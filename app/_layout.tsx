@@ -3,22 +3,25 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { TicketProvider } from '@/store/ticket-store';
+import { useSchemaCouleur } from '@/crochets/utiliser-schema-couleur';
+import { TicketProvider } from '@/etat/etat-ticket';
 
 export const unstable_settings = {
-  anchor: '(tabs)',
+  anchor: '(onglets)',
 };
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
+  const colorScheme = useSchemaCouleur();
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <TicketProvider>
         <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+          <Stack.Screen name="(onglets)" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="fenetre-modale"
+            options={{ presentation: 'modal', title: 'Fenêtre modale' }}
+          />
         </Stack>
         <StatusBar style="auto" />
       </TicketProvider>
