@@ -9,7 +9,7 @@ export default function EcranFenetreModale() {
     <VueTheme style={styles.container}>
       <TexteTheme type="title">Ceci est une fenêtre modale</TexteTheme>
       <Link href="/" dismissTo style={styles.link}>
-        <TexteTheme type="link">Retourner à l'accueil</TexteTheme>
+        <TexteTheme type="link">Retourner à accueil</TexteTheme>
       </Link>
     </VueTheme>
   );
