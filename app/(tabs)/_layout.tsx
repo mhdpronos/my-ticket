@@ -51,6 +51,13 @@ export default function DispositionOnglets() {
           tabBarIcon: ({ color }) => <MaterialCommunityIcons name="account-outline" size={24} color={color} />,
         }}
       />
+      <Tabs.Screen
+        name="parametres"
+        options={{
+          title: 'Paramètres',
+          href: null,
+        }}
+      />
     </Tabs>
   );
 }

@@ -1,11 +1,13 @@
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { router } from 'expo-router';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 import { TexteTheme } from '@/composants/texte-theme';
 import { useCouleurTheme } from '@/crochets/utiliser-couleur-theme';
 import { useAccesUtilisateur } from '@/crochets/utiliser-acces-utilisateur';
 
-// Écran profil avec espaces réservés pour l'abonnement et les performances.
+// Écran profil avec un vrai formulaire modifiable et un accès aux paramètres.
 
 export default function EcranProfil() {
   const background = useCouleurTheme({}, 'background');
@@ -16,7 +18,19 @@ export default function EcranProfil() {
   const success = useCouleurTheme({}, 'success');
   const warning = useCouleurTheme({}, 'warning');
   const premium = useCouleurTheme({}, 'premium');
+  const tint = useCouleurTheme({}, 'tint');
   const { isPremium } = useAccesUtilisateur();
+  const [nom, setNom] = useState('MHD Pro Analyst');
+  const [email, setEmail] = useState('pro@mhdpronos.com');
+  const [telephone, setTelephone] = useState('+225 07 00 00 00 00');
+  const [ville, setVille] = useState('Abidjan, Côte d’Ivoire');
+  const [bio, setBio] = useState('Analyste premium • Spécialiste Ligue 1 & Premier League.');
+  const [sauvegarde, setSauvegarde] = useState('Dernière sauvegarde : Aujourd’hui, 09:42');
+
+  const gererSauvegarde = () => {
+    // Mise à jour locale uniquement (connecter à l’API quand elle sera prête).
+    setSauvegarde(`Dernière sauvegarde : Aujourd’hui, ${new Date().toLocaleTimeString()}`);
+  };
 
   return (
     <ScrollView
@@ -31,6 +45,12 @@ export default function EcranProfil() {
             <TexteTheme type="title">Profil professionnel</TexteTheme>
             <TexteTheme style={{ color: mutedText }}>Compte Pro • MHD Pronos</TexteTheme>
           </View>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.push('/(tabs)/parametres')}
+            style={[styles.settingsButton, { borderColor: border, backgroundColor: backgroundSecondary }]}>
+            <MaterialCommunityIcons name="cog-outline" size={20} color={tint} />
+          </Pressable>
         </View>
         <View style={[styles.progressCard, { backgroundColor: card, borderColor: border }]}>
           <View style={styles.progressHeader}>
@@ -51,17 +71,38 @@ export default function EcranProfil() {
           <MaterialCommunityIcons name="shield-account-outline" size={20} color={mutedText} />
           <TexteTheme type="defaultSemiBold">Identité & accès</TexteTheme>
         </View>
-        <View style={styles.row}>
+        <View style={styles.inputGroup}>
           <TexteTheme style={[styles.rowLabel, { color: mutedText }]}>Nom</TexteTheme>
-          <TexteTheme style={styles.rowValue}>MHD Pro Analyst</TexteTheme>
+          <TextInput
+            value={nom}
+            onChangeText={setNom}
+            placeholder="Votre nom"
+            placeholderTextColor={mutedText}
+            style={[styles.input, { backgroundColor: backgroundSecondary, borderColor: border }]}
+          />
         </View>
-        <View style={styles.row}>
+        <View style={styles.inputGroup}>
           <TexteTheme style={[styles.rowLabel, { color: mutedText }]}>Email</TexteTheme>
-          <TexteTheme style={styles.rowValue}>pro@mhdpronos.com</TexteTheme>
+          <TextInput
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            placeholder="exemple@email.com"
+            placeholderTextColor={mutedText}
+            style={[styles.input, { backgroundColor: backgroundSecondary, borderColor: border }]}
+          />
         </View>
-        <View style={styles.row}>
+        <View style={styles.inputGroup}>
           <TexteTheme style={[styles.rowLabel, { color: mutedText }]}>Téléphone</TexteTheme>
-          <TexteTheme style={styles.rowValue}>+225 07 00 00 00 00</TexteTheme>
+          <TextInput
+            value={telephone}
+            onChangeText={setTelephone}
+            keyboardType="phone-pad"
+            placeholder="+225 00 00 00 00 00"
+            placeholderTextColor={mutedText}
+            style={[styles.input, { backgroundColor: backgroundSecondary, borderColor: border }]}
+          />
         </View>
         <View style={styles.row}>
           <TexteTheme style={[styles.rowLabel, { color: mutedText }]}>ID client</TexteTheme>
@@ -77,6 +118,45 @@ export default function EcranProfil() {
             <TexteTheme style={{ color: mutedText }}>2FA activée</TexteTheme>
           </View>
         </View>
+      </View>
+
+      <View style={[styles.card, { backgroundColor: card, borderColor: border }]}>
+        <View style={styles.cardHeader}>
+          <MaterialCommunityIcons name="account-edit-outline" size={20} color={mutedText} />
+          <TexteTheme type="defaultSemiBold">Profil public</TexteTheme>
+        </View>
+        <View style={styles.inputGroup}>
+          <TexteTheme style={[styles.rowLabel, { color: mutedText }]}>Ville</TexteTheme>
+          <TextInput
+            value={ville}
+            onChangeText={setVille}
+            placeholder="Ville"
+            placeholderTextColor={mutedText}
+            style={[styles.input, { backgroundColor: backgroundSecondary, borderColor: border }]}
+          />
+        </View>
+        <View style={styles.inputGroup}>
+          <TexteTheme style={[styles.rowLabel, { color: mutedText }]}>Bio</TexteTheme>
+          <TextInput
+            value={bio}
+            onChangeText={setBio}
+            placeholder="Décrivez votre profil"
+            placeholderTextColor={mutedText}
+            multiline
+            style={[
+              styles.input,
+              styles.multilineInput,
+              { backgroundColor: backgroundSecondary, borderColor: border },
+            ]}
+          />
+        </View>
+        <Pressable
+          accessibilityRole="button"
+          onPress={gererSauvegarde}
+          style={[styles.saveButton, { backgroundColor: tint }]}>
+          <TexteTheme style={styles.saveButtonText}>Enregistrer les modifications</TexteTheme>
+        </Pressable>
+        <TexteTheme style={{ color: mutedText }}>{sauvegarde}</TexteTheme>
       </View>
 
       <View style={[styles.card, { backgroundColor: card, borderColor: border }]}>
@@ -219,6 +299,23 @@ export default function EcranProfil() {
           </View>
         </View>
       </View>
+
+      <View style={[styles.card, { backgroundColor: card, borderColor: border }]}>
+        <View style={styles.cardHeader}>
+          <MaterialCommunityIcons name="cog-transfer-outline" size={20} color={mutedText} />
+          <TexteTheme type="defaultSemiBold">Actions rapides</TexteTheme>
+        </View>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push('/(tabs)/parametres')}
+          style={[styles.actionRow, { borderColor: border, backgroundColor: backgroundSecondary }]}>
+          <View style={styles.actionRowContent}>
+            <MaterialCommunityIcons name="cog-outline" size={18} color={tint} />
+            <TexteTheme>Accéder aux paramètres</TexteTheme>
+          </View>
+          <MaterialCommunityIcons name="chevron-right" size={18} color={mutedText} />
+        </Pressable>
+      </View>
     </ScrollView>
   );
 }
@@ -252,6 +349,14 @@ const styles = StyleSheet.create({
   identityText: {
     flex: 1,
     gap: 4,
+  },
+  settingsButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   progressCard: {
     borderWidth: 1,
@@ -299,6 +404,30 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'right',
   },
+  inputGroup: {
+    gap: 6,
+  },
+  input: {
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    fontSize: 15,
+  },
+  multilineInput: {
+    minHeight: 90,
+    textAlignVertical: 'top',
+  },
+  saveButton: {
+    marginTop: 6,
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  saveButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
   badgeRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -328,5 +457,19 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 6,
     paddingHorizontal: 10,
+  },
+  actionRow: {
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  actionRowContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
 });
