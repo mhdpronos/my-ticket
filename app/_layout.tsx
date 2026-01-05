@@ -7,7 +7,7 @@ import { useSchemaCouleur } from '@/crochets/utiliser-schema-couleur';
 import { TicketProvider } from '@/etat/etat-ticket';
 
 export const unstable_settings = {
-  anchor: '(onglets)',
+  anchor: '(tabs)',
 };
 
 export default function RootLayout() {
@@ -17,7 +17,7 @@ export default function RootLayout() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <TicketProvider>
         <Stack>
-          <Stack.Screen name="(onglets)" options={{ headerShown: false }} />
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen
             name="fenetre-modale"
             options={{ presentation: 'modal', title: 'Fenêtre modale' }}
