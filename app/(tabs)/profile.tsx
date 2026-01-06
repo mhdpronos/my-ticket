@@ -18,7 +18,7 @@ export default function ProfileScreen() {
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
       <View style={styles.header}>
-        <View style={[styles.avatar, { borderColor: border }]}
+        <View style={[styles.avatar, { borderColor: border }]}>
           <MaterialCommunityIcons name="account-outline" size={30} color={mutedText} />
         </View>
         <View style={styles.identity}>
