@@ -1,30 +1,30 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { DarkTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
-
-import { useSchemaCouleur } from '@/crochets/utiliser-schema-couleur';
-import { TicketProvider } from '@/etat/etat-ticket';
+import React from 'react';
+import { AppProviders } from '@/store/AppProviders';
 
 export const unstable_settings = {
   anchor: '(tabs)',
 };
 
 export default function RootLayout() {
-  const colorScheme = useSchemaCouleur();
-
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <TicketProvider>
+    <ThemeProvider value={DarkTheme}>
+      <AppProviders>
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen
-            name="fenetre-modale"
-            options={{ presentation: 'modal', title: 'Fenêtre modale' }}
-          />
+          <Stack.Screen name="notifications" options={{ title: 'Notifications' }} />
+          <Stack.Screen name="subscription" options={{ title: 'Abonnement' }} />
+          <Stack.Screen name="history" options={{ title: 'Historique' }} />
+          <Stack.Screen name="settings" options={{ title: 'Réglages' }} />
+          <Stack.Screen name="support" options={{ title: 'Aide & Support' }} />
+          <Stack.Screen name="legal" options={{ title: 'Mentions légales' }} />
+          <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+          <Stack.Screen name="match-details" options={{ title: 'Détails match' }} />
         </Stack>
-        <StatusBar style="auto" />
-      </TicketProvider>
+        <StatusBar style="light" />
+      </AppProviders>
     </ThemeProvider>
   );
 }
