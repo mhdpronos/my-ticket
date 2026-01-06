@@ -14,7 +14,7 @@ export default function LegalScreen() {
       <View style={[styles.card, { backgroundColor: card, borderColor: border }]}>
         <ThemedText type="defaultSemiBold">Mentions légales</ThemedText>
         <ThemedText style={{ color: mutedText }}>
-          MY TICKET propose des informations et comparaisons de cotes. L'application n'est pas un bookmaker.
+          MY TICKET propose des informations et comparaisons de cotes. Pas un bookmaker.
         </ThemedText>
       </View>
       <View style={[styles.card, { backgroundColor: card, borderColor: border }]}>
