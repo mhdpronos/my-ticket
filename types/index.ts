@@ -1,6 +1,8 @@
+// Le code qui définit les types de données principaux de l'app.
 export type Team = {
   id: string;
   name: string;
+  logoUrl: string;
 };
 
 export type League = {
@@ -11,6 +13,17 @@ export type League = {
 
 export type MatchStatus = 'upcoming' | 'live' | 'finished';
 
+export type MatchScore = {
+  home: number;
+  away: number;
+};
+
+export type MatchWinRate = {
+  home: number;
+  draw: number;
+  away: number;
+};
+
 export type Match = {
   id: string;
   homeTeam: Team;
@@ -18,6 +31,10 @@ export type Match = {
   league: League;
   kickoffIso: string;
   status: MatchStatus;
+  score?: MatchScore;
+  liveMinute?: number;
+  winRate?: MatchWinRate;
+  venue?: string;
 };
 
 export type MarketType = '1X2' | 'OVER_UNDER' | 'BOTH_TEAMS_SCORE' | 'DOUBLE_CHANCE' | 'HANDICAP';
@@ -53,4 +70,13 @@ export type UserAccess = {
 export type Bookmaker = {
   id: string;
   name: string;
+};
+
+export type UserProfile = {
+  fullName: string;
+  email: string;
+  phone: string;
+  city: string;
+  favoriteTeam: string;
+  birthDate: string;
 };

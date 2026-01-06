@@ -1,3 +1,4 @@
+// Le code de la page principale des matchs et des filtres.
 import { ActivityIndicator, FlatList, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useEffect, useMemo, useState } from 'react';
@@ -11,7 +12,7 @@ import { useThemeColor } from '@/hooks/useThemeColor';
 import { getMatchesByDate } from '@/services/matchesService';
 import { getPredictionsForMatch } from '@/services/predictionsService';
 import { useAppStore } from '@/store/useAppStore';
-import { Match, Prediction } from '@/types';
+import { Match, MatchStatus, Prediction } from '@/types';
 import { buildRollingDates } from '@/utils/dateRange';
 
 export default function MatchesScreen() {
@@ -25,6 +26,7 @@ export default function MatchesScreen() {
   const [selectedLeagueId, setSelectedLeagueId] = useState<string | null>(null);
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<'all' | 'morning' | 'afternoon' | 'evening'>('all');
+  const [selectedStatus, setSelectedStatus] = useState<MatchStatus | 'all'>('all');
 
   const dates = useMemo(() => buildRollingDates(), []);
 
@@ -42,6 +44,8 @@ export default function MatchesScreen() {
   const border = useThemeColor({}, 'border');
   const mutedText = useThemeColor({}, 'mutedText');
   const tint = useThemeColor({}, 'tint');
+  const success = useThemeColor({}, 'success');
+  const warning = useThemeColor({}, 'warning');
 
   useEffect(() => {
     if (!selectedDateId) {
@@ -109,7 +113,9 @@ export default function MatchesScreen() {
           ? kickoffHour >= 14 && kickoffHour < 19
           : kickoffHour >= 19;
 
-      return (matchesTeams || query.length === 0) && matchesLeague && matchesCountry && matchesFavorites && matchesTime;
+      const matchesStatus = selectedStatus === 'all' ? true : match.status === selectedStatus;
+
+      return (matchesTeams || query.length === 0) && matchesLeague && matchesCountry && matchesFavorites && matchesTime && matchesStatus;
     });
   }, [
     matches,
@@ -120,6 +126,7 @@ export default function MatchesScreen() {
     favoriteTeams,
     favoriteLeagues,
     selectedTimeSlot,
+    selectedStatus,
   ]);
 
   const handleOpenMatch = (match: Match) => {
@@ -142,9 +149,11 @@ export default function MatchesScreen() {
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
       <View style={styles.header}>
-        <View>
-          <ThemedText type="title">MY TICKET</ThemedText>
-          <ThemedText style={{ color: mutedText }}>Crée ton ticket. Compare les cotes. Parie où tu veux.</ThemedText>
+        <View style={styles.headerText}>
+          <ThemedText type="title">MY TICKET LIVE</ThemedText>
+          <ThemedText style={{ color: mutedText }}>
+            Scores en direct, historique, taux de réussite et pronostics.
+          </ThemedText>
           <ThemedText style={{ color: mutedText }}>Créé par mhd pronos.</ThemedText>
         </View>
         <TouchableOpacity
@@ -196,6 +205,9 @@ export default function MatchesScreen() {
           }}>
           <ThemedText style={{ color: mutedText }}>{selectedCountry ?? 'Tous les pays'}</ThemedText>
         </TouchableOpacity>
+      </View>
+
+      <View style={styles.filterRow}>
         <TouchableOpacity
           style={[styles.filterChip, { borderColor: border, backgroundColor: card }]}
           onPress={() =>
@@ -212,6 +224,21 @@ export default function MatchesScreen() {
               ? 'Après-midi'
               : 'Soir'}
           </ThemedText>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.filterChip, { borderColor: border, backgroundColor: selectedStatus === 'live' ? success : card }]}
+          onPress={() => setSelectedStatus((prev) => (prev === 'live' ? 'all' : 'live'))}>
+          <ThemedText style={{ color: selectedStatus === 'live' ? '#FFFFFF' : mutedText }}>En direct</ThemedText>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.filterChip, { borderColor: border, backgroundColor: selectedStatus === 'finished' ? warning : card }]}
+          onPress={() => setSelectedStatus((prev) => (prev === 'finished' ? 'all' : 'finished'))}>
+          <ThemedText style={{ color: selectedStatus === 'finished' ? '#FFFFFF' : mutedText }}>Terminés</ThemedText>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.filterChip, { borderColor: border, backgroundColor: selectedStatus === 'upcoming' ? tint : card }]}
+          onPress={() => setSelectedStatus((prev) => (prev === 'upcoming' ? 'all' : 'upcoming'))}>
+          <ThemedText style={{ color: selectedStatus === 'upcoming' ? '#FFFFFF' : mutedText }}>À venir</ThemedText>
         </TouchableOpacity>
       </View>
 
@@ -271,11 +298,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 12,
+  },
+  headerText: {
+    flex: 1,
+    gap: 4,
   },
   notificationButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -287,7 +319,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
     gap: 8,
   },
@@ -304,7 +336,7 @@ const styles = StyleSheet.create({
   },
   filterChip: {
     borderWidth: 1,
-    borderRadius: 14,
+    borderRadius: 16,
     paddingVertical: 8,
     paddingHorizontal: 12,
   },

@@ -1,6 +1,7 @@
+// Le code qui gère l'état global de l'application avec Zustand.
 import { create } from 'zustand';
 
-import { Match, Prediction, TicketItem, UserAccess } from '@/types';
+import { Match, Prediction, TicketItem, UserAccess, UserProfile } from '@/types';
 
 type AppState = {
   selectedDateId: string | null;
@@ -15,6 +16,18 @@ type AppState = {
   toggleFavoriteLeague: (leagueId: string) => void;
   userAccess: UserAccess;
   setUserAccess: (access: UserAccess) => void;
+  userProfile: UserProfile;
+  updateUserProfile: (profile: Partial<UserProfile>) => void;
+  signOut: () => void;
+};
+
+const initialProfile: UserProfile = {
+  fullName: '',
+  email: '',
+  phone: '',
+  city: '',
+  favoriteTeam: '',
+  birthDate: '',
 };
 
 export const useAppStore = create<AppState>((set) => ({
@@ -52,4 +65,20 @@ export const useAppStore = create<AppState>((set) => ({
     })),
   userAccess: { status: 'FREE', isGuest: true },
   setUserAccess: (access) => set({ userAccess: access }),
+  userProfile: initialProfile,
+  updateUserProfile: (profile) =>
+    set((state) => ({
+      userProfile: {
+        ...state.userProfile,
+        ...profile,
+      },
+    })),
+  signOut: () =>
+    set({
+      userAccess: { status: 'FREE', isGuest: true },
+      userProfile: initialProfile,
+      ticketItems: [],
+      favoriteTeams: [],
+      favoriteLeagues: [],
+    }),
 }));
