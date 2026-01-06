@@ -1,52 +1,61 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { HeaderNotificationsButton } from '@/components/HeaderNotificationsButton';
-import { Colors } from '@/constants/theme';
-import { useAppColorScheme } from '@/hooks/useColorScheme';
 
-export default function TabsLayout() {
-  const colorScheme = useAppColorScheme();
+import { OngletHaptique } from '@/composants/onglet-haptique';
+import { Colors } from '@/constantes/theme';
+import { useSchemaCouleur } from '@/crochets/utiliser-schema-couleur';
+
+export default function DispositionOnglets() {
+  const colorScheme = useSchemaCouleur();
 
   return (
     <Tabs
       screenOptions={{
-        headerShown: true,
-        headerStyle: { backgroundColor: Colors.dark.background },
-        headerTitleStyle: { color: Colors.dark.text },
-        headerTintColor: Colors.dark.text,
-        headerRight: () => <HeaderNotificationsButton />,
-        tabBarActiveTintColor: Colors[colorScheme].accent ?? Colors.dark.accent,
-        tabBarInactiveTintColor: Colors[colorScheme].muted ?? Colors.dark.muted,
-        tabBarStyle: { backgroundColor: Colors.dark.surface, borderTopColor: Colors.dark.border },
-      }}
-    >
+        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        headerShown: false,
+        tabBarButton: OngletHaptique,
+      }}>
       <Tabs.Screen
-        name="matches"
+        name="matchs"
         options={{
           title: 'Matchs',
           tabBarIcon: ({ color }) => <MaterialCommunityIcons name="soccer" size={24} color={color} />,
         }}
       />
       <Tabs.Screen
-        name="ticket"
-        options={{
-          title: 'Ticket',
-          tabBarIcon: ({ color }) => <MaterialCommunityIcons name="ticket-confirmation-outline" size={24} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="favorites"
+        name="favoris"
         options={{
           title: 'Favoris',
           tabBarIcon: ({ color }) => <MaterialCommunityIcons name="star-outline" size={24} color={color} />,
         }}
       />
       <Tabs.Screen
-        name="profile"
+        name="billet"
+        options={{
+          title: 'Billet',
+          tabBarIcon: ({ color }) => <MaterialCommunityIcons name="ticket-outline" size={24} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="meilleurs-choix"
+        options={{
+          title: 'Meilleurs choix',
+          tabBarIcon: ({ color }) => <MaterialCommunityIcons name="crown-outline" size={24} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="profil"
         options={{
           title: 'Profil',
           tabBarIcon: ({ color }) => <MaterialCommunityIcons name="account-outline" size={24} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="parametres"
+        options={{
+          title: 'Paramètres',
+          href: null,
         }}
       />
     </Tabs>
