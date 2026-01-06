@@ -2,60 +2,46 @@ import { Tabs } from 'expo-router';
 import React from 'react';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
-import { OngletHaptique } from '@/composants/onglet-haptique';
-import { Colors } from '@/constantes/theme';
-import { useSchemaCouleur } from '@/crochets/utiliser-schema-couleur';
+import { HapticTab } from '@/components/ui/HapticTab';
+import { Colors } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/useColorScheme';
 
-export default function DispositionOnglets() {
-  const colorScheme = useSchemaCouleur();
+export default function TabLayout() {
+  const colorScheme = useColorScheme();
 
   return (
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
         headerShown: false,
-        tabBarButton: OngletHaptique,
+        tabBarButton: HapticTab,
       }}>
       <Tabs.Screen
-        name="matchs"
+        name="matches"
         options={{
           title: 'Matchs',
           tabBarIcon: ({ color }) => <MaterialCommunityIcons name="soccer" size={24} color={color} />,
         }}
       />
       <Tabs.Screen
-        name="favoris"
+        name="ticket"
+        options={{
+          title: 'Ticket',
+          tabBarIcon: ({ color }) => <MaterialCommunityIcons name="ticket-outline" size={24} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="favorites"
         options={{
           title: 'Favoris',
           tabBarIcon: ({ color }) => <MaterialCommunityIcons name="star-outline" size={24} color={color} />,
         }}
       />
       <Tabs.Screen
-        name="billet"
-        options={{
-          title: 'Billet',
-          tabBarIcon: ({ color }) => <MaterialCommunityIcons name="ticket-outline" size={24} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="meilleurs-choix"
-        options={{
-          title: 'Meilleurs choix',
-          tabBarIcon: ({ color }) => <MaterialCommunityIcons name="crown-outline" size={24} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="profil"
+        name="profile"
         options={{
           title: 'Profil',
           tabBarIcon: ({ color }) => <MaterialCommunityIcons name="account-outline" size={24} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="parametres"
-        options={{
-          title: 'Paramètres',
-          href: null,
         }}
       />
     </Tabs>
