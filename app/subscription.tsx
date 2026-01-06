@@ -13,7 +13,7 @@ export default function SubscriptionScreen() {
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
       <View style={styles.header}>
-        <ThemedText type="title">Premium MY TICKET</ThemedText>
+        <ThemedText type="title">MY TICKET +</ThemedText>
         <ThemedText style={{ color: mutedText }}>
           Débloque 3 pronostics premium par match et les meilleures cotes.
         </ThemedText>
