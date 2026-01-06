@@ -149,12 +149,11 @@ export default function MatchesScreen() {
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
       <View style={styles.header}>
-        <View style={styles.headerText}>
-          <ThemedText type="title">MY TICKET LIVE</ThemedText>
+        <View style={[styles.heroCard, { backgroundColor: card, borderColor: border }]}>
+          <ThemedText type="title">Matchs</ThemedText>
           <ThemedText style={{ color: mutedText }}>
-            Scores en direct, historique, taux de réussite et pronostics.
+            Crée ton ticket, compare les cotes et suis tes pronostics en direct.
           </ThemedText>
-          <ThemedText style={{ color: mutedText }}>Créé par mhd pronos.</ThemedText>
         </View>
         <TouchableOpacity
           accessibilityRole="button"
@@ -164,82 +163,85 @@ export default function MatchesScreen() {
         </TouchableOpacity>
       </View>
 
+      <ThemedText style={[styles.sectionTitle, { color: mutedText }]}>Calendrier</ThemedText>
       <DateStrip dates={dates} selectedId={selectedDateId ?? dates[2].id} onSelect={setSelectedDateId} />
 
-      <View style={[styles.searchBox, { backgroundColor: card, borderColor: border }]}>
-        <MaterialCommunityIcons name="magnify" size={18} color={mutedText} />
-        <TextInput
-          placeholder="Rechercher une équipe"
-          placeholderTextColor={mutedText}
-          value={searchValue}
-          onChangeText={setSearchValue}
-          style={[styles.searchInput, { color: mutedText }]}
-        />
-      </View>
+      <View style={[styles.filterPanel, { backgroundColor: card, borderColor: border }]}>
+        <View style={[styles.searchBox, { backgroundColor: background, borderColor: border, borderWidth: 1 }]}>
+          <MaterialCommunityIcons name="magnify" size={18} color={mutedText} />
+          <TextInput
+            placeholder="Rechercher une équipe"
+            placeholderTextColor={mutedText}
+            value={searchValue}
+            onChangeText={setSearchValue}
+            style={[styles.searchInput, { color: mutedText }]}
+          />
+        </View>
 
-      <View style={styles.filterRow}>
-        <TouchableOpacity
-          style={[styles.filterChip, { borderColor: border, backgroundColor: favoritesOnly ? tint : card }]}
-          onPress={() => setFavoritesOnly((value) => !value)}>
-          <ThemedText style={{ color: favoritesOnly ? '#FFFFFF' : mutedText }}>Favoris</ThemedText>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.filterChip, { borderColor: border, backgroundColor: card }]}
-          onPress={() => {
-            const currentIndex = leagueOptions.findIndex((league) => league.id === selectedLeagueId);
-            const next = leagueOptions[currentIndex + 1] ?? null;
-            setSelectedLeagueId(next ? next.id : null);
-          }}>
-          <ThemedText style={{ color: mutedText }}>
-            {selectedLeagueId
-              ? leagueOptions.find((league) => league.id === selectedLeagueId)?.name
-              : 'Toutes les ligues'}
-          </ThemedText>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.filterChip, { borderColor: border, backgroundColor: card }]}
-          onPress={() => {
-            const currentIndex = countryOptions.findIndex((country) => country === selectedCountry);
-            const next = countryOptions[currentIndex + 1] ?? null;
-            setSelectedCountry(next ?? null);
-          }}>
-          <ThemedText style={{ color: mutedText }}>{selectedCountry ?? 'Tous les pays'}</ThemedText>
-        </TouchableOpacity>
-      </View>
+        <View style={styles.filterRow}>
+          <TouchableOpacity
+            style={[styles.filterChip, { borderColor: border, backgroundColor: favoritesOnly ? tint : card }]}
+            onPress={() => setFavoritesOnly((value) => !value)}>
+            <ThemedText style={{ color: favoritesOnly ? '#FFFFFF' : mutedText }}>Favoris</ThemedText>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.filterChip, { borderColor: border, backgroundColor: card }]}
+            onPress={() => {
+              const currentIndex = leagueOptions.findIndex((league) => league.id === selectedLeagueId);
+              const next = leagueOptions[currentIndex + 1] ?? null;
+              setSelectedLeagueId(next ? next.id : null);
+            }}>
+            <ThemedText style={{ color: mutedText }}>
+              {selectedLeagueId
+                ? leagueOptions.find((league) => league.id === selectedLeagueId)?.name
+                : 'Toutes les ligues'}
+            </ThemedText>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.filterChip, { borderColor: border, backgroundColor: card }]}
+            onPress={() => {
+              const currentIndex = countryOptions.findIndex((country) => country === selectedCountry);
+              const next = countryOptions[currentIndex + 1] ?? null;
+              setSelectedCountry(next ?? null);
+            }}>
+            <ThemedText style={{ color: mutedText }}>{selectedCountry ?? 'Tous les pays'}</ThemedText>
+          </TouchableOpacity>
+        </View>
 
-      <View style={styles.filterRow}>
-        <TouchableOpacity
-          style={[styles.filterChip, { borderColor: border, backgroundColor: card }]}
-          onPress={() =>
-            setSelectedTimeSlot((prev) =>
-              prev === 'all' ? 'morning' : prev === 'morning' ? 'afternoon' : prev === 'afternoon' ? 'evening' : 'all'
-            )
-          }>
-          <ThemedText style={{ color: mutedText }}>
-            {selectedTimeSlot === 'all'
-              ? 'Toutes heures'
-              : selectedTimeSlot === 'morning'
-              ? 'Matin'
-              : selectedTimeSlot === 'afternoon'
-              ? 'Après-midi'
-              : 'Soir'}
-          </ThemedText>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.filterChip, { borderColor: border, backgroundColor: selectedStatus === 'live' ? success : card }]}
-          onPress={() => setSelectedStatus((prev) => (prev === 'live' ? 'all' : 'live'))}>
-          <ThemedText style={{ color: selectedStatus === 'live' ? '#FFFFFF' : mutedText }}>En direct</ThemedText>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.filterChip, { borderColor: border, backgroundColor: selectedStatus === 'finished' ? warning : card }]}
-          onPress={() => setSelectedStatus((prev) => (prev === 'finished' ? 'all' : 'finished'))}>
-          <ThemedText style={{ color: selectedStatus === 'finished' ? '#FFFFFF' : mutedText }}>Terminés</ThemedText>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.filterChip, { borderColor: border, backgroundColor: selectedStatus === 'upcoming' ? tint : card }]}
-          onPress={() => setSelectedStatus((prev) => (prev === 'upcoming' ? 'all' : 'upcoming'))}>
-          <ThemedText style={{ color: selectedStatus === 'upcoming' ? '#FFFFFF' : mutedText }}>À venir</ThemedText>
-        </TouchableOpacity>
+        <View style={styles.filterRow}>
+          <TouchableOpacity
+            style={[styles.filterChip, { borderColor: border, backgroundColor: card }]}
+            onPress={() =>
+              setSelectedTimeSlot((prev) =>
+                prev === 'all' ? 'morning' : prev === 'morning' ? 'afternoon' : prev === 'afternoon' ? 'evening' : 'all'
+              )
+            }>
+            <ThemedText style={{ color: mutedText }}>
+              {selectedTimeSlot === 'all'
+                ? 'Toutes heures'
+                : selectedTimeSlot === 'morning'
+                ? 'Matin'
+                : selectedTimeSlot === 'afternoon'
+                ? 'Après-midi'
+                : 'Soir'}
+            </ThemedText>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.filterChip, { borderColor: border, backgroundColor: selectedStatus === 'live' ? success : card }]}
+            onPress={() => setSelectedStatus((prev) => (prev === 'live' ? 'all' : 'live'))}>
+            <ThemedText style={{ color: selectedStatus === 'live' ? '#FFFFFF' : mutedText }}>En direct</ThemedText>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.filterChip, { borderColor: border, backgroundColor: selectedStatus === 'finished' ? warning : card }]}
+            onPress={() => setSelectedStatus((prev) => (prev === 'finished' ? 'all' : 'finished'))}>
+            <ThemedText style={{ color: selectedStatus === 'finished' ? '#FFFFFF' : mutedText }}>Terminés</ThemedText>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.filterChip, { borderColor: border, backgroundColor: selectedStatus === 'upcoming' ? tint : card }]}
+            onPress={() => setSelectedStatus((prev) => (prev === 'upcoming' ? 'all' : 'upcoming'))}>
+            <ThemedText style={{ color: selectedStatus === 'upcoming' ? '#FFFFFF' : mutedText }}>À venir</ThemedText>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {isLoading ? (
@@ -294,15 +296,18 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 16,
-    marginBottom: 16,
+    marginBottom: 12,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'stretch',
     gap: 12,
   },
-  headerText: {
+  heroCard: {
     flex: 1,
-    gap: 4,
+    borderWidth: 1,
+    borderRadius: 18,
+    padding: 14,
+    gap: 6,
   },
   notificationButton: {
     width: 44,
@@ -312,15 +317,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  sectionTitle: {
+    paddingHorizontal: 16,
+    marginBottom: 8,
+    fontSize: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  filterPanel: {
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderRadius: 18,
+    padding: 12,
+    gap: 12,
+  },
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 16,
-    marginBottom: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 16,
-    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 14,
     gap: 8,
   },
   searchInput: {
@@ -331,8 +349,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
-    paddingHorizontal: 16,
-    marginBottom: 12,
   },
   filterChip: {
     borderWidth: 1,

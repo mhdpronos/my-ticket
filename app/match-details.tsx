@@ -1,6 +1,7 @@
 // Le code de la page qui affiche les détails avancés d'un match.
 import { StyleSheet, View } from 'react-native';
 
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { useThemeColor } from '@/hooks/useThemeColor';
 
@@ -14,8 +15,9 @@ export default function MatchDetailsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
+      <ScreenHeader title="Détails du match" subtitle="Statistiques avancées & tendances clés." />
       <View style={[styles.hero, { backgroundColor: card, borderColor: border }]}> 
-        <ThemedText type="title">Détails du match</ThemedText>
+        <ThemedText type="defaultSemiBold">Résumé du match</ThemedText>
         <ThemedText style={{ color: mutedText }}>
           Statistiques, compositions, historique et tendances de performance.
         </ThemedText>
@@ -52,7 +54,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 16,
-    paddingTop: 24,
+    paddingBottom: 24,
     gap: 16,
   },
   hero: {

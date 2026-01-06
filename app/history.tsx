@@ -1,6 +1,7 @@
 import { FlatList, StyleSheet, View } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { useThemeColor } from '@/hooks/useThemeColor';
 
@@ -18,6 +19,7 @@ export default function HistoryScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
+      <ScreenHeader title="Historique" subtitle="Retrouve tes tickets passés." />
       <FlatList
         data={historyItems}
         keyExtractor={(item) => item.id}
@@ -45,11 +47,11 @@ export default function HistoryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 20,
+    paddingBottom: 12,
   },
   list: {
     gap: 12,
+    paddingHorizontal: 16,
     paddingBottom: 24,
   },
   card: {
