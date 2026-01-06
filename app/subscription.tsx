@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { useThemeColor } from '@/hooks/useThemeColor';
 
@@ -12,13 +13,10 @@ export default function SubscriptionScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
-      <View style={styles.header}>
-        <ThemedText type="title">MY TICKET +</ThemedText>
-        <ThemedText style={{ color: mutedText }}>
-          Débloque 3 pronostics premium par match et les meilleures cotes.
-        </ThemedText>
-      </View>
-
+      <ScreenHeader
+        title="Abonnement Premium"
+        subtitle="Débloque les pronostics premium et les meilleures cotes."
+      />
       <View style={[styles.card, { backgroundColor: card, borderColor: border }]}>
         <ThemedText type="defaultSemiBold">Plan Mensuel</ThemedText>
         <ThemedText style={{ color: mutedText }}>Accès complet • 30 jours</ThemedText>
@@ -44,11 +42,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 16,
-    paddingTop: 24,
+    paddingBottom: 24,
     gap: 16,
-  },
-  header: {
-    gap: 8,
   },
   card: {
     borderWidth: 1,

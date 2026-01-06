@@ -1,6 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { useThemeColor } from '@/hooks/useThemeColor';
 
@@ -12,6 +13,7 @@ export default function SupportScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
+      <ScreenHeader title="Aide & Support" subtitle="Besoin d'un coup de main ? On est là." />
       <View style={[styles.card, { backgroundColor: card, borderColor: border }]}>
         <MaterialCommunityIcons name="headset" size={22} color={mutedText} />
         <View style={styles.textBlock}>
@@ -35,7 +37,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 16,
-    paddingTop: 24,
+    paddingBottom: 24,
     gap: 16,
   },
   card: {

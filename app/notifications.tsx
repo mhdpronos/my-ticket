@@ -1,6 +1,7 @@
 import { FlatList, StyleSheet, View } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { useThemeColor } from '@/hooks/useThemeColor';
 
@@ -31,6 +32,7 @@ export default function NotificationsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
+      <ScreenHeader title="Notifications" subtitle="Reste informé des mises à jour clés." />
       <FlatList
         data={notifications}
         keyExtractor={(item) => item.id}
@@ -58,11 +60,11 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 20,
+    paddingBottom: 12,
   },
   list: {
     gap: 12,
+    paddingHorizontal: 16,
     paddingBottom: 24,
   },
   card: {

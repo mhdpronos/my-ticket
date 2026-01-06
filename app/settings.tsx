@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { useThemeColor } from '@/hooks/useThemeColor';
 
@@ -19,11 +20,7 @@ export default function SettingsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
-      <View style={styles.header}>
-        <ThemedText type="title">Réglages</ThemedText>
-        <ThemedText style={{ color: mutedText }}>Personnalise ton expérience MY TICKET.</ThemedText>
-      </View>
-
+      <ScreenHeader title="Réglages" subtitle="Personnalise ton expérience MY TICKET." />
       <View style={[styles.card, { backgroundColor: card, borderColor: border }]}>
         {rows.map((row) => (
           <Pressable key={row.id} style={[styles.rowButton, { borderColor: border }]}>
@@ -46,11 +43,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 16,
-    paddingTop: 24,
+    paddingBottom: 24,
     gap: 16,
-  },
-  header: {
-    gap: 6,
   },
   card: {
     borderWidth: 1,
