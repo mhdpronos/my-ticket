@@ -10,7 +10,7 @@ import { ThemedText } from '@/components/ui/ThemedText';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { getMatchesByDate } from '@/services/matchesService';
 import { useAppStore } from '@/store/useAppStore';
-import { Match } from '@/types';
+import { Match, MatchStatus } from '@/types';
 import { buildRollingDates } from '@/utils/dateRange';
 
 export default function MatchesScreen() {
@@ -18,6 +18,9 @@ export default function MatchesScreen() {
   const [searchValue, setSearchValue] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [selectedLeagueId, setSelectedLeagueId] = useState<string | null>(null);
+  const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<'all' | 'morning' | 'afternoon' | 'evening'>('all');
+  const [selectedStatus, setSelectedStatus] = useState<MatchStatus | 'all'>('all');
   const [isLeagueModalOpen, setIsLeagueModalOpen] = useState(false);
 
   const dates = useMemo(() => buildRollingDates(), []);
@@ -28,13 +31,14 @@ export default function MatchesScreen() {
   const favoriteLeagues = useAppStore((state) => state.favoriteLeagues);
   const toggleFavoriteTeam = useAppStore((state) => state.toggleFavoriteTeam);
   const toggleFavoriteLeague = useAppStore((state) => state.toggleFavoriteLeague);
-  const userAccess = useAppStore((state) => state.userAccess);
 
   const background = useThemeColor({}, 'background');
   const card = useThemeColor({}, 'card');
   const border = useThemeColor({}, 'border');
   const mutedText = useThemeColor({}, 'mutedText');
   const tint = useThemeColor({}, 'tint');
+  const success = useThemeColor({}, 'success');
+  const warning = useThemeColor({}, 'warning');
   const accent = useThemeColor({}, 'accent');
 
   useEffect(() => {
@@ -62,6 +66,11 @@ export default function MatchesScreen() {
     return Array.from(unique.values()).sort((a, b) => a.name.localeCompare(b.name, 'fr'));
   }, [matches]);
 
+  const countryOptions = useMemo(() => {
+    const unique = new Set(matches.map((match) => match.league.country));
+    return Array.from(unique);
+  }, [matches]);
+
   const visibleMatches = useMemo(() => {
     return matches.filter((match) => {
       const query = searchValue.toLowerCase();
@@ -85,21 +94,6 @@ export default function MatchesScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
-      <View style={styles.header}>
-        <View>
-          <ThemedText type="title" style={styles.brandTitle}>
-            MY TICKET
-          </ThemedText>
-          <ThemedText style={{ color: mutedText }}>Crée ton ticket. Compare les cotes. Parie où tu veux.</ThemedText>
-        </View>
-        <TouchableOpacity
-          accessibilityRole="button"
-          onPress={() => router.push('/notifications')}
-          style={[styles.notificationButton, { borderColor: border, backgroundColor: card }]}>
-          <MaterialCommunityIcons name="bell-outline" size={20} color={mutedText} />
-        </TouchableOpacity>
-      </View>
-
       <View style={styles.searchRow}>
         <View style={[styles.searchBox, { backgroundColor: card, borderColor: border }]}>
           <MaterialCommunityIcons name="magnify" size={18} color={mutedText} />
@@ -116,11 +110,51 @@ export default function MatchesScreen() {
           onPress={() => setIsLeagueModalOpen(true)}
           style={[styles.filterButton, { borderColor: border, backgroundColor: card }]}>
           <MaterialCommunityIcons name="filter-variant" size={18} color={accent} />
+          <ThemedText style={{ color: mutedText }}>Championnat</ThemedText>
         </TouchableOpacity>
       </View>
 
-      <ThemedText style={[styles.sectionTitle, { color: mutedText }]}>Matchs à venir</ThemedText>
+      <View style={styles.header}>
+        <View>
+          <ThemedText type="title">Matchs</ThemedText>
+          <ThemedText style={{ color: mutedText }}>
+            Crée ton ticket, compare les cotes et suis tes pronostics en direct.
+          </ThemedText>
+          <ThemedText style={{ color: mutedText }}>Crée ton ticket. Compare les cotes. Parie où tu veux.</ThemedText>
+        </View>
+        <TouchableOpacity
+          accessibilityRole="button"
+          onPress={() => router.push('/notifications')}
+          style={[styles.notificationButton, { borderColor: border, backgroundColor: card }]}>
+          <MaterialCommunityIcons name="bell-outline" size={20} color={mutedText} />
+        </TouchableOpacity>
+      </View>
+
+      <ThemedText style={[styles.sectionTitle, { color: mutedText }]}>Calendrier</ThemedText>
       <DateStrip dates={dates} selectedId={selectedDateId ?? dates[2].id} onSelect={setSelectedDateId} />
+
+      <View style={[styles.filterPanel, { backgroundColor: card, borderColor: border }]}>
+        <View style={styles.filterRow}>
+          <TouchableOpacity
+            style={[styles.filterChip, { borderColor: border, backgroundColor: favoritesOnly ? tint : card }]}
+            onPress={() => setFavoritesOnly((value) => !value)}>
+            <ThemedText style={{ color: favoritesOnly ? '#FFFFFF' : mutedText }}>Favoris</ThemedText>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.filterChip, { borderColor: border, backgroundColor: card }]}
+            onPress={() => setIsLeagueModalOpen(true)}>
+            <ThemedText style={{ color: mutedText }}>{selectedLeagueLabel}</ThemedText>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.filterChip, { borderColor: border, backgroundColor: card }]}
+            onPress={() => {
+              const currentIndex = countryOptions.findIndex((country) => country === selectedCountry);
+              const next = countryOptions[currentIndex + 1] ?? null;
+              setSelectedCountry(next ?? null);
+            }}>
+            <ThemedText style={{ color: mutedText }}>{selectedCountry ?? 'Tous les pays'}</ThemedText>
+          </TouchableOpacity>
+        </View>
 
       <View style={styles.chipRow}>
         <TouchableOpacity
@@ -214,7 +248,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   header: {
     paddingHorizontal: 16,
@@ -223,10 +257,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'stretch',
     gap: 12,
-  },
-  brandTitle: {
-    letterSpacing: 1.5,
-    fontStyle: 'italic',
   },
   notificationButton: {
     width: 44,
@@ -258,6 +288,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   filterButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  filterRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
