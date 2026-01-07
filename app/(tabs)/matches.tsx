@@ -17,6 +17,7 @@ export default function MatchesScreen() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [searchValue, setSearchValue] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [selectedLeagueId, setSelectedLeagueId] = useState<string | null>(null);
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<'all' | 'morning' | 'afternoon' | 'evening'>('all');
@@ -78,9 +79,38 @@ export default function MatchesScreen() {
         match.homeTeam.name.toLowerCase().includes(query) || match.awayTeam.name.toLowerCase().includes(query);
 
       const matchesLeague = selectedLeagueId ? match.league.id === selectedLeagueId : true;
-      return (matchesTeams || query.length === 0) && matchesLeague;
+      const matchesCountry = selectedCountry ? match.league.country === selectedCountry : true;
+      const matchesFavorites = favoritesOnly
+        ? favoriteTeams.includes(match.homeTeam.id) ||
+          favoriteTeams.includes(match.awayTeam.id) ||
+          favoriteLeagues.includes(match.league.id)
+        : true;
+
+      const kickoffHour = new Date(match.kickoffIso).getHours();
+      const matchesTime =
+        selectedTimeSlot === 'all'
+          ? true
+          : selectedTimeSlot === 'morning'
+          ? kickoffHour < 14
+          : selectedTimeSlot === 'afternoon'
+          ? kickoffHour >= 14 && kickoffHour < 19
+          : kickoffHour >= 19;
+
+      const matchesStatus = selectedStatus === 'all' ? true : match.status === selectedStatus;
+
+      return (matchesTeams || query.length === 0) && matchesLeague && matchesCountry && matchesFavorites && matchesTime && matchesStatus;
     });
-  }, [matches, searchValue, selectedLeagueId]);
+  }, [
+    matches,
+    searchValue,
+    selectedLeagueId,
+    selectedCountry,
+    favoritesOnly,
+    favoriteTeams,
+    favoriteLeagues,
+    selectedTimeSlot,
+    selectedStatus,
+  ]);
 
   const handleOpenMatch = (match: Match) => {
     router.push({ pathname: '/match-details', params: { matchId: match.id } });
@@ -120,7 +150,6 @@ export default function MatchesScreen() {
           <ThemedText style={{ color: mutedText }}>
             Crée ton ticket, compare les cotes et suis tes pronostics en direct.
           </ThemedText>
-          <ThemedText style={{ color: mutedText }}>Crée ton ticket. Compare les cotes. Parie où tu veux.</ThemedText>
         </View>
         <TouchableOpacity
           accessibilityRole="button"
@@ -156,12 +185,40 @@ export default function MatchesScreen() {
           </TouchableOpacity>
         </View>
 
-      <View style={styles.chipRow}>
-        <TouchableOpacity
-          style={[styles.filterChip, { borderColor: border, backgroundColor: card }]}
-          onPress={() => setIsLeagueModalOpen(true)}>
-          <ThemedText style={{ color: mutedText }}>{selectedLeagueLabel}</ThemedText>
-        </TouchableOpacity>
+        <View style={styles.filterRow}>
+          <TouchableOpacity
+            style={[styles.filterChip, { borderColor: border, backgroundColor: card }]}
+            onPress={() =>
+              setSelectedTimeSlot((prev) =>
+                prev === 'all' ? 'morning' : prev === 'morning' ? 'afternoon' : prev === 'afternoon' ? 'evening' : 'all'
+              )
+            }>
+            <ThemedText style={{ color: mutedText }}>
+              {selectedTimeSlot === 'all'
+                ? 'Toutes heures'
+                : selectedTimeSlot === 'morning'
+                ? 'Matin'
+                : selectedTimeSlot === 'afternoon'
+                ? 'Après-midi'
+                : 'Soir'}
+            </ThemedText>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.filterChip, { borderColor: border, backgroundColor: selectedStatus === 'live' ? success : card }]}
+            onPress={() => setSelectedStatus((prev) => (prev === 'live' ? 'all' : 'live'))}>
+            <ThemedText style={{ color: selectedStatus === 'live' ? '#FFFFFF' : mutedText }}>En direct</ThemedText>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.filterChip, { borderColor: border, backgroundColor: selectedStatus === 'finished' ? warning : card }]}
+            onPress={() => setSelectedStatus((prev) => (prev === 'finished' ? 'all' : 'finished'))}>
+            <ThemedText style={{ color: selectedStatus === 'finished' ? '#FFFFFF' : mutedText }}>Terminés</ThemedText>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.filterChip, { borderColor: border, backgroundColor: selectedStatus === 'upcoming' ? tint : card }]}
+            onPress={() => setSelectedStatus((prev) => (prev === 'upcoming' ? 'all' : 'upcoming'))}>
+            <ThemedText style={{ color: selectedStatus === 'upcoming' ? '#FFFFFF' : mutedText }}>À venir</ThemedText>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {isLoading ? (
@@ -177,7 +234,6 @@ export default function MatchesScreen() {
           renderItem={({ item }) => (
             <MatchCard
               match={item}
-              predictionCount={userAccess.status === 'PREMIUM' ? 6 : 3}
               onPress={() => handleOpenMatch(item)}
               onToggleTeamFavorite={toggleFavoriteTeam}
               onToggleLeagueFavorite={toggleFavoriteLeague}
@@ -252,7 +308,7 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 16,
-    marginBottom: 16,
+    marginBottom: 12,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'stretch',
@@ -268,10 +324,19 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     paddingHorizontal: 16,
-    marginBottom: 10,
+    marginBottom: 8,
     fontSize: 12,
     textTransform: 'uppercase',
     letterSpacing: 1,
+  },
+  filterPanel: {
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderRadius: 18,
+    padding: 12,
+    gap: 12,
   },
   searchBox: {
     flex: 1,
@@ -298,17 +363,8 @@ const styles = StyleSheet.create({
   },
   filterRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    borderWidth: 1,
-  },
-  chipRow: {
-    paddingHorizontal: 16,
-    flexDirection: 'row',
-    marginBottom: 8,
+    flexWrap: 'wrap',
+    gap: 10,
   },
   filterChip: {
     borderWidth: 1,
