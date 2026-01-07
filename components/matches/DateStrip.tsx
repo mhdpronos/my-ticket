@@ -15,6 +15,7 @@ export function DateStrip({ dates, selectedId, onSelect }: DateStripProps) {
   const border = useThemeColor({}, 'border');
   const card = useThemeColor({}, 'card');
   const mutedText = useThemeColor({}, 'mutedText');
+  const backgroundSecondary = useThemeColor({}, 'backgroundSecondary');
 
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.container}>
@@ -27,8 +28,8 @@ export function DateStrip({ dates, selectedId, onSelect }: DateStripProps) {
               style={[
                 styles.pill,
                 {
-                  backgroundColor: isSelected ? highlight : card,
-                  borderColor: border,
+                  backgroundColor: isSelected ? highlight : backgroundSecondary,
+                  borderColor: isSelected ? highlight : border,
                 },
               ]}
               onPress={() => onSelect(date.id)}>
@@ -49,7 +50,7 @@ export function DateStrip({ dates, selectedId, onSelect }: DateStripProps) {
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 12,
+    marginBottom: 10,
   },
   row: {
     flexDirection: 'row',
@@ -57,9 +58,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   pill: {
-    paddingVertical: 8,
+    paddingVertical: 6,
     paddingHorizontal: 14,
-    borderRadius: 16,
+    borderRadius: 999,
     borderWidth: 1,
   },
 });
