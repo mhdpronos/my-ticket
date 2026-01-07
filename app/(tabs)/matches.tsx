@@ -19,7 +19,6 @@ export default function MatchesScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [selectedLeagueId, setSelectedLeagueId] = useState<string | null>(null);
-  const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<'all' | 'morning' | 'afternoon' | 'evening'>('all');
   const [selectedStatus, setSelectedStatus] = useState<MatchStatus | 'all'>('all');
   const [isLeagueModalOpen, setIsLeagueModalOpen] = useState(false);
@@ -67,11 +66,6 @@ export default function MatchesScreen() {
     return Array.from(unique.values()).sort((a, b) => a.name.localeCompare(b.name, 'fr'));
   }, [matches]);
 
-  const countryOptions = useMemo(() => {
-    const unique = new Set(matches.map((match) => match.league.country));
-    return Array.from(unique);
-  }, [matches]);
-
   const visibleMatches = useMemo(() => {
     return matches.filter((match) => {
       const query = searchValue.toLowerCase();
@@ -79,7 +73,6 @@ export default function MatchesScreen() {
         match.homeTeam.name.toLowerCase().includes(query) || match.awayTeam.name.toLowerCase().includes(query);
 
       const matchesLeague = selectedLeagueId ? match.league.id === selectedLeagueId : true;
-      const matchesCountry = selectedCountry ? match.league.country === selectedCountry : true;
       const matchesFavorites = favoritesOnly
         ? favoriteTeams.includes(match.homeTeam.id) ||
           favoriteTeams.includes(match.awayTeam.id) ||
@@ -98,13 +91,12 @@ export default function MatchesScreen() {
 
       const matchesStatus = selectedStatus === 'all' ? true : match.status === selectedStatus;
 
-      return (matchesTeams || query.length === 0) && matchesLeague && matchesCountry && matchesFavorites && matchesTime && matchesStatus;
+      return (matchesTeams || query.length === 0) && matchesLeague && matchesFavorites && matchesTime && matchesStatus;
     });
   }, [
     matches,
     searchValue,
     selectedLeagueId,
-    selectedCountry,
     favoritesOnly,
     favoriteTeams,
     favoriteLeagues,
@@ -140,13 +132,17 @@ export default function MatchesScreen() {
           onPress={() => setIsLeagueModalOpen(true)}
           style={[styles.filterButton, { borderColor: border, backgroundColor: card }]}>
           <MaterialCommunityIcons name="filter-variant" size={18} color={accent} />
-          <ThemedText style={{ color: mutedText }}>Championnat</ThemedText>
+          <ThemedText style={{ color: mutedText }} numberOfLines={1}>
+            {selectedLeagueLabel}
+          </ThemedText>
         </TouchableOpacity>
       </View>
 
       <View style={styles.header}>
         <View>
-          <ThemedText type="title">Matchs</ThemedText>
+          <ThemedText type="title" style={styles.brandTitle}>
+            MY TICKET
+          </ThemedText>
           <ThemedText style={{ color: mutedText }}>
             Crée ton ticket, compare les cotes et suis tes pronostics en direct.
           </ThemedText>
@@ -172,16 +168,9 @@ export default function MatchesScreen() {
           <TouchableOpacity
             style={[styles.filterChip, { borderColor: border, backgroundColor: card }]}
             onPress={() => setIsLeagueModalOpen(true)}>
-            <ThemedText style={{ color: mutedText }}>{selectedLeagueLabel}</ThemedText>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.filterChip, { borderColor: border, backgroundColor: card }]}
-            onPress={() => {
-              const currentIndex = countryOptions.findIndex((country) => country === selectedCountry);
-              const next = countryOptions[currentIndex + 1] ?? null;
-              setSelectedCountry(next ?? null);
-            }}>
-            <ThemedText style={{ color: mutedText }}>{selectedCountry ?? 'Tous les pays'}</ThemedText>
+            <ThemedText style={{ color: mutedText }} numberOfLines={1}>
+              {selectedLeagueLabel}
+            </ThemedText>
           </TouchableOpacity>
         </View>
 
@@ -314,6 +303,9 @@ const styles = StyleSheet.create({
     alignItems: 'stretch',
     gap: 12,
   },
+  brandTitle: {
+    letterSpacing: 1,
+  },
   notificationButton: {
     width: 44,
     height: 44,
@@ -360,6 +352,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 16,
     borderWidth: 1,
+    maxWidth: 160,
   },
   filterRow: {
     flexDirection: 'row',

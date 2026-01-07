@@ -16,13 +16,19 @@ export default function TabLayout() {
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarStyle: {
-          height: 72,
+          height: 78,
           paddingTop: 8,
-          paddingBottom: 12,
+          paddingBottom: 14,
+          borderTopColor: Colors[colorScheme ?? 'light'].border,
+          backgroundColor: Colors[colorScheme ?? 'light'].card,
         },
         tabBarLabelStyle: {
           fontSize: 12,
           marginTop: 4,
+        },
+        tabBarItemStyle: {
+          alignItems: 'center',
+          justifyContent: 'center',
         },
       }}>
       <Tabs.Screen
