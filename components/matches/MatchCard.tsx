@@ -6,6 +6,7 @@ import { Image } from 'expo-image';
 
 import { ThemedText } from '@/components/ui/ThemedText';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { useAppStore } from '@/store/useAppStore';
 import { Match } from '@/types';
 
 type MatchCardProps = {
@@ -47,33 +48,44 @@ function MatchCardComponent({
   const mutedText = useThemeColor({}, 'mutedText');
   const tint = useThemeColor({}, 'tint');
   const accent = useThemeColor({}, 'accent');
+  const backgroundSecondary = useThemeColor({}, 'backgroundSecondary');
   const success = useThemeColor({}, 'success');
   const danger = useThemeColor({}, 'danger');
+
+  const userAccess = useAppStore((state) => state.userAccess);
 
   const winRate = match.winRate;
   const homeRateColor = winRate && winRate.home >= 60 ? success : danger;
   const awayRateColor = winRate && winRate.away >= 60 ? success : danger;
+  const isLive = match.status === 'live';
+  const availablePredictions = userAccess.status === 'PREMIUM' ? 6 : 3;
+  const kickoffLabel = new Date(match.kickoffIso).toLocaleTimeString('fr-FR', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 
   return (
     <Pressable style={[styles.card, { backgroundColor: card, borderColor: border }]} onPress={onPress}>
       <View style={styles.headerRow}>
-        <View style={styles.statusWrap}>
-          <View style={[styles.statusDot, { backgroundColor: match.status === 'live' ? accent : tint }]} />
-          <ThemedText type="defaultSemiBold" style={{ color: match.status === 'live' ? accent : tint }}>
-            {formatStatus(match)}
-          </ThemedText>
+        <View style={styles.leagueBlock}>
+          <ThemedText type="defaultSemiBold">{match.league.name}</ThemedText>
+          <ThemedText style={{ color: mutedText }}>{match.league.country}</ThemedText>
         </View>
-        <View style={[styles.leagueChip, { borderColor: border }]}>
-          <ThemedText style={{ color: mutedText }}>{match.league.name}</ThemedText>
+        <View style={styles.headerActions}>
           <TouchableOpacity
             accessibilityRole="button"
-            onPress={() => onToggleLeagueFavorite(match.league.id)}>
+            onPress={() => onToggleLeagueFavorite(match.league.id)}
+            style={[styles.iconPill, { borderColor: border, backgroundColor: backgroundSecondary }]}>
             <MaterialCommunityIcons
               name={isLeagueFavorite(match.league.id) ? 'star' : 'star-outline'}
               size={16}
               color={accent}
             />
           </TouchableOpacity>
+          <View style={[styles.statusPill, { backgroundColor: isLive ? accent : backgroundSecondary, borderColor: border }]}>
+            <View style={[styles.statusDot, { backgroundColor: isLive ? '#FFFFFF' : tint }]} />
+            <ThemedText style={{ color: isLive ? '#FFFFFF' : tint }}>{formatStatus(match)}</ThemedText>
+          </View>
         </View>
       </View>
 
@@ -101,21 +113,12 @@ function MatchCardComponent({
         </View>
 
         <View style={styles.scoreBlock}>
-          <ThemedText type="title" style={{ color: tint }}>
-            {formatScore(match)}
-          </ThemedText>
-          <ThemedText style={{ color: mutedText }}>
-            {new Date(match.kickoffIso).toLocaleDateString('fr-FR', {
-              weekday: 'short',
-              day: '2-digit',
-              month: 'short',
-            })}{' '}
-            •{' '}
-            {new Date(match.kickoffIso).toLocaleTimeString('fr-FR', {
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
-          </ThemedText>
+          <View style={[styles.scorePill, { backgroundColor: backgroundSecondary, borderColor: border }]}>
+            <ThemedText type="defaultSemiBold" style={{ color: tint }}>
+              {formatScore(match)}
+            </ThemedText>
+            <ThemedText style={{ color: mutedText }}>{kickoffLabel}</ThemedText>
+          </View>
         </View>
 
         <View style={styles.teamBlock}>
@@ -146,8 +149,14 @@ function MatchCardComponent({
       </View>
 
       <View style={styles.footerRow}>
-        <ThemedText style={{ color: mutedText }}>{match.league.country}</ThemedText>
-        <ThemedText style={{ color: mutedText }}>{match.venue ?? 'Stade principal'}</ThemedText>
+        <View style={styles.footerInfo}>
+          <MaterialCommunityIcons name="map-marker-outline" size={16} color={mutedText} />
+          <ThemedText style={{ color: mutedText }}>{match.venue ?? 'Stade principal'}</ThemedText>
+        </View>
+        <View style={styles.footerInfo}>
+          <ThemedText style={{ color: mutedText }}>{availablePredictions} pronos dispo</ThemedText>
+          <MaterialCommunityIcons name="plus-circle" size={18} color={accent} />
+        </View>
       </View>
     </Pressable>
   );
@@ -160,29 +169,38 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 16,
     borderWidth: 1,
-    gap: 14,
+    gap: 16,
   },
   headerRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
   },
-  statusWrap: {
+  leagueBlock: {
+    flex: 1,
+    gap: 2,
+  },
+  headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+  },
+  iconPill: {
+    borderWidth: 1,
+    padding: 6,
+    borderRadius: 999,
   },
   statusDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
   },
-  leagueChip: {
+  statusPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     borderWidth: 1,
-    paddingVertical: 4,
+    paddingVertical: 6,
     paddingHorizontal: 10,
     borderRadius: 999,
   },
@@ -215,6 +233,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
   },
+  scorePill: {
+    borderWidth: 1,
+    borderRadius: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+    minWidth: 86,
+    gap: 4,
+  },
   alignRight: {
     textAlign: 'right',
   },
@@ -225,5 +252,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  footerInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
 });
