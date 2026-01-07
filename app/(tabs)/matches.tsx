@@ -1,38 +1,29 @@
 // Le code de la page principale des matchs et des filtres.
-import { ActivityIndicator, FlatList, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, Modal, Pressable, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useEffect, useMemo, useState } from 'react';
 import { router } from 'expo-router';
 
 import { DateStrip } from '@/components/matches/DateStrip';
-import { MatchBottomSheet } from '@/components/matches/MatchBottomSheet';
 import { MatchCard } from '@/components/matches/MatchCard';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { getMatchesByDate } from '@/services/matchesService';
-import { getPredictionsForMatch } from '@/services/predictionsService';
 import { useAppStore } from '@/store/useAppStore';
-import { Match, MatchStatus, Prediction } from '@/types';
+import { Match } from '@/types';
 import { buildRollingDates } from '@/utils/dateRange';
 
 export default function MatchesScreen() {
   const [matches, setMatches] = useState<Match[]>([]);
-  const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
-  const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [searchValue, setSearchValue] = useState('');
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [selectedLeagueId, setSelectedLeagueId] = useState<string | null>(null);
-  const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState<'all' | 'morning' | 'afternoon' | 'evening'>('all');
-  const [selectedStatus, setSelectedStatus] = useState<MatchStatus | 'all'>('all');
+  const [isLeagueModalOpen, setIsLeagueModalOpen] = useState(false);
 
   const dates = useMemo(() => buildRollingDates(), []);
 
   const selectedDateId = useAppStore((state) => state.selectedDateId);
   const setSelectedDateId = useAppStore((state) => state.setSelectedDateId);
-  const addTicketItem = useAppStore((state) => state.addTicketItem);
   const favoriteTeams = useAppStore((state) => state.favoriteTeams);
   const favoriteLeagues = useAppStore((state) => state.favoriteLeagues);
   const toggleFavoriteTeam = useAppStore((state) => state.toggleFavoriteTeam);
@@ -44,8 +35,7 @@ export default function MatchesScreen() {
   const border = useThemeColor({}, 'border');
   const mutedText = useThemeColor({}, 'mutedText');
   const tint = useThemeColor({}, 'tint');
-  const success = useThemeColor({}, 'success');
-  const warning = useThemeColor({}, 'warning');
+  const accent = useThemeColor({}, 'accent');
 
   useEffect(() => {
     if (!selectedDateId) {
@@ -67,26 +57,9 @@ export default function MatchesScreen() {
     loadMatches();
   }, [selectedDateId]);
 
-  useEffect(() => {
-    if (!selectedMatch) {
-      return;
-    }
-    const loadPredictions = async () => {
-      const data = await getPredictionsForMatch(selectedMatch.id);
-      setPredictions(data);
-    };
-
-    loadPredictions();
-  }, [selectedMatch]);
-
   const leagueOptions = useMemo(() => {
     const unique = new Map(matches.map((match) => [match.league.id, match.league]));
-    return Array.from(unique.values());
-  }, [matches]);
-
-  const countryOptions = useMemo(() => {
-    const unique = new Set(matches.map((match) => match.league.country));
-    return Array.from(unique);
+    return Array.from(unique.values()).sort((a, b) => a.name.localeCompare(b.name, 'fr'));
   }, [matches]);
 
   const visibleMatches = useMemo(() => {
@@ -96,52 +69,16 @@ export default function MatchesScreen() {
         match.homeTeam.name.toLowerCase().includes(query) || match.awayTeam.name.toLowerCase().includes(query);
 
       const matchesLeague = selectedLeagueId ? match.league.id === selectedLeagueId : true;
-      const matchesCountry = selectedCountry ? match.league.country === selectedCountry : true;
-      const matchesFavorites = favoritesOnly
-        ? favoriteTeams.includes(match.homeTeam.id) ||
-          favoriteTeams.includes(match.awayTeam.id) ||
-          favoriteLeagues.includes(match.league.id)
-        : true;
-
-      const kickoffHour = new Date(match.kickoffIso).getHours();
-      const matchesTime =
-        selectedTimeSlot === 'all'
-          ? true
-          : selectedTimeSlot === 'morning'
-          ? kickoffHour < 14
-          : selectedTimeSlot === 'afternoon'
-          ? kickoffHour >= 14 && kickoffHour < 19
-          : kickoffHour >= 19;
-
-      const matchesStatus = selectedStatus === 'all' ? true : match.status === selectedStatus;
-
-      return (matchesTeams || query.length === 0) && matchesLeague && matchesCountry && matchesFavorites && matchesTime && matchesStatus;
+      return (matchesTeams || query.length === 0) && matchesLeague;
     });
-  }, [
-    matches,
-    searchValue,
-    selectedLeagueId,
-    selectedCountry,
-    favoritesOnly,
-    favoriteTeams,
-    favoriteLeagues,
-    selectedTimeSlot,
-    selectedStatus,
-  ]);
+  }, [matches, searchValue, selectedLeagueId]);
 
   const handleOpenMatch = (match: Match) => {
-    setSelectedMatch(match);
-    setIsSheetOpen(true);
+    router.push({ pathname: '/match-details', params: { matchId: match.id } });
   };
 
-  const handleAddPrediction = (match: Match, prediction: Prediction) => {
-    addTicketItem(match, prediction);
-  };
-
-  const handleCloseSheet = () => {
-    setIsSheetOpen(false);
-    setSelectedMatch(null);
-  };
+  const selectedLeagueLabel =
+    leagueOptions.find((league) => league.id === selectedLeagueId)?.name ?? 'Tous les championnats';
 
   const isTeamFavorite = (teamId: string) => favoriteTeams.includes(teamId);
   const isLeagueFavorite = (leagueId: string) => favoriteLeagues.includes(leagueId);
@@ -149,11 +86,11 @@ export default function MatchesScreen() {
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
       <View style={styles.header}>
-        <View style={[styles.heroCard, { backgroundColor: card, borderColor: border }]}>
-          <ThemedText type="title">Matchs</ThemedText>
-          <ThemedText style={{ color: mutedText }}>
-            Crée ton ticket, compare les cotes et suis tes pronostics en direct.
+        <View>
+          <ThemedText type="title" style={styles.brandTitle}>
+            MY TICKET
           </ThemedText>
+          <ThemedText style={{ color: mutedText }}>Crée ton ticket. Compare les cotes. Parie où tu veux.</ThemedText>
         </View>
         <TouchableOpacity
           accessibilityRole="button"
@@ -163,85 +100,34 @@ export default function MatchesScreen() {
         </TouchableOpacity>
       </View>
 
-      <ThemedText style={[styles.sectionTitle, { color: mutedText }]}>Calendrier</ThemedText>
-      <DateStrip dates={dates} selectedId={selectedDateId ?? dates[2].id} onSelect={setSelectedDateId} />
-
-      <View style={[styles.filterPanel, { backgroundColor: card, borderColor: border }]}>
-        <View style={[styles.searchBox, { backgroundColor: background, borderColor: border, borderWidth: 1 }]}>
+      <View style={styles.searchRow}>
+        <View style={[styles.searchBox, { backgroundColor: card, borderColor: border }]}>
           <MaterialCommunityIcons name="magnify" size={18} color={mutedText} />
           <TextInput
-            placeholder="Rechercher une équipe"
+            placeholder="Rechercher un match"
             placeholderTextColor={mutedText}
             value={searchValue}
             onChangeText={setSearchValue}
             style={[styles.searchInput, { color: mutedText }]}
           />
         </View>
+        <TouchableOpacity
+          accessibilityRole="button"
+          onPress={() => setIsLeagueModalOpen(true)}
+          style={[styles.filterButton, { borderColor: border, backgroundColor: card }]}>
+          <MaterialCommunityIcons name="filter-variant" size={18} color={accent} />
+        </TouchableOpacity>
+      </View>
 
-        <View style={styles.filterRow}>
-          <TouchableOpacity
-            style={[styles.filterChip, { borderColor: border, backgroundColor: favoritesOnly ? tint : card }]}
-            onPress={() => setFavoritesOnly((value) => !value)}>
-            <ThemedText style={{ color: favoritesOnly ? '#FFFFFF' : mutedText }}>Favoris</ThemedText>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.filterChip, { borderColor: border, backgroundColor: card }]}
-            onPress={() => {
-              const currentIndex = leagueOptions.findIndex((league) => league.id === selectedLeagueId);
-              const next = leagueOptions[currentIndex + 1] ?? null;
-              setSelectedLeagueId(next ? next.id : null);
-            }}>
-            <ThemedText style={{ color: mutedText }}>
-              {selectedLeagueId
-                ? leagueOptions.find((league) => league.id === selectedLeagueId)?.name
-                : 'Toutes les ligues'}
-            </ThemedText>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.filterChip, { borderColor: border, backgroundColor: card }]}
-            onPress={() => {
-              const currentIndex = countryOptions.findIndex((country) => country === selectedCountry);
-              const next = countryOptions[currentIndex + 1] ?? null;
-              setSelectedCountry(next ?? null);
-            }}>
-            <ThemedText style={{ color: mutedText }}>{selectedCountry ?? 'Tous les pays'}</ThemedText>
-          </TouchableOpacity>
-        </View>
+      <ThemedText style={[styles.sectionTitle, { color: mutedText }]}>Matchs à venir</ThemedText>
+      <DateStrip dates={dates} selectedId={selectedDateId ?? dates[2].id} onSelect={setSelectedDateId} />
 
-        <View style={styles.filterRow}>
-          <TouchableOpacity
-            style={[styles.filterChip, { borderColor: border, backgroundColor: card }]}
-            onPress={() =>
-              setSelectedTimeSlot((prev) =>
-                prev === 'all' ? 'morning' : prev === 'morning' ? 'afternoon' : prev === 'afternoon' ? 'evening' : 'all'
-              )
-            }>
-            <ThemedText style={{ color: mutedText }}>
-              {selectedTimeSlot === 'all'
-                ? 'Toutes heures'
-                : selectedTimeSlot === 'morning'
-                ? 'Matin'
-                : selectedTimeSlot === 'afternoon'
-                ? 'Après-midi'
-                : 'Soir'}
-            </ThemedText>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.filterChip, { borderColor: border, backgroundColor: selectedStatus === 'live' ? success : card }]}
-            onPress={() => setSelectedStatus((prev) => (prev === 'live' ? 'all' : 'live'))}>
-            <ThemedText style={{ color: selectedStatus === 'live' ? '#FFFFFF' : mutedText }}>En direct</ThemedText>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.filterChip, { borderColor: border, backgroundColor: selectedStatus === 'finished' ? warning : card }]}
-            onPress={() => setSelectedStatus((prev) => (prev === 'finished' ? 'all' : 'finished'))}>
-            <ThemedText style={{ color: selectedStatus === 'finished' ? '#FFFFFF' : mutedText }}>Terminés</ThemedText>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.filterChip, { borderColor: border, backgroundColor: selectedStatus === 'upcoming' ? tint : card }]}
-            onPress={() => setSelectedStatus((prev) => (prev === 'upcoming' ? 'all' : 'upcoming'))}>
-            <ThemedText style={{ color: selectedStatus === 'upcoming' ? '#FFFFFF' : mutedText }}>À venir</ThemedText>
-          </TouchableOpacity>
-        </View>
+      <View style={styles.chipRow}>
+        <TouchableOpacity
+          style={[styles.filterChip, { borderColor: border, backgroundColor: card }]}
+          onPress={() => setIsLeagueModalOpen(true)}>
+          <ThemedText style={{ color: mutedText }}>{selectedLeagueLabel}</ThemedText>
+        </TouchableOpacity>
       </View>
 
       {isLoading ? (
@@ -257,6 +143,7 @@ export default function MatchesScreen() {
           renderItem={({ item }) => (
             <MatchCard
               match={item}
+              predictionCount={userAccess.status === 'PREMIUM' ? 6 : 3}
               onPress={() => handleOpenMatch(item)}
               onToggleTeamFavorite={toggleFavoriteTeam}
               onToggleLeagueFavorite={toggleFavoriteLeague}
@@ -277,14 +164,42 @@ export default function MatchesScreen() {
         />
       )}
 
-      <MatchBottomSheet
-        match={selectedMatch}
-        visible={isSheetOpen}
-        predictions={predictions}
-        userAccess={userAccess}
-        onClose={handleCloseSheet}
-        onAddPrediction={handleAddPrediction}
-      />
+      <Modal animationType="slide" transparent visible={isLeagueModalOpen} onRequestClose={() => setIsLeagueModalOpen(false)}>
+        <Pressable style={styles.modalOverlay} onPress={() => setIsLeagueModalOpen(false)}>
+          <View
+            style={[styles.modalCard, { backgroundColor: card, borderColor: border }]}
+            onStartShouldSetResponder={() => true}>
+            <View style={styles.modalHeader}>
+              <ThemedText type="defaultSemiBold">Choisir un championnat</ThemedText>
+              <TouchableOpacity
+                accessibilityRole="button"
+                onPress={() => setIsLeagueModalOpen(false)}
+                style={[styles.modalCloseButton, { borderColor: border }]}>
+                <MaterialCommunityIcons name="close" size={18} color={mutedText} />
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity
+              style={[styles.modalItem, { borderColor: border }]}
+              onPress={() => {
+                setSelectedLeagueId(null);
+                setIsLeagueModalOpen(false);
+              }}>
+              <ThemedText style={{ color: mutedText }}>Tous les championnats</ThemedText>
+            </TouchableOpacity>
+            {leagueOptions.map((league) => (
+              <TouchableOpacity
+                key={league.id}
+                style={[styles.modalItem, { borderColor: border }]}
+                onPress={() => {
+                  setSelectedLeagueId(league.id);
+                  setIsLeagueModalOpen(false);
+                }}>
+                <ThemedText style={{ color: mutedText }}>{league.name}</ThemedText>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -294,20 +209,24 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingTop: 56,
   },
+  searchRow: {
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 16,
+  },
   header: {
     paddingHorizontal: 16,
-    marginBottom: 12,
+    marginBottom: 16,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'stretch',
     gap: 12,
   },
-  heroCard: {
-    flex: 1,
-    borderWidth: 1,
-    borderRadius: 18,
-    padding: 14,
-    gap: 6,
+  brandTitle: {
+    letterSpacing: 1.5,
+    fontStyle: 'italic',
   },
   notificationButton: {
     width: 44,
@@ -319,36 +238,38 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     paddingHorizontal: 16,
-    marginBottom: 8,
+    marginBottom: 10,
     fontSize: 12,
     textTransform: 'uppercase',
     letterSpacing: 1,
   },
-  filterPanel: {
-    marginHorizontal: 16,
-    marginTop: 12,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderRadius: 18,
-    padding: 12,
-    gap: 12,
-  },
   searchBox: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 16,
     gap: 8,
+    borderWidth: 1,
   },
   searchInput: {
     flex: 1,
     fontSize: 14,
   },
-  filterRow: {
+  filterButton: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  chipRow: {
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    marginBottom: 8,
   },
   filterChip: {
     borderWidth: 1,
@@ -372,5 +293,36 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     gap: 6,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+  },
+  modalCard: {
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 16,
+    gap: 10,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  modalCloseButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalItem: {
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
   },
 });
