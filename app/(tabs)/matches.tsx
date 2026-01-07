@@ -1,43 +1,37 @@
 // Le code de la page principale des matchs et des filtres.
-import { ActivityIndicator, FlatList, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, Modal, Pressable, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useEffect, useMemo, useState } from 'react';
 import { router } from 'expo-router';
 
 import { DateStrip } from '@/components/matches/DateStrip';
-import { MatchBottomSheet } from '@/components/matches/MatchBottomSheet';
 import { MatchCard } from '@/components/matches/MatchCard';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { getMatchesByDate } from '@/services/matchesService';
-import { getPredictionsForMatch } from '@/services/predictionsService';
 import { useAppStore } from '@/store/useAppStore';
-import { Match, MatchStatus, Prediction } from '@/types';
+import { Match, MatchStatus } from '@/types';
 import { buildRollingDates } from '@/utils/dateRange';
 
 export default function MatchesScreen() {
   const [matches, setMatches] = useState<Match[]>([]);
-  const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
-  const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [searchValue, setSearchValue] = useState('');
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [selectedLeagueId, setSelectedLeagueId] = useState<string | null>(null);
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<'all' | 'morning' | 'afternoon' | 'evening'>('all');
   const [selectedStatus, setSelectedStatus] = useState<MatchStatus | 'all'>('all');
+  const [isLeagueModalOpen, setIsLeagueModalOpen] = useState(false);
 
   const dates = useMemo(() => buildRollingDates(), []);
 
   const selectedDateId = useAppStore((state) => state.selectedDateId);
   const setSelectedDateId = useAppStore((state) => state.setSelectedDateId);
-  const addTicketItem = useAppStore((state) => state.addTicketItem);
   const favoriteTeams = useAppStore((state) => state.favoriteTeams);
   const favoriteLeagues = useAppStore((state) => state.favoriteLeagues);
   const toggleFavoriteTeam = useAppStore((state) => state.toggleFavoriteTeam);
   const toggleFavoriteLeague = useAppStore((state) => state.toggleFavoriteLeague);
-  const userAccess = useAppStore((state) => state.userAccess);
 
   const background = useThemeColor({}, 'background');
   const card = useThemeColor({}, 'card');
@@ -46,6 +40,7 @@ export default function MatchesScreen() {
   const tint = useThemeColor({}, 'tint');
   const success = useThemeColor({}, 'success');
   const warning = useThemeColor({}, 'warning');
+  const accent = useThemeColor({}, 'accent');
 
   useEffect(() => {
     if (!selectedDateId) {
@@ -67,21 +62,9 @@ export default function MatchesScreen() {
     loadMatches();
   }, [selectedDateId]);
 
-  useEffect(() => {
-    if (!selectedMatch) {
-      return;
-    }
-    const loadPredictions = async () => {
-      const data = await getPredictionsForMatch(selectedMatch.id);
-      setPredictions(data);
-    };
-
-    loadPredictions();
-  }, [selectedMatch]);
-
   const leagueOptions = useMemo(() => {
     const unique = new Map(matches.map((match) => [match.league.id, match.league]));
-    return Array.from(unique.values());
+    return Array.from(unique.values()).sort((a, b) => a.name.localeCompare(b.name, 'fr'));
   }, [matches]);
 
   const countryOptions = useMemo(() => {
@@ -130,26 +113,39 @@ export default function MatchesScreen() {
   ]);
 
   const handleOpenMatch = (match: Match) => {
-    setSelectedMatch(match);
-    setIsSheetOpen(true);
+    router.push({ pathname: '/match-details', params: { matchId: match.id } });
   };
 
-  const handleAddPrediction = (match: Match, prediction: Prediction) => {
-    addTicketItem(match, prediction);
-  };
-
-  const handleCloseSheet = () => {
-    setIsSheetOpen(false);
-    setSelectedMatch(null);
-  };
+  const selectedLeagueLabel =
+    leagueOptions.find((league) => league.id === selectedLeagueId)?.name ?? 'Tous les championnats';
 
   const isTeamFavorite = (teamId: string) => favoriteTeams.includes(teamId);
   const isLeagueFavorite = (leagueId: string) => favoriteLeagues.includes(leagueId);
 
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
+      <View style={styles.searchRow}>
+        <View style={[styles.searchBox, { backgroundColor: card, borderColor: border }]}>
+          <MaterialCommunityIcons name="magnify" size={18} color={mutedText} />
+          <TextInput
+            placeholder="Rechercher un match"
+            placeholderTextColor={mutedText}
+            value={searchValue}
+            onChangeText={setSearchValue}
+            style={[styles.searchInput, { color: mutedText }]}
+          />
+        </View>
+        <TouchableOpacity
+          accessibilityRole="button"
+          onPress={() => setIsLeagueModalOpen(true)}
+          style={[styles.filterButton, { borderColor: border, backgroundColor: card }]}>
+          <MaterialCommunityIcons name="filter-variant" size={18} color={accent} />
+          <ThemedText style={{ color: mutedText }}>Championnat</ThemedText>
+        </TouchableOpacity>
+      </View>
+
       <View style={styles.header}>
-        <View style={[styles.heroCard, { backgroundColor: card, borderColor: border }]}>
+        <View>
           <ThemedText type="title">Matchs</ThemedText>
           <ThemedText style={{ color: mutedText }}>
             Crée ton ticket, compare les cotes et suis tes pronostics en direct.
@@ -167,17 +163,6 @@ export default function MatchesScreen() {
       <DateStrip dates={dates} selectedId={selectedDateId ?? dates[2].id} onSelect={setSelectedDateId} />
 
       <View style={[styles.filterPanel, { backgroundColor: card, borderColor: border }]}>
-        <View style={[styles.searchBox, { backgroundColor: background, borderColor: border, borderWidth: 1 }]}>
-          <MaterialCommunityIcons name="magnify" size={18} color={mutedText} />
-          <TextInput
-            placeholder="Rechercher une équipe"
-            placeholderTextColor={mutedText}
-            value={searchValue}
-            onChangeText={setSearchValue}
-            style={[styles.searchInput, { color: mutedText }]}
-          />
-        </View>
-
         <View style={styles.filterRow}>
           <TouchableOpacity
             style={[styles.filterChip, { borderColor: border, backgroundColor: favoritesOnly ? tint : card }]}
@@ -186,16 +171,8 @@ export default function MatchesScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.filterChip, { borderColor: border, backgroundColor: card }]}
-            onPress={() => {
-              const currentIndex = leagueOptions.findIndex((league) => league.id === selectedLeagueId);
-              const next = leagueOptions[currentIndex + 1] ?? null;
-              setSelectedLeagueId(next ? next.id : null);
-            }}>
-            <ThemedText style={{ color: mutedText }}>
-              {selectedLeagueId
-                ? leagueOptions.find((league) => league.id === selectedLeagueId)?.name
-                : 'Toutes les ligues'}
-            </ThemedText>
+            onPress={() => setIsLeagueModalOpen(true)}>
+            <ThemedText style={{ color: mutedText }}>{selectedLeagueLabel}</ThemedText>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.filterChip, { borderColor: border, backgroundColor: card }]}
@@ -277,14 +254,42 @@ export default function MatchesScreen() {
         />
       )}
 
-      <MatchBottomSheet
-        match={selectedMatch}
-        visible={isSheetOpen}
-        predictions={predictions}
-        userAccess={userAccess}
-        onClose={handleCloseSheet}
-        onAddPrediction={handleAddPrediction}
-      />
+      <Modal animationType="slide" transparent visible={isLeagueModalOpen} onRequestClose={() => setIsLeagueModalOpen(false)}>
+        <Pressable style={styles.modalOverlay} onPress={() => setIsLeagueModalOpen(false)}>
+          <View
+            style={[styles.modalCard, { backgroundColor: card, borderColor: border }]}
+            onStartShouldSetResponder={() => true}>
+            <View style={styles.modalHeader}>
+              <ThemedText type="defaultSemiBold">Choisir un championnat</ThemedText>
+              <TouchableOpacity
+                accessibilityRole="button"
+                onPress={() => setIsLeagueModalOpen(false)}
+                style={[styles.modalCloseButton, { borderColor: border }]}>
+                <MaterialCommunityIcons name="close" size={18} color={mutedText} />
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity
+              style={[styles.modalItem, { borderColor: border }]}
+              onPress={() => {
+                setSelectedLeagueId(null);
+                setIsLeagueModalOpen(false);
+              }}>
+              <ThemedText style={{ color: mutedText }}>Tous les championnats</ThemedText>
+            </TouchableOpacity>
+            {leagueOptions.map((league) => (
+              <TouchableOpacity
+                key={league.id}
+                style={[styles.modalItem, { borderColor: border }]}
+                onPress={() => {
+                  setSelectedLeagueId(league.id);
+                  setIsLeagueModalOpen(false);
+                }}>
+                <ThemedText style={{ color: mutedText }}>{league.name}</ThemedText>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -294,6 +299,13 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingTop: 56,
   },
+  searchRow: {
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 12,
+  },
   header: {
     paddingHorizontal: 16,
     marginBottom: 12,
@@ -301,13 +313,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'stretch',
     gap: 12,
-  },
-  heroCard: {
-    flex: 1,
-    borderWidth: 1,
-    borderRadius: 18,
-    padding: 14,
-    gap: 6,
   },
   notificationButton: {
     width: 44,
@@ -334,16 +339,27 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   searchBox: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 16,
     gap: 8,
+    borderWidth: 1,
   },
   searchInput: {
     flex: 1,
     fontSize: 14,
+  },
+  filterButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    borderWidth: 1,
   },
   filterRow: {
     flexDirection: 'row',
@@ -372,5 +388,36 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     gap: 6,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+  },
+  modalCard: {
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 16,
+    gap: 10,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  modalCloseButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalItem: {
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
   },
 });
