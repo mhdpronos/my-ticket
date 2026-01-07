@@ -45,7 +45,8 @@ export function PredictionRow({ prediction, locked, onAdd }: PredictionRowProps)
         </View>
       </View>
       <TouchableOpacity style={[styles.addButton, { borderColor: border }]} onPress={onAdd} disabled={locked}>
-        <MaterialCommunityIcons name="plus" size={20} color={locked ? mutedText : accent} />
+        <MaterialCommunityIcons name="plus" size={18} color={locked ? mutedText : accent} />
+        <ThemedText style={{ color: locked ? mutedText : accent }}>Ajouter</ThemedText>
       </TouchableOpacity>
     </View>
   );
@@ -75,11 +76,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   addButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 1,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
   },
 });
