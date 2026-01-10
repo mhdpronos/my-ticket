@@ -1,5 +1,5 @@
 // Le code qui affiche la fiche détaillée d'un match en bottom sheet.
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { BottomSheetBackdrop, BottomSheetModal } from '@gorhom/bottom-sheet';
@@ -35,15 +35,12 @@ export function MatchBottomSheet({
   const tint = useThemeColor({}, 'tint');
   const success = useThemeColor({}, 'success');
   const danger = useThemeColor({}, 'danger');
-  const accent = useThemeColor({}, 'accent');
 
   const snapPoints = useMemo(() => ['65%', '90%'], []);
-  const [activeRisk, setActiveRisk] = useState<Prediction['risk']>('safe');
 
   useEffect(() => {
     if (visible && match) {
       sheetRef.current?.present();
-      setActiveRisk('safe');
     } else {
       sheetRef.current?.dismiss();
     }
@@ -66,15 +63,8 @@ export function MatchBottomSheet({
   const freePredictions = predictions.filter((prediction) => prediction.tier === 'free');
   const premiumPredictions = predictions.filter((prediction) => prediction.tier === 'premium');
   const visiblePredictions = isPremium ? [...freePredictions, ...premiumPredictions] : freePredictions;
-  const filteredPredictions = visiblePredictions.filter((prediction) => prediction.risk === activeRisk);
   const scoreLabel = match.score ? `${match.score.home} : ${match.score.away}` : '-- : --';
   const winRate = match.winRate;
-  const bookmakers = ['1xBet', 'Betwinner', 'Melbet', 'Parions Sport', 'Winamax'];
-  const riskTabs: Array<{ key: Prediction['risk']; label: string }> = [
-    { key: 'safe', label: 'Safe' },
-    { key: 'medium', label: 'Medium' },
-    { key: 'risky', label: 'Risky' },
-  ];
 
   return (
     <BottomSheetModal
@@ -89,9 +79,7 @@ export function MatchBottomSheet({
           <View style={styles.matchHeader}>
             <View style={styles.teamLine}>
               <Image source={{ uri: match.homeTeam.logoUrl }} style={styles.logo} contentFit="contain" />
-              <ThemedText type="defaultSemiBold" numberOfLines={1}>
-                {match.homeTeam.name}
-              </ThemedText>
+              <ThemedText type="defaultSemiBold">{match.homeTeam.name}</ThemedText>
             </View>
             <View style={styles.scoreBox}>
               <ThemedText type="title" style={{ color: tint }}>
@@ -102,23 +90,13 @@ export function MatchBottomSheet({
               </ThemedText>
             </View>
             <View style={styles.teamLine}>
-              <ThemedText type="defaultSemiBold" numberOfLines={1}>
-                {match.awayTeam.name}
-              </ThemedText>
+              <ThemedText type="defaultSemiBold">{match.awayTeam.name}</ThemedText>
               <Image source={{ uri: match.awayTeam.logoUrl }} style={styles.logo} contentFit="contain" />
             </View>
           </View>
-          <View style={styles.headerActions}>
-            <TouchableOpacity
-              accessibilityRole="button"
-              onPress={() => router.push({ pathname: '/match-details', params: { matchId: match.id } })}
-              style={[styles.detailsButton, { borderColor: border, backgroundColor: card }]}>
-              <ThemedText style={{ color: mutedText }}>Détails</ThemedText>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={handleDismiss} style={[styles.closeButton, { borderColor: border }]}>
-              <MaterialCommunityIcons name="close" size={18} color={mutedText} />
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity onPress={handleDismiss} style={[styles.closeButton, { borderColor: border }]}>
+            <MaterialCommunityIcons name="close" size={18} color={mutedText} />
+          </TouchableOpacity>
         </View>
 
         <View style={styles.metaRow}>
@@ -150,31 +128,10 @@ export function MatchBottomSheet({
           <ThemedText style={{ color: mutedText }}>{isPremium ? 'Premium actif' : 'Mode gratuit'}</ThemedText>
         </View>
 
-        <View style={[styles.riskTabs, { borderColor: border }]}>
-          {riskTabs.map((tab) => {
-            const isActive = tab.key === activeRisk;
-            return (
-              <TouchableOpacity
-                key={tab.key}
-                accessibilityRole="button"
-                style={[
-                  styles.riskTab,
-                  {
-                    backgroundColor: isActive ? accent : 'transparent',
-                    borderColor: isActive ? accent : 'transparent',
-                  },
-                ]}
-                onPress={() => setActiveRisk(tab.key)}>
-                <ThemedText style={{ color: isActive ? '#FFFFFF' : mutedText }}>{tab.label}</ThemedText>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        {filteredPredictions.length === 0 ? (
+        {visiblePredictions.length === 0 ? (
           <ThemedText style={{ color: mutedText }}>Chargement des pronostics...</ThemedText>
         ) : (
-          filteredPredictions.map((prediction) => (
+          visiblePredictions.map((prediction) => (
             <PredictionRow
               key={prediction.id}
               prediction={prediction}
@@ -184,23 +141,8 @@ export function MatchBottomSheet({
           ))
         )}
 
-        <View style={styles.sectionHeader}>
-          <ThemedText type="defaultSemiBold">Parier avec</ThemedText>
-          <ThemedText style={{ color: mutedText }}>Sélectionne un bookmaker</ThemedText>
-        </View>
-        <View style={styles.bookmakersRow}>
-          {bookmakers.map((bookmaker) => (
-            <TouchableOpacity
-              key={bookmaker}
-              accessibilityRole="button"
-              style={[styles.bookmakerButton, { borderColor: border, backgroundColor: card }]}>
-              <ThemedText style={{ color: mutedText }}>{bookmaker}</ThemedText>
-            </TouchableOpacity>
-          ))}
-        </View>
-
         {!isPremium && (
-          <View style={[styles.premiumBanner, { borderColor: border }]}>
+          <View style={[styles.premiumBanner, { borderColor: border }]}> 
             <ThemedText type="defaultSemiBold">Passe en Premium</ThemedText>
             <ThemedText style={{ color: mutedText }}>
               Débloque 3 pronostics supplémentaires par match et les meilleures cotes.
@@ -238,7 +180,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    gap: 8,
   },
   logo: {
     width: 36,
@@ -255,17 +196,6 @@ const styles = StyleSheet.create({
     height: 32,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  detailsButton: {
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
   },
   metaRow: {
     gap: 4,
@@ -287,31 +217,6 @@ const styles = StyleSheet.create({
   },
   sectionHeader: {
     gap: 4,
-  },
-  riskTabs: {
-    flexDirection: 'row',
-    borderWidth: 1,
-    borderRadius: 999,
-    padding: 4,
-    gap: 6,
-  },
-  riskTab: {
-    flex: 1,
-    borderRadius: 999,
-    paddingVertical: 8,
-    alignItems: 'center',
-    borderWidth: 1,
-  },
-  bookmakersRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  bookmakerButton: {
-    borderWidth: 1,
-    borderRadius: 14,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
   },
   premiumBanner: {
     borderWidth: 1,
