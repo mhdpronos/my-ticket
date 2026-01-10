@@ -1,5 +1,6 @@
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { useState } from 'react';
 
 import { ThemedText } from '@/components/ui/ThemedText';
 import { useThemeColor } from '@/hooks/useThemeColor';
@@ -23,6 +24,19 @@ export function PredictionRow({ prediction, locked, onAdd, oddsLabel = '—' }: 
   const mutedText = useThemeColor({}, 'mutedText');
   const premium = useThemeColor({}, 'premium');
   const accent = useThemeColor({}, 'accent');
+  const success = useThemeColor({}, 'success');
+  const [isAdded, setIsAdded] = useState(false);
+
+  const handleAdd = () => {
+    if (locked) {
+      return;
+    }
+    onAdd();
+    setIsAdded(true);
+  };
+
+  const buttonLabel = isAdded ? 'Ajouté' : 'Ajouter';
+  const buttonColor = isAdded ? success : accent;
 
   return (
     <View style={[styles.row, { borderColor: border, opacity: locked ? 0.5 : 1 }]}> 
@@ -46,12 +60,24 @@ export function PredictionRow({ prediction, locked, onAdd, oddsLabel = '—' }: 
         </View>
       </View>
       <TouchableOpacity
-        style={[styles.addButton, { borderColor: border }]}
-        onPress={onAdd}
+        style={[
+          styles.addButton,
+          {
+            borderColor: isAdded ? success : border,
+            backgroundColor: isAdded ? success : 'transparent',
+          },
+        ]}
+        onPress={handleAdd}
         disabled={locked}
         accessibilityRole="button">
-        <MaterialCommunityIcons name="plus" size={18} color={locked ? mutedText : accent} />
-        <ThemedText style={{ color: locked ? mutedText : accent }}>+ Ticket</ThemedText>
+        {isAdded ? (
+          <MaterialCommunityIcons name="check" size={18} color="#FFFFFF" />
+        ) : (
+          <MaterialCommunityIcons name="plus" size={18} color={locked ? mutedText : buttonColor} />
+        )}
+        <ThemedText style={{ color: locked ? mutedText : isAdded ? '#FFFFFF' : buttonColor }}>
+          {buttonLabel}
+        </ThemedText>
       </TouchableOpacity>
     </View>
   );

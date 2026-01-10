@@ -6,16 +6,13 @@ import { Image } from 'expo-image';
 
 import { ThemedText } from '@/components/ui/ThemedText';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { useAppStore } from '@/store/useAppStore';
 import { Match } from '@/types';
 
 type MatchCardProps = {
   match: Match;
   onPress: () => void;
-  onToggleTeamFavorite: (teamId: string) => void;
-  onToggleLeagueFavorite: (leagueId: string) => void;
-  isTeamFavorite: (teamId: string) => boolean;
-  isLeagueFavorite: (leagueId: string) => boolean;
+  onToggleFavoriteMatch: (match: Match) => void;
+  isMatchFavorite: (matchId: string) => boolean;
 };
 
 const formatStatus = (match: Match) => {
@@ -38,10 +35,8 @@ const formatScore = (match: Match) => {
 function MatchCardComponent({
   match,
   onPress,
-  onToggleTeamFavorite,
-  onToggleLeagueFavorite,
-  isTeamFavorite,
-  isLeagueFavorite,
+  onToggleFavoriteMatch,
+  isMatchFavorite,
 }: MatchCardProps) {
   const card = useThemeColor({}, 'card');
   const border = useThemeColor({}, 'border');
@@ -49,18 +44,11 @@ function MatchCardComponent({
   const tint = useThemeColor({}, 'tint');
   const accent = useThemeColor({}, 'accent');
   const backgroundSecondary = useThemeColor({}, 'backgroundSecondary');
-  const success = useThemeColor({}, 'success');
   const warning = useThemeColor({}, 'warning');
   const danger = useThemeColor({}, 'danger');
 
-  const userAccess = useAppStore((state) => state.userAccess);
-
-  const winRate = match.winRate;
-  const homeRateColor = winRate && winRate.home >= 60 ? success : danger;
-  const awayRateColor = winRate && winRate.away >= 60 ? success : danger;
   const isLive = match.status === 'live';
   const isFinished = match.status === 'finished';
-  const availablePredictions = userAccess.status === 'PREMIUM' ? 6 : 3;
   const kickoffLabel = new Date(match.kickoffIso).toLocaleTimeString('fr-FR', {
     hour: '2-digit',
     minute: '2-digit',
@@ -81,10 +69,10 @@ function MatchCardComponent({
         <View style={styles.headerActions}>
           <TouchableOpacity
             accessibilityRole="button"
-            onPress={() => onToggleLeagueFavorite(match.league.id)}
+            onPress={() => onToggleFavoriteMatch(match)}
             style={[styles.iconPill, { borderColor: border, backgroundColor: backgroundSecondary }]}>
             <MaterialCommunityIcons
-              name={isLeagueFavorite(match.league.id) ? 'star' : 'star-outline'}
+              name={isMatchFavorite(match.id) ? 'star' : 'star-outline'}
               size={16}
               color={accent}
             />
@@ -102,25 +90,10 @@ function MatchCardComponent({
             <Image source={{ uri: match.homeTeam.logoUrl }} style={styles.logo} contentFit="contain" />
             <View style={styles.teamInfo}>
               <View style={styles.teamNameRow}>
-                <ThemedText type="defaultSemiBold" numberOfLines={1}>
+                <ThemedText type="defaultSemiBold" numberOfLines={1} ellipsizeMode="tail" style={styles.teamName}>
                   {match.homeTeam.name}
                 </ThemedText>
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  onPress={() => onToggleTeamFavorite(match.homeTeam.id)}
-                  style={styles.starButton}>
-                  <MaterialCommunityIcons
-                    name={isTeamFavorite(match.homeTeam.id) ? 'star' : 'star-outline'}
-                    size={16}
-                    color={accent}
-                  />
-                </TouchableOpacity>
               </View>
-              {winRate && (
-                <ThemedText style={{ color: homeRateColor }} numberOfLines={1}>
-                  {winRate.home}% victoire
-                </ThemedText>
-              )}
             </View>
           </View>
         </View>
@@ -130,9 +103,9 @@ function MatchCardComponent({
             <ThemedText type="defaultSemiBold" style={{ color: tint }}>
               {match.status === 'upcoming' ? kickoffLabel : formatScore(match)}
             </ThemedText>
-            <ThemedText style={{ color: mutedText }}>
-              {match.status === 'upcoming' ? 'Heure' : isLive ? 'En direct' : 'Terminé'}
-            </ThemedText>
+            {match.status === 'upcoming' ? null : (
+              <ThemedText style={{ color: mutedText }}>{isLive ? 'En direct' : 'Terminé'}</ThemedText>
+            )}
           </View>
         </View>
 
@@ -140,25 +113,14 @@ function MatchCardComponent({
           <View style={styles.teamRowRight}>
             <View style={styles.teamInfoRight}>
               <View style={styles.teamNameRowRight}>
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  onPress={() => onToggleTeamFavorite(match.awayTeam.id)}
-                  style={styles.starButton}>
-                  <MaterialCommunityIcons
-                    name={isTeamFavorite(match.awayTeam.id) ? 'star' : 'star-outline'}
-                    size={16}
-                    color={accent}
-                  />
-                </TouchableOpacity>
-                <ThemedText type="defaultSemiBold" style={styles.alignRight} numberOfLines={1}>
+                <ThemedText
+                  type="defaultSemiBold"
+                  style={[styles.alignRight, styles.teamName]}
+                  numberOfLines={1}
+                  ellipsizeMode="tail">
                   {match.awayTeam.name}
                 </ThemedText>
               </View>
-              {winRate && (
-                <ThemedText style={[styles.alignRight, { color: awayRateColor }]} numberOfLines={1}>
-                  {winRate.away}% victoire
-                </ThemedText>
-              )}
             </View>
             <Image source={{ uri: match.awayTeam.logoUrl }} style={styles.logo} contentFit="contain" />
           </View>
@@ -173,21 +135,15 @@ function MatchCardComponent({
           </ThemedText>
         </View>
         <View style={styles.footerInfoRight}>
-          <ThemedText style={{ color: mutedText }}>{availablePredictions} pronos dispo</ThemedText>
-          <TouchableOpacity accessibilityRole="button" style={[styles.addButton, { borderColor: border }]}
-            disabled>
-            <MaterialCommunityIcons name="plus" size={14} color={accent} />
+          <TouchableOpacity
+            accessibilityRole="button"
+            onPress={onPress}
+            style={[styles.pronoButton, { backgroundColor: tint }]}>
+            <ThemedText style={styles.pronoButtonText}>Voir les pronos</ThemedText>
+            <MaterialCommunityIcons name="chevron-right" size={16} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
       </View>
-
-      {winRate ? (
-        <View style={styles.formRow}>
-          <ThemedText style={{ color: mutedText }} numberOfLines={1}>
-            Forme: {winRate.home}% • {winRate.draw}% nul • {winRate.away}%
-          </ThemedText>
-        </View>
-      ) : null}
     </Pressable>
   );
 }
@@ -259,11 +215,13 @@ const styles = StyleSheet.create({
   teamInfo: {
     flex: 1,
     gap: 4,
+    minWidth: 0,
   },
   teamInfoRight: {
     flex: 1,
     gap: 4,
     alignItems: 'flex-end',
+    minWidth: 0,
   },
   teamNameRow: {
     flexDirection: 'row',
@@ -275,6 +233,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     justifyContent: 'flex-end',
+  },
+  teamName: {
+    flexShrink: 1,
   },
   logo: {
     width: 34,
@@ -316,12 +277,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
-  addButton: {
-    borderWidth: 1,
+  pronoButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
     borderRadius: 999,
-    padding: 4,
   },
-  formRow: {
-    paddingTop: 4,
+  pronoButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
   },
 });

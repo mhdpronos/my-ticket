@@ -1,20 +1,26 @@
 import { FlatList, StyleSheet, TouchableOpacity, View } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { useRef } from 'react';
+import { useScrollToTop } from '@react-navigation/native';
 
 import { TicketItemRow } from '@/components/ticket/TicketItemRow';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useAppStore } from '@/store/useAppStore';
+import { TicketItem } from '@/types';
 
 export default function TicketScreen() {
   const ticketItems = useAppStore((state) => state.ticketItems);
   const removeTicketItem = useAppStore((state) => state.removeTicketItem);
   const clearTicket = useAppStore((state) => state.clearTicket);
+  const listRef = useRef<FlatList<TicketItem>>(null);
 
   const background = useThemeColor({}, 'background');
   const card = useThemeColor({}, 'card');
   const border = useThemeColor({}, 'border');
   const mutedText = useThemeColor({}, 'mutedText');
+
+  useScrollToTop(listRef);
 
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
@@ -33,6 +39,7 @@ export default function TicketScreen() {
       </View>
 
       <FlatList
+        ref={listRef}
         data={ticketItems}
         keyExtractor={(item) => item.match.id}
         contentContainerStyle={styles.list}

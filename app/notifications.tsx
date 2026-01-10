@@ -60,6 +60,7 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingTop: 56,
     paddingBottom: 12,
   },
   list: {

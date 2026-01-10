@@ -51,19 +51,25 @@ export function DateStrip({ dates, selectedId, onSelect }: DateStripProps) {
             onPress={() => onSelect(date.id)}>
             <ThemedText
               type="defaultSemiBold"
-              style={{
-                color: isSelected ? '#FFFFFF' : mutedText,
-              }}>
+              style={[
+                styles.dayText,
+                {
+                  color: isSelected ? '#FFFFFF' : mutedText,
+                },
+              ]}>
               {formatDay(date.date)}
             </ThemedText>
             <ThemedText
-              style={{
-                color: isSelected ? '#FFFFFF' : mutedText,
-              }}>
+              style={[
+                styles.dateText,
+                {
+                  color: isSelected ? '#FFFFFF' : mutedText,
+                },
+              ]}>
               {formatDate(date.date)}
             </ThemedText>
             {date.isToday ? (
-              <View style={[styles.todayBadge, { backgroundColor: isSelected ? '#FFFFFF' : highlight }]}> 
+              <View style={[styles.todayBadge, { backgroundColor: isSelected ? '#FFFFFF' : highlight }]}>
                 <ThemedText style={{ color: isSelected ? highlight : '#FFFFFF' }}>Aujourd'hui</ThemedText>
               </View>
             ) : null}
@@ -84,13 +90,19 @@ const styles = StyleSheet.create({
     paddingRight: 16,
   },
   pill: {
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 18,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 16,
     borderWidth: 1,
-    gap: 4,
+    gap: 2,
     alignItems: 'center',
-    minWidth: 86,
+    minWidth: 72,
+  },
+  dayText: {
+    fontSize: 12,
+  },
+  dateText: {
+    fontSize: 12,
   },
   selectedPill: {
     shadowColor: '#000000',
