@@ -23,7 +23,7 @@ const formatStatus = (match: Match) => {
     return `LIVE ${match.liveMinute ?? 0}'`;
   }
   if (match.status === 'finished') {
-    return 'Terminé';
+    return 'FT';
   }
   return 'À venir';
 };
@@ -50,6 +50,7 @@ function MatchCardComponent({
   const accent = useThemeColor({}, 'accent');
   const backgroundSecondary = useThemeColor({}, 'backgroundSecondary');
   const success = useThemeColor({}, 'success');
+  const warning = useThemeColor({}, 'warning');
   const danger = useThemeColor({}, 'danger');
 
   const userAccess = useAppStore((state) => state.userAccess);
@@ -58,18 +59,24 @@ function MatchCardComponent({
   const homeRateColor = winRate && winRate.home >= 60 ? success : danger;
   const awayRateColor = winRate && winRate.away >= 60 ? success : danger;
   const isLive = match.status === 'live';
+  const isFinished = match.status === 'finished';
   const availablePredictions = userAccess.status === 'PREMIUM' ? 6 : 3;
   const kickoffLabel = new Date(match.kickoffIso).toLocaleTimeString('fr-FR', {
     hour: '2-digit',
     minute: '2-digit',
   });
+  const statusColor = isLive ? danger : isFinished ? warning : tint;
 
   return (
     <Pressable style={[styles.card, { backgroundColor: card, borderColor: border }]} onPress={onPress}>
       <View style={styles.headerRow}>
         <View style={styles.leagueBlock}>
-          <ThemedText type="defaultSemiBold">{match.league.name}</ThemedText>
-          <ThemedText style={{ color: mutedText }}>{match.league.country}</ThemedText>
+          <ThemedText type="defaultSemiBold" numberOfLines={1}>
+            {match.league.name}
+          </ThemedText>
+          <ThemedText style={{ color: mutedText }} numberOfLines={1}>
+            {match.league.country}
+          </ThemedText>
         </View>
         <View style={styles.headerActions}>
           <TouchableOpacity
@@ -82,63 +89,73 @@ function MatchCardComponent({
               color={accent}
             />
           </TouchableOpacity>
-          <View style={[styles.statusPill, { backgroundColor: isLive ? accent : backgroundSecondary, borderColor: border }]}>
-            <View style={[styles.statusDot, { backgroundColor: isLive ? '#FFFFFF' : tint }]} />
-            <ThemedText style={{ color: isLive ? '#FFFFFF' : tint }}>{formatStatus(match)}</ThemedText>
+          <View style={[styles.statusPill, { backgroundColor: statusColor, borderColor: border }]}>
+            <View style={[styles.statusDot, { backgroundColor: '#FFFFFF' }]} />
+            <ThemedText style={{ color: '#FFFFFF' }}>{formatStatus(match)}</ThemedText>
           </View>
         </View>
       </View>
 
       <View style={styles.teamsRow}>
-        <View style={styles.teamBlock}>
-          <View style={styles.teamMeta}>
+        <View style={styles.teamColumn}>
+          <View style={styles.teamRow}>
             <Image source={{ uri: match.homeTeam.logoUrl }} style={styles.logo} contentFit="contain" />
-            <View>
-              <ThemedText type="defaultSemiBold">{match.homeTeam.name}</ThemedText>
+            <View style={styles.teamInfo}>
+              <View style={styles.teamNameRow}>
+                <ThemedText type="defaultSemiBold" numberOfLines={1}>
+                  {match.homeTeam.name}
+                </ThemedText>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  onPress={() => onToggleTeamFavorite(match.homeTeam.id)}
+                  style={styles.starButton}>
+                  <MaterialCommunityIcons
+                    name={isTeamFavorite(match.homeTeam.id) ? 'star' : 'star-outline'}
+                    size={16}
+                    color={accent}
+                  />
+                </TouchableOpacity>
+              </View>
               {winRate && (
-                <ThemedText style={{ color: homeRateColor }}>{winRate.home}% victoire</ThemedText>
+                <ThemedText style={{ color: homeRateColor }} numberOfLines={1}>
+                  {winRate.home}% victoire
+                </ThemedText>
               )}
             </View>
           </View>
-          <TouchableOpacity
-            accessibilityRole="button"
-            onPress={() => onToggleTeamFavorite(match.homeTeam.id)}
-            style={styles.starButton}>
-            <MaterialCommunityIcons
-              name={isTeamFavorite(match.homeTeam.id) ? 'star' : 'star-outline'}
-              size={18}
-              color={accent}
-            />
-          </TouchableOpacity>
         </View>
 
         <View style={styles.scoreBlock}>
           <View style={[styles.scorePill, { backgroundColor: backgroundSecondary, borderColor: border }]}>
             <ThemedText type="defaultSemiBold" style={{ color: tint }}>
-              {formatScore(match)}
+              {match.status === 'upcoming' ? kickoffLabel : formatScore(match)}
             </ThemedText>
-            <ThemedText style={{ color: mutedText }}>{kickoffLabel}</ThemedText>
+            <ThemedText style={{ color: mutedText }}>
+              {match.status === 'upcoming' ? 'Heure' : isLive ? 'En direct' : 'Terminé'}
+            </ThemedText>
           </View>
         </View>
 
-        <View style={styles.teamBlock}>
-          <TouchableOpacity
-            accessibilityRole="button"
-            onPress={() => onToggleTeamFavorite(match.awayTeam.id)}
-            style={styles.starButton}>
-            <MaterialCommunityIcons
-              name={isTeamFavorite(match.awayTeam.id) ? 'star' : 'star-outline'}
-              size={18}
-              color={accent}
-            />
-          </TouchableOpacity>
-          <View style={styles.teamMetaRight}>
-            <View>
-              <ThemedText type="defaultSemiBold" style={styles.alignRight}>
-                {match.awayTeam.name}
-              </ThemedText>
+        <View style={styles.teamColumn}>
+          <View style={styles.teamRowRight}>
+            <View style={styles.teamInfoRight}>
+              <View style={styles.teamNameRowRight}>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  onPress={() => onToggleTeamFavorite(match.awayTeam.id)}
+                  style={styles.starButton}>
+                  <MaterialCommunityIcons
+                    name={isTeamFavorite(match.awayTeam.id) ? 'star' : 'star-outline'}
+                    size={16}
+                    color={accent}
+                  />
+                </TouchableOpacity>
+                <ThemedText type="defaultSemiBold" style={styles.alignRight} numberOfLines={1}>
+                  {match.awayTeam.name}
+                </ThemedText>
+              </View>
               {winRate && (
-                <ThemedText style={[styles.alignRight, { color: awayRateColor }]}>
+                <ThemedText style={[styles.alignRight, { color: awayRateColor }]} numberOfLines={1}>
                   {winRate.away}% victoire
                 </ThemedText>
               )}
@@ -151,13 +168,26 @@ function MatchCardComponent({
       <View style={styles.footerRow}>
         <View style={styles.footerInfo}>
           <MaterialCommunityIcons name="map-marker-outline" size={16} color={mutedText} />
-          <ThemedText style={{ color: mutedText }}>{match.venue ?? 'Stade principal'}</ThemedText>
+          <ThemedText style={{ color: mutedText }} numberOfLines={1}>
+            {match.venue ?? '—'}
+          </ThemedText>
         </View>
-        <View style={styles.footerInfo}>
+        <View style={styles.footerInfoRight}>
           <ThemedText style={{ color: mutedText }}>{availablePredictions} pronos dispo</ThemedText>
-          <MaterialCommunityIcons name="plus-circle" size={18} color={accent} />
+          <TouchableOpacity accessibilityRole="button" style={[styles.addButton, { borderColor: border }]}
+            disabled>
+            <MaterialCommunityIcons name="plus" size={14} color={accent} />
+          </TouchableOpacity>
         </View>
       </View>
+
+      {winRate ? (
+        <View style={styles.formRow}>
+          <ThemedText style={{ color: mutedText }} numberOfLines={1}>
+            Forme: {winRate.home}% • {winRate.draw}% nul • {winRate.away}%
+          </ThemedText>
+        </View>
+      ) : null}
     </Pressable>
   );
 }
@@ -169,16 +199,18 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 16,
     borderWidth: 1,
-    gap: 16,
+    gap: 14,
+    marginHorizontal: 16,
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
+    gap: 12,
   },
   leagueBlock: {
     flex: 1,
-    gap: 2,
+    gap: 4,
   },
   headerActions: {
     flexDirection: 'row',
@@ -191,14 +223,14 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   statusPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
     borderWidth: 1,
     paddingVertical: 6,
     paddingHorizontal: 10,
@@ -208,26 +240,45 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 10,
+    gap: 8,
   },
-  teamBlock: {
+  teamColumn: {
     flex: 1,
-    gap: 6,
   },
-  teamMeta: {
+  teamRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
   },
-  teamMetaRight: {
+  teamRowRight: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
     gap: 10,
   },
+  teamInfo: {
+    flex: 1,
+    gap: 4,
+  },
+  teamInfoRight: {
+    flex: 1,
+    gap: 4,
+    alignItems: 'flex-end',
+  },
+  teamNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  teamNameRowRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    justifyContent: 'flex-end',
+  },
   logo: {
-    width: 36,
-    height: 36,
+    width: 34,
+    height: 34,
   },
   scoreBlock: {
     alignItems: 'center',
@@ -239,23 +290,38 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
     alignItems: 'center',
-    minWidth: 86,
+    minWidth: 90,
     gap: 4,
   },
   alignRight: {
     textAlign: 'right',
   },
   starButton: {
-    alignSelf: 'flex-end',
+    padding: 2,
   },
   footerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 8,
   },
   footerInfo: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+  },
+  footerInfoRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  addButton: {
+    borderWidth: 1,
+    borderRadius: 999,
+    padding: 4,
+  },
+  formRow: {
+    paddingTop: 4,
   },
 });

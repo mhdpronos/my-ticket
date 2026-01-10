@@ -1,5 +1,14 @@
 // Le code de la page principale des matchs et des filtres.
-import { ActivityIndicator, FlatList, Modal, Pressable, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Modal,
+  Pressable,
+  SectionList,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useEffect, useMemo, useState } from 'react';
 import { router } from 'expo-router';
@@ -13,15 +22,22 @@ import { useAppStore } from '@/store/useAppStore';
 import { Match, MatchStatus } from '@/types';
 import { buildRollingDates } from '@/utils/dateRange';
 
+type MatchSection = {
+  key: 'calendar' | 'matches';
+  data: Match[];
+};
+
 export default function MatchesScreen() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [searchValue, setSearchValue] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [selectedLeagueId, setSelectedLeagueId] = useState<string | null>(null);
+  const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<'all' | 'morning' | 'afternoon' | 'evening'>('all');
   const [selectedStatus, setSelectedStatus] = useState<MatchStatus | 'all'>('all');
   const [isLeagueModalOpen, setIsLeagueModalOpen] = useState(false);
+  const [isCountryModalOpen, setIsCountryModalOpen] = useState(false);
 
   const dates = useMemo(() => buildRollingDates(), []);
 
@@ -35,11 +51,13 @@ export default function MatchesScreen() {
   const background = useThemeColor({}, 'background');
   const card = useThemeColor({}, 'card');
   const border = useThemeColor({}, 'border');
+  const text = useThemeColor({}, 'text');
   const mutedText = useThemeColor({}, 'mutedText');
   const tint = useThemeColor({}, 'tint');
   const success = useThemeColor({}, 'success');
   const warning = useThemeColor({}, 'warning');
   const accent = useThemeColor({}, 'accent');
+  const danger = useThemeColor({}, 'danger');
 
   useEffect(() => {
     if (!selectedDateId) {
@@ -66,6 +84,11 @@ export default function MatchesScreen() {
     return Array.from(unique.values()).sort((a, b) => a.name.localeCompare(b.name, 'fr'));
   }, [matches]);
 
+  const countryOptions = useMemo(() => {
+    const unique = new Set(matches.map((match) => match.league.country));
+    return Array.from(unique.values()).sort((a, b) => a.localeCompare(b, 'fr'));
+  }, [matches]);
+
   const visibleMatches = useMemo(() => {
     return matches.filter((match) => {
       const query = searchValue.toLowerCase();
@@ -73,6 +96,7 @@ export default function MatchesScreen() {
         match.homeTeam.name.toLowerCase().includes(query) || match.awayTeam.name.toLowerCase().includes(query);
 
       const matchesLeague = selectedLeagueId ? match.league.id === selectedLeagueId : true;
+      const matchesCountry = selectedCountry ? match.league.country === selectedCountry : true;
       const matchesFavorites = favoritesOnly
         ? favoriteTeams.includes(match.homeTeam.id) ||
           favoriteTeams.includes(match.awayTeam.id) ||
@@ -91,12 +115,20 @@ export default function MatchesScreen() {
 
       const matchesStatus = selectedStatus === 'all' ? true : match.status === selectedStatus;
 
-      return (matchesTeams || query.length === 0) && matchesLeague && matchesFavorites && matchesTime && matchesStatus;
+      return (
+        (matchesTeams || query.length === 0) &&
+        matchesLeague &&
+        matchesCountry &&
+        matchesFavorites &&
+        matchesTime &&
+        matchesStatus
+      );
     });
   }, [
     matches,
     searchValue,
     selectedLeagueId,
+    selectedCountry,
     favoritesOnly,
     favoriteTeams,
     favoriteLeagues,
@@ -109,118 +141,58 @@ export default function MatchesScreen() {
   };
 
   const selectedLeagueLabel =
-    leagueOptions.find((league) => league.id === selectedLeagueId)?.name ?? 'Tous les championnats';
+    leagueOptions.find((league) => league.id === selectedLeagueId)?.name ?? 'Championnat';
+  const selectedCountryLabel = selectedCountry ?? 'Pays';
 
   const isTeamFavorite = (teamId: string) => favoriteTeams.includes(teamId);
   const isLeagueFavorite = (leagueId: string) => favoriteLeagues.includes(leagueId);
 
+  const sections = useMemo<MatchSection[]>(() => {
+    return [
+      { key: 'calendar', data: [] },
+      { key: 'matches', data: visibleMatches },
+    ];
+  }, [visibleMatches]);
+
+  const renderChip = ({
+    label,
+    icon,
+    active,
+    activeColor,
+    onPress,
+  }: {
+    label: string;
+    icon?: keyof typeof MaterialCommunityIcons.glyphMap;
+    active: boolean;
+    activeColor: string;
+    onPress: () => void;
+  }) => (
+    <TouchableOpacity
+      accessibilityRole="button"
+      onPress={onPress}
+      style={[
+        styles.filterChip,
+        {
+          borderColor: border,
+          backgroundColor: active ? activeColor : card,
+        },
+      ]}>
+      {icon ? (
+        <MaterialCommunityIcons name={icon} size={14} color={active ? '#FFFFFF' : mutedText} />
+      ) : null}
+      <ThemedText style={{ color: active ? '#FFFFFF' : mutedText }} numberOfLines={1}>
+        {label}
+      </ThemedText>
+    </TouchableOpacity>
+  );
+
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
-      <View style={styles.searchRow}>
-        <View style={[styles.searchBox, { backgroundColor: card, borderColor: border }]}>
-          <MaterialCommunityIcons name="magnify" size={18} color={mutedText} />
-          <TextInput
-            placeholder="Rechercher un match"
-            placeholderTextColor={mutedText}
-            value={searchValue}
-            onChangeText={setSearchValue}
-            style={[styles.searchInput, { color: mutedText }]}
-          />
-        </View>
-        <TouchableOpacity
-          accessibilityRole="button"
-          onPress={() => setIsLeagueModalOpen(true)}
-          style={[styles.filterButton, { borderColor: border, backgroundColor: card }]}>
-          <MaterialCommunityIcons name="filter-variant" size={18} color={accent} />
-          <ThemedText style={{ color: mutedText }} numberOfLines={1}>
-            {selectedLeagueLabel}
-          </ThemedText>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.header}>
-        <View>
-          <ThemedText type="title" style={styles.brandTitle}>
-            MY TICKET
-          </ThemedText>
-          <ThemedText style={{ color: mutedText }}>
-            Crée ton ticket, compare les cotes et suis tes pronostics en direct.
-          </ThemedText>
-        </View>
-        <TouchableOpacity
-          accessibilityRole="button"
-          onPress={() => router.push('/notifications')}
-          style={[styles.notificationButton, { borderColor: border, backgroundColor: card }]}>
-          <MaterialCommunityIcons name="bell-outline" size={20} color={mutedText} />
-        </TouchableOpacity>
-      </View>
-
-      <ThemedText style={[styles.sectionTitle, { color: mutedText }]}>Calendrier</ThemedText>
-      <DateStrip dates={dates} selectedId={selectedDateId ?? dates[2].id} onSelect={setSelectedDateId} />
-
-      <View style={[styles.filterPanel, { backgroundColor: card, borderColor: border }]}>
-        <View style={styles.filterRow}>
-          <TouchableOpacity
-            style={[styles.filterChip, { borderColor: border, backgroundColor: favoritesOnly ? tint : card }]}
-            onPress={() => setFavoritesOnly((value) => !value)}>
-            <ThemedText style={{ color: favoritesOnly ? '#FFFFFF' : mutedText }}>Favoris</ThemedText>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.filterChip, { borderColor: border, backgroundColor: card }]}
-            onPress={() => setIsLeagueModalOpen(true)}>
-            <ThemedText style={{ color: mutedText }} numberOfLines={1}>
-              {selectedLeagueLabel}
-            </ThemedText>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.filterRow}>
-          <TouchableOpacity
-            style={[styles.filterChip, { borderColor: border, backgroundColor: card }]}
-            onPress={() =>
-              setSelectedTimeSlot((prev) =>
-                prev === 'all' ? 'morning' : prev === 'morning' ? 'afternoon' : prev === 'afternoon' ? 'evening' : 'all'
-              )
-            }>
-            <ThemedText style={{ color: mutedText }}>
-              {selectedTimeSlot === 'all'
-                ? 'Toutes heures'
-                : selectedTimeSlot === 'morning'
-                ? 'Matin'
-                : selectedTimeSlot === 'afternoon'
-                ? 'Après-midi'
-                : 'Soir'}
-            </ThemedText>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.filterChip, { borderColor: border, backgroundColor: selectedStatus === 'live' ? success : card }]}
-            onPress={() => setSelectedStatus((prev) => (prev === 'live' ? 'all' : 'live'))}>
-            <ThemedText style={{ color: selectedStatus === 'live' ? '#FFFFFF' : mutedText }}>En direct</ThemedText>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.filterChip, { borderColor: border, backgroundColor: selectedStatus === 'finished' ? warning : card }]}
-            onPress={() => setSelectedStatus((prev) => (prev === 'finished' ? 'all' : 'finished'))}>
-            <ThemedText style={{ color: selectedStatus === 'finished' ? '#FFFFFF' : mutedText }}>Terminés</ThemedText>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.filterChip, { borderColor: border, backgroundColor: selectedStatus === 'upcoming' ? tint : card }]}
-            onPress={() => setSelectedStatus((prev) => (prev === 'upcoming' ? 'all' : 'upcoming'))}>
-            <ThemedText style={{ color: selectedStatus === 'upcoming' ? '#FFFFFF' : mutedText }}>À venir</ThemedText>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {isLoading ? (
-        <View style={styles.loadingState}>
-          <ActivityIndicator size="large" color={tint} />
-          <ThemedText style={{ color: mutedText }}>Chargement des matchs...</ThemedText>
-        </View>
-      ) : (
-        <FlatList
-          data={visibleMatches}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.list}
-          renderItem={({ item }) => (
+      <SectionList
+        sections={sections}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item, section }) =>
+          section.key === 'matches' ? (
             <MatchCard
               match={item}
               onPress={() => handleOpenMatch(item)}
@@ -229,19 +201,139 @@ export default function MatchesScreen() {
               isTeamFavorite={isTeamFavorite}
               isLeagueFavorite={isLeagueFavorite}
             />
-          )}
-          ListEmptyComponent={
+          ) : null
+        }
+        renderSectionHeader={({ section }) =>
+          section.key === 'calendar' ? (
+            <View style={[styles.calendarHeader, { backgroundColor: background, borderBottomColor: border }]}>
+              <ThemedText style={[styles.sectionTitle, { color: mutedText }]}>CALENDRIER</ThemedText>
+              <DateStrip dates={dates} selectedId={selectedDateId ?? dates[2].id} onSelect={setSelectedDateId} />
+            </View>
+          ) : null
+        }
+        stickySectionHeadersEnabled
+        contentContainerStyle={styles.list}
+        ListHeaderComponent={
+          <View>
+            <View style={styles.headerRow}>
+              <View style={styles.brandBlock}>
+                <ThemedText type="title" style={styles.brandTitle} numberOfLines={1}>
+                  MY TICKET
+                </ThemedText>
+                <ThemedText style={{ color: mutedText }} numberOfLines={1} ellipsizeMode="tail">
+                  Crée ton ticket, compare les cotes et suis tes pronostics en direct.
+                </ThemedText>
+              </View>
+              <TouchableOpacity
+                accessibilityRole="button"
+                onPress={() => router.push('/notifications')}
+                style={[styles.notificationButton, { borderColor: border, backgroundColor: card }]}>
+                <MaterialCommunityIcons name="bell-outline" size={20} color={mutedText} />
+              </TouchableOpacity>
+            </View>
+            <View style={[styles.divider, { backgroundColor: border }]} />
+
+            <View style={styles.searchRow}>
+              <View style={[styles.searchBox, { backgroundColor: card, borderColor: border }]}>
+                <MaterialCommunityIcons name="magnify" size={18} color={mutedText} />
+                <TextInput
+                  placeholder="Rechercher un match, équipe, ligue…"
+                  placeholderTextColor={mutedText}
+                  value={searchValue}
+                  onChangeText={setSearchValue}
+                  style={[styles.searchInput, { color: text }]}
+                />
+              </View>
+            </View>
+
+            <View style={[styles.filterPanel, { backgroundColor: card, borderColor: border }]}> 
+              <View style={styles.filterRow}>
+                {renderChip({
+                  label: 'Favoris',
+                  icon: 'star-outline',
+                  active: favoritesOnly,
+                  activeColor: accent,
+                  onPress: () => setFavoritesOnly((value) => !value),
+                })}
+                {renderChip({
+                  label: selectedLeagueLabel,
+                  icon: 'trophy-outline',
+                  active: !!selectedLeagueId,
+                  activeColor: tint,
+                  onPress: () => setIsLeagueModalOpen(true),
+                })}
+                {renderChip({
+                  label: selectedCountryLabel,
+                  icon: 'earth',
+                  active: !!selectedCountry,
+                  activeColor: tint,
+                  onPress: () => setIsCountryModalOpen(true),
+                })}
+              </View>
+
+              <View style={styles.filterRow}>
+                {renderChip({
+                  label:
+                    selectedTimeSlot === 'all'
+                      ? 'Toutes heures'
+                      : selectedTimeSlot === 'morning'
+                      ? 'Matin'
+                      : selectedTimeSlot === 'afternoon'
+                      ? 'Après-midi'
+                      : 'Soir',
+                  icon: 'clock-outline',
+                  active: selectedTimeSlot !== 'all',
+                  activeColor: tint,
+                  onPress: () =>
+                    setSelectedTimeSlot((prev) =>
+                      prev === 'all' ? 'morning' : prev === 'morning' ? 'afternoon' : prev === 'afternoon' ? 'evening' : 'all'
+                    ),
+                })}
+                {renderChip({
+                  label: 'À venir',
+                  icon: 'calendar-check-outline',
+                  active: selectedStatus === 'upcoming',
+                  activeColor: tint,
+                  onPress: () => setSelectedStatus((prev) => (prev === 'upcoming' ? 'all' : 'upcoming')),
+                })}
+                {renderChip({
+                  label: 'En direct',
+                  icon: 'access-point',
+                  active: selectedStatus === 'live',
+                  activeColor: danger,
+                  onPress: () => setSelectedStatus((prev) => (prev === 'live' ? 'all' : 'live')),
+                })}
+                {renderChip({
+                  label: 'Terminés',
+                  icon: 'flag-checkered',
+                  active: selectedStatus === 'finished',
+                  activeColor: warning,
+                  onPress: () => setSelectedStatus((prev) => (prev === 'finished' ? 'all' : 'finished')),
+                })}
+              </View>
+            </View>
+          </View>
+        }
+        ListFooterComponent={
+          !isLoading && visibleMatches.length === 0 ? (
             <View style={[styles.emptyCard, { borderColor: border, backgroundColor: card }]}>
               <ThemedText type="defaultSemiBold">Aucun match trouvé</ThemedText>
               <ThemedText style={{ color: mutedText }}>Ajuste tes filtres ou change de date.</ThemedText>
             </View>
-          }
-          showsVerticalScrollIndicator={false}
-          initialNumToRender={12}
-          maxToRenderPerBatch={12}
-          windowSize={8}
-        />
-      )}
+          ) : null
+        }
+        showsVerticalScrollIndicator={false}
+        initialNumToRender={12}
+        maxToRenderPerBatch={12}
+        windowSize={8}
+      />
+
+      {isLoading ? (
+        <View style={styles.loadingState}>
+          <ActivityIndicator size="large" color={tint} />
+          <ThemedText style={{ color: mutedText }}>Chargement des matchs...</ThemedText>
+        </View>
+      ) : null}
 
       <Modal animationType="slide" transparent visible={isLeagueModalOpen} onRequestClose={() => setIsLeagueModalOpen(false)}>
         <Pressable style={styles.modalOverlay} onPress={() => setIsLeagueModalOpen(false)}>
@@ -279,6 +371,43 @@ export default function MatchesScreen() {
           </View>
         </Pressable>
       </Modal>
+
+      <Modal animationType="slide" transparent visible={isCountryModalOpen} onRequestClose={() => setIsCountryModalOpen(false)}>
+        <Pressable style={styles.modalOverlay} onPress={() => setIsCountryModalOpen(false)}>
+          <View
+            style={[styles.modalCard, { backgroundColor: card, borderColor: border }]}
+            onStartShouldSetResponder={() => true}>
+            <View style={styles.modalHeader}>
+              <ThemedText type="defaultSemiBold">Choisir un pays</ThemedText>
+              <TouchableOpacity
+                accessibilityRole="button"
+                onPress={() => setIsCountryModalOpen(false)}
+                style={[styles.modalCloseButton, { borderColor: border }]}>
+                <MaterialCommunityIcons name="close" size={18} color={mutedText} />
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity
+              style={[styles.modalItem, { borderColor: border }]}
+              onPress={() => {
+                setSelectedCountry(null);
+                setIsCountryModalOpen(false);
+              }}>
+              <ThemedText style={{ color: mutedText }}>Tous les pays</ThemedText>
+            </TouchableOpacity>
+            {countryOptions.map((country) => (
+              <TouchableOpacity
+                key={country}
+                style={[styles.modalItem, { borderColor: border }]}
+                onPress={() => {
+                  setSelectedCountry(country);
+                  setIsCountryModalOpen(false);
+                }}>
+                <ThemedText style={{ color: mutedText }}>{country}</ThemedText>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -288,20 +417,16 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingTop: 56,
   },
-  searchRow: {
+  headerRow: {
     paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    marginBottom: 12,
-  },
-  header: {
-    paddingHorizontal: 16,
-    marginBottom: 12,
-    flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'stretch',
     gap: 12,
+  },
+  brandBlock: {
+    flex: 1,
+    gap: 6,
   },
   brandTitle: {
     letterSpacing: 1,
@@ -314,12 +439,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  sectionTitle: {
+  divider: {
+    height: 1,
+    marginTop: 16,
+    marginHorizontal: 16,
+  },
+  searchRow: {
     paddingHorizontal: 16,
-    marginBottom: 8,
-    fontSize: 12,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
+    marginTop: 16,
+  },
+  searchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderRadius: 16,
+    gap: 8,
+    borderWidth: 1,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
   },
   filterPanel: {
     marginHorizontal: 16,
@@ -330,48 +470,40 @@ const styles = StyleSheet.create({
     padding: 12,
     gap: 12,
   },
-  searchBox: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 16,
-    gap: 8,
-    borderWidth: 1,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 14,
-  },
-  filterButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 16,
-    borderWidth: 1,
-    maxWidth: 160,
-  },
   filterRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    gap: 8,
   },
   filterChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     borderWidth: 1,
-    borderRadius: 16,
+    borderRadius: 14,
     paddingVertical: 8,
     paddingHorizontal: 12,
   },
-  list: {
+  sectionTitle: {
+    fontSize: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+  },
+  calendarHeader: {
     paddingHorizontal: 16,
+    paddingTop: 4,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+  },
+  list: {
     paddingBottom: 140,
     gap: 12,
   },
   loadingState: {
-    flex: 1,
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 220,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,
@@ -381,6 +513,8 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     gap: 6,
+    marginHorizontal: 16,
+    marginTop: 16,
   },
   modalOverlay: {
     flex: 1,

@@ -9,6 +9,7 @@ type PredictionRowProps = {
   prediction: Prediction;
   locked: boolean;
   onAdd: () => void;
+  oddsLabel?: string;
 };
 
 const riskLabels: Record<Prediction['risk'], string> = {
@@ -17,36 +18,40 @@ const riskLabels: Record<Prediction['risk'], string> = {
   risky: 'Risky',
 };
 
-export function PredictionRow({ prediction, locked, onAdd }: PredictionRowProps) {
+export function PredictionRow({ prediction, locked, onAdd, oddsLabel = '—' }: PredictionRowProps) {
   const border = useThemeColor({}, 'border');
   const mutedText = useThemeColor({}, 'mutedText');
   const premium = useThemeColor({}, 'premium');
   const accent = useThemeColor({}, 'accent');
 
   return (
-    <View style={[styles.row, { borderColor: border, opacity: locked ? 0.5 : 1 }]}>
+    <View style={[styles.row, { borderColor: border, opacity: locked ? 0.5 : 1 }]}> 
       <View style={styles.info}>
-        <ThemedText type="defaultSemiBold">{prediction.label}</ThemedText>
+        <ThemedText type="defaultSemiBold" numberOfLines={1}>
+          {prediction.label}
+        </ThemedText>
+        <ThemedText style={{ color: mutedText }}>Cote {oddsLabel}</ThemedText>
         <View style={styles.metaRow}>
-          <View style={[styles.tag, { borderColor: border }]}
-          >
+          <View style={[styles.tag, { borderColor: border }]}>
             <ThemedText style={{ color: mutedText }}>{prediction.market}</ThemedText>
           </View>
-          <View style={[styles.tag, { borderColor: border }]}
-          >
+          <View style={[styles.tag, { borderColor: border }]}>
             <ThemedText style={{ color: mutedText }}>{riskLabels[prediction.risk]}</ThemedText>
           </View>
-          <View style={[styles.tag, { borderColor: border }]}
-          >
+          <View style={[styles.tag, { borderColor: border }]}>
             <ThemedText style={{ color: prediction.tier === 'premium' ? premium : mutedText }}>
               {prediction.tier === 'premium' ? 'Premium' : 'Gratuit'}
             </ThemedText>
           </View>
         </View>
       </View>
-      <TouchableOpacity style={[styles.addButton, { borderColor: border }]} onPress={onAdd} disabled={locked}>
+      <TouchableOpacity
+        style={[styles.addButton, { borderColor: border }]}
+        onPress={onAdd}
+        disabled={locked}
+        accessibilityRole="button">
         <MaterialCommunityIcons name="plus" size={18} color={locked ? mutedText : accent} />
-        <ThemedText style={{ color: locked ? mutedText : accent }}>Ajouter</ThemedText>
+        <ThemedText style={{ color: locked ? mutedText : accent }}>+ Ticket</ThemedText>
       </TouchableOpacity>
     </View>
   );
@@ -67,7 +72,7 @@ const styles = StyleSheet.create({
   metaRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    gap: 8,
   },
   tag: {
     borderWidth: 1,
@@ -84,5 +89,6 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 999,
     borderWidth: 1,
+    alignSelf: 'flex-start',
   },
 });

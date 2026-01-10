@@ -10,6 +10,23 @@ type DateStripProps = {
   onSelect: (id: string) => void;
 };
 
+const formatDay = (date: Date) =>
+  date
+    .toLocaleDateString('fr-FR', {
+      weekday: 'short',
+    })
+    .replace('.', '')
+    .replace(/^[a-z]/, (value) => value.toUpperCase());
+
+const formatDate = (date: Date) =>
+  date
+    .toLocaleDateString('fr-FR', {
+      day: '2-digit',
+      month: 'short',
+    })
+    .replace('.', '')
+    .replace(/^[a-z]/, (value) => value.toUpperCase());
+
 export function DateStrip({ dates, selectedId, onSelect }: DateStripProps) {
   const highlight = useThemeColor({}, 'tint');
   const border = useThemeColor({}, 'border');
@@ -17,49 +34,74 @@ export function DateStrip({ dates, selectedId, onSelect }: DateStripProps) {
   const mutedText = useThemeColor({}, 'mutedText');
 
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.container}>
-      <View style={styles.row}>
-        {dates.map((date) => {
-          const isSelected = date.id === selectedId;
-          return (
-            <TouchableOpacity
-              key={date.id}
-              style={[
-                styles.pill,
-                {
-                  backgroundColor: isSelected ? highlight : card,
-                  borderColor: border,
-                },
-              ]}
-              onPress={() => onSelect(date.id)}>
-              <ThemedText
-                type="defaultSemiBold"
-                style={{
-                  color: isSelected ? '#FFFFFF' : date.isToday ? highlight : mutedText,
-                }}>
-                {date.label}
-              </ThemedText>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.container} contentContainerStyle={styles.row}>
+      {dates.map((date) => {
+        const isSelected = date.id === selectedId;
+        return (
+          <TouchableOpacity
+            key={date.id}
+            style={[
+              styles.pill,
+              {
+                backgroundColor: isSelected ? highlight : card,
+                borderColor: border,
+              },
+              isSelected ? styles.selectedPill : null,
+            ]}
+            onPress={() => onSelect(date.id)}>
+            <ThemedText
+              type="defaultSemiBold"
+              style={{
+                color: isSelected ? '#FFFFFF' : mutedText,
+              }}>
+              {formatDay(date.date)}
+            </ThemedText>
+            <ThemedText
+              style={{
+                color: isSelected ? '#FFFFFF' : mutedText,
+              }}>
+              {formatDate(date.date)}
+            </ThemedText>
+            {date.isToday ? (
+              <View style={[styles.todayBadge, { backgroundColor: isSelected ? '#FFFFFF' : highlight }]}> 
+                <ThemedText style={{ color: isSelected ? highlight : '#FFFFFF' }}>Aujourd'hui</ThemedText>
+              </View>
+            ) : null}
+          </TouchableOpacity>
+        );
+      })}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 12,
+    marginTop: 8,
   },
   row: {
     flexDirection: 'row',
     gap: 10,
-    paddingHorizontal: 16,
+    paddingRight: 16,
   },
   pill: {
-    paddingVertical: 8,
+    paddingVertical: 10,
     paddingHorizontal: 14,
-    borderRadius: 16,
+    borderRadius: 18,
     borderWidth: 1,
+    gap: 4,
+    alignItems: 'center',
+    minWidth: 86,
+  },
+  selectedPill: {
+    shadowColor: '#000000',
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+  },
+  todayBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 999,
   },
 });
