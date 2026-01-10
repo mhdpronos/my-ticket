@@ -2,13 +2,15 @@
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { useScrollToTop } from '@react-navigation/native';
 
 import { ThemedText } from '@/components/ui/ThemedText';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useAppStore } from '@/store/useAppStore';
 
 export default function ProfileScreen() {
+  const scrollRef = useRef<ScrollView>(null);
   const background = useThemeColor({}, 'background');
   const card = useThemeColor({}, 'card');
   const border = useThemeColor({}, 'border');
@@ -26,13 +28,18 @@ export default function ProfileScreen() {
   const [emailInput, setEmailInput] = useState(userProfile.email);
   const [passwordInput, setPasswordInput] = useState('');
 
+  useScrollToTop(scrollRef);
+
   const handleAuth = () => {
     updateUserProfile({ email: emailInput });
     setUserAccess({ status: 'FREE', isGuest: false });
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: background }]} contentContainerStyle={styles.content}>
+    <ScrollView
+      ref={scrollRef}
+      style={[styles.container, { backgroundColor: background }]}
+      contentContainerStyle={styles.content}>
       <View style={styles.header}>
         <View style={[styles.avatar, { borderColor: border }]}> 
           <MaterialCommunityIcons name="account-outline" size={30} color={mutedText} />

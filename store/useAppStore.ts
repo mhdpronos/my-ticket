@@ -10,10 +10,8 @@ type AppState = {
   addTicketItem: (match: Match, prediction: Prediction) => void;
   removeTicketItem: (matchId: string) => void;
   clearTicket: () => void;
-  favoriteTeams: string[];
-  favoriteLeagues: string[];
-  toggleFavoriteTeam: (teamId: string) => void;
-  toggleFavoriteLeague: (leagueId: string) => void;
+  favoriteMatches: Match[];
+  toggleFavoriteMatch: (match: Match) => void;
   userAccess: UserAccess;
   setUserAccess: (access: UserAccess) => void;
   userProfile: UserProfile;
@@ -49,20 +47,16 @@ export const useAppStore = create<AppState>((set) => ({
       ticketItems: state.ticketItems.filter((item) => item.match.id !== matchId),
     })),
   clearTicket: () => set({ ticketItems: [] }),
-  favoriteTeams: [],
-  favoriteLeagues: [],
-  toggleFavoriteTeam: (teamId) =>
-    set((state) => ({
-      favoriteTeams: state.favoriteTeams.includes(teamId)
-        ? state.favoriteTeams.filter((id) => id !== teamId)
-        : [...state.favoriteTeams, teamId],
-    })),
-  toggleFavoriteLeague: (leagueId) =>
-    set((state) => ({
-      favoriteLeagues: state.favoriteLeagues.includes(leagueId)
-        ? state.favoriteLeagues.filter((id) => id !== leagueId)
-        : [...state.favoriteLeagues, leagueId],
-    })),
+  favoriteMatches: [],
+  toggleFavoriteMatch: (match) =>
+    set((state) => {
+      const exists = state.favoriteMatches.some((item) => item.id === match.id);
+      return {
+        favoriteMatches: exists
+          ? state.favoriteMatches.filter((item) => item.id !== match.id)
+          : [match, ...state.favoriteMatches],
+      };
+    }),
   userAccess: { status: 'FREE', isGuest: true },
   setUserAccess: (access) => set({ userAccess: access }),
   userProfile: initialProfile,
@@ -78,7 +72,6 @@ export const useAppStore = create<AppState>((set) => ({
       userAccess: { status: 'FREE', isGuest: true },
       userProfile: initialProfile,
       ticketItems: [],
-      favoriteTeams: [],
-      favoriteLeagues: [],
+      favoriteMatches: [],
     }),
 }));

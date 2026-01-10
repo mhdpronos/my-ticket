@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Modal,
   Pressable,
+  ScrollView,
   SectionList,
   StyleSheet,
   TextInput,
@@ -10,8 +11,9 @@ import {
   View,
 } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { router } from 'expo-router';
+import { useScrollToTop } from '@react-navigation/native';
 
 import { DateStrip } from '@/components/matches/DateStrip';
 import { MatchCard } from '@/components/matches/MatchCard';
@@ -31,22 +33,20 @@ export default function MatchesScreen() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [searchValue, setSearchValue] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [selectedLeagueId, setSelectedLeagueId] = useState<string | null>(null);
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<'all' | 'morning' | 'afternoon' | 'evening'>('all');
   const [selectedStatus, setSelectedStatus] = useState<MatchStatus | 'all'>('all');
   const [isLeagueModalOpen, setIsLeagueModalOpen] = useState(false);
   const [isCountryModalOpen, setIsCountryModalOpen] = useState(false);
+  const listRef = useRef<SectionList<Match>>(null);
 
   const dates = useMemo(() => buildRollingDates(), []);
 
   const selectedDateId = useAppStore((state) => state.selectedDateId);
   const setSelectedDateId = useAppStore((state) => state.setSelectedDateId);
-  const favoriteTeams = useAppStore((state) => state.favoriteTeams);
-  const favoriteLeagues = useAppStore((state) => state.favoriteLeagues);
-  const toggleFavoriteTeam = useAppStore((state) => state.toggleFavoriteTeam);
-  const toggleFavoriteLeague = useAppStore((state) => state.toggleFavoriteLeague);
+  const favoriteMatches = useAppStore((state) => state.favoriteMatches);
+  const toggleFavoriteMatch = useAppStore((state) => state.toggleFavoriteMatch);
 
   const background = useThemeColor({}, 'background');
   const card = useThemeColor({}, 'card');
@@ -54,9 +54,7 @@ export default function MatchesScreen() {
   const text = useThemeColor({}, 'text');
   const mutedText = useThemeColor({}, 'mutedText');
   const tint = useThemeColor({}, 'tint');
-  const success = useThemeColor({}, 'success');
   const warning = useThemeColor({}, 'warning');
-  const accent = useThemeColor({}, 'accent');
   const danger = useThemeColor({}, 'danger');
 
   useEffect(() => {
@@ -97,11 +95,6 @@ export default function MatchesScreen() {
 
       const matchesLeague = selectedLeagueId ? match.league.id === selectedLeagueId : true;
       const matchesCountry = selectedCountry ? match.league.country === selectedCountry : true;
-      const matchesFavorites = favoritesOnly
-        ? favoriteTeams.includes(match.homeTeam.id) ||
-          favoriteTeams.includes(match.awayTeam.id) ||
-          favoriteLeagues.includes(match.league.id)
-        : true;
 
       const kickoffHour = new Date(match.kickoffIso).getHours();
       const matchesTime =
@@ -119,7 +112,6 @@ export default function MatchesScreen() {
         (matchesTeams || query.length === 0) &&
         matchesLeague &&
         matchesCountry &&
-        matchesFavorites &&
         matchesTime &&
         matchesStatus
       );
@@ -129,9 +121,6 @@ export default function MatchesScreen() {
     searchValue,
     selectedLeagueId,
     selectedCountry,
-    favoritesOnly,
-    favoriteTeams,
-    favoriteLeagues,
     selectedTimeSlot,
     selectedStatus,
   ]);
@@ -144,8 +133,9 @@ export default function MatchesScreen() {
     leagueOptions.find((league) => league.id === selectedLeagueId)?.name ?? 'Championnat';
   const selectedCountryLabel = selectedCountry ?? 'Pays';
 
-  const isTeamFavorite = (teamId: string) => favoriteTeams.includes(teamId);
-  const isLeagueFavorite = (leagueId: string) => favoriteLeagues.includes(leagueId);
+  const isMatchFavorite = (matchId: string) => favoriteMatches.some((match) => match.id === matchId);
+
+  useScrollToTop(listRef);
 
   const sections = useMemo<MatchSection[]>(() => {
     return [
@@ -189,6 +179,7 @@ export default function MatchesScreen() {
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
       <SectionList
+        ref={listRef}
         sections={sections}
         keyExtractor={(item) => item.id}
         renderItem={({ item, section }) =>
@@ -196,10 +187,8 @@ export default function MatchesScreen() {
             <MatchCard
               match={item}
               onPress={() => handleOpenMatch(item)}
-              onToggleTeamFavorite={toggleFavoriteTeam}
-              onToggleLeagueFavorite={toggleFavoriteLeague}
-              isTeamFavorite={isTeamFavorite}
-              isLeagueFavorite={isLeagueFavorite}
+              onToggleFavoriteMatch={toggleFavoriteMatch}
+              isMatchFavorite={isMatchFavorite}
             />
           ) : null
         }
@@ -247,14 +236,11 @@ export default function MatchesScreen() {
             </View>
 
             <View style={[styles.filterPanel, { backgroundColor: card, borderColor: border }]}> 
-              <View style={styles.filterRow}>
-                {renderChip({
-                  label: 'Favoris',
-                  icon: 'star-outline',
-                  active: favoritesOnly,
-                  activeColor: accent,
-                  onPress: () => setFavoritesOnly((value) => !value),
-                })}
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.filterRow}
+                style={styles.filterScroll}>
                 {renderChip({
                   label: selectedLeagueLabel,
                   icon: 'trophy-outline',
@@ -269,9 +255,6 @@ export default function MatchesScreen() {
                   activeColor: tint,
                   onPress: () => setIsCountryModalOpen(true),
                 })}
-              </View>
-
-              <View style={styles.filterRow}>
                 {renderChip({
                   label:
                     selectedTimeSlot === 'all'
@@ -310,7 +293,7 @@ export default function MatchesScreen() {
                   activeColor: warning,
                   onPress: () => setSelectedStatus((prev) => (prev === 'finished' ? 'all' : 'finished')),
                 })}
-              </View>
+              </ScrollView>
             </View>
           </View>
         }
@@ -470,10 +453,14 @@ const styles = StyleSheet.create({
     padding: 12,
     gap: 12,
   },
+  filterScroll: {
+    flexGrow: 0,
+  },
   filterRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 8,
+    alignItems: 'center',
+    paddingRight: 4,
   },
   filterChip: {
     flexDirection: 'row',

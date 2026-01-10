@@ -1,22 +1,20 @@
 import { ActivityIndicator, FlatList, StyleSheet, TouchableOpacity, View } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { router } from 'expo-router';
+import { useScrollToTop } from '@react-navigation/native';
 
+import { MatchCard } from '@/components/matches/MatchCard';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { getAllMatches } from '@/services/matchesService';
-import { getPredictionsForMatch } from '@/services/predictionsService';
-import { Match, Prediction } from '@/types';
-
-type TopPick = {
-  match: Match;
-  prediction: Prediction;
-};
+import { useAppStore } from '@/store/useAppStore';
+import { Match } from '@/types';
 
 export default function TopPicksScreen() {
-  const [picks, setPicks] = useState<TopPick[]>([]);
+  const [picks, setPicks] = useState<Match[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const listRef = useRef<FlatList<Match>>(null);
 
   const background = useThemeColor({}, 'background');
   const card = useThemeColor({}, 'card');
@@ -24,23 +22,22 @@ export default function TopPicksScreen() {
   const mutedText = useThemeColor({}, 'mutedText');
   const tint = useThemeColor({}, 'tint');
 
+  const favoriteMatches = useAppStore((state) => state.favoriteMatches);
+  const toggleFavoriteMatch = useAppStore((state) => state.toggleFavoriteMatch);
+
   useEffect(() => {
     const loadPicks = async () => {
       const matches = await getAllMatches();
-      const selectedMatches = matches.slice(0, 6);
-      const picksData = await Promise.all(
-        selectedMatches.map(async (match) => {
-          const predictions = await getPredictionsForMatch(match.id);
-          const prediction = predictions.find((item) => item.tier === 'free') ?? predictions[0];
-          return { match, prediction };
-        })
-      );
-      setPicks(picksData);
+      setPicks(matches.slice(0, 6));
       setIsLoading(false);
     };
 
     loadPicks();
   }, []);
+
+  const isMatchFavorite = (matchId: string) => favoriteMatches.some((match) => match.id === matchId);
+
+  useScrollToTop(listRef);
 
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
@@ -67,25 +64,17 @@ export default function TopPicksScreen() {
         </View>
       ) : (
         <FlatList
+          ref={listRef}
           data={picks}
-          keyExtractor={(item) => item.match.id}
+          keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
-            <TouchableOpacity
-              accessibilityRole="button"
-              style={[styles.pickCard, { backgroundColor: card, borderColor: border }]}
-              onPress={() => router.push({ pathname: '/match-details', params: { matchId: item.match.id } })}>
-              <View style={styles.pickHeader}>
-                <ThemedText type="defaultSemiBold">{item.match.league.name}</ThemedText>
-                <MaterialCommunityIcons name="chevron-right" size={18} color={mutedText} />
-              </View>
-              <ThemedText style={{ color: mutedText }}>
-                {item.match.homeTeam.name} • {item.match.awayTeam.name}
-              </ThemedText>
-              <View style={[styles.predictionPill, { borderColor: border }]}>
-                <ThemedText style={{ color: mutedText }}>{item.prediction.label}</ThemedText>
-              </View>
-            </TouchableOpacity>
+            <MatchCard
+              match={item}
+              onPress={() => router.push({ pathname: '/match-details', params: { matchId: item.id } })}
+              onToggleFavoriteMatch={toggleFavoriteMatch}
+              isMatchFavorite={isMatchFavorite}
+            />
           )}
           ListEmptyComponent={
             <View style={[styles.emptyCard, { backgroundColor: card, borderColor: border }]}>
@@ -106,7 +95,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingTop: 56,
-    paddingHorizontal: 16,
   },
   header: {
     flexDirection: 'row',
@@ -114,6 +102,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     marginBottom: 16,
+    paddingHorizontal: 16,
   },
   actionButton: {
     flexDirection: 'row',
@@ -128,29 +117,12 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingBottom: 40,
   },
-  pickCard: {
-    borderWidth: 1,
-    borderRadius: 16,
-    padding: 16,
-    gap: 8,
-  },
-  pickHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  predictionPill: {
-    alignSelf: 'flex-start',
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-  },
   emptyCard: {
     borderWidth: 1,
     borderRadius: 16,
     padding: 16,
     gap: 6,
+    marginHorizontal: 16,
   },
   loadingState: {
     flex: 1,
