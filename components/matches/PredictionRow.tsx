@@ -28,25 +28,25 @@ export function PredictionRow({ prediction, locked, onAdd }: PredictionRowProps)
       <View style={styles.info}>
         <ThemedText type="defaultSemiBold">{prediction.label}</ThemedText>
         <View style={styles.metaRow}>
-          <View style={[styles.tag, { borderColor: border }]}
-          >
+          <View style={[styles.tag, { borderColor: border }]}>
             <ThemedText style={{ color: mutedText }}>{prediction.market}</ThemedText>
           </View>
-          <View style={[styles.tag, { borderColor: border }]}
-          >
+          <View style={[styles.tag, { borderColor: border }]}>
             <ThemedText style={{ color: mutedText }}>{riskLabels[prediction.risk]}</ThemedText>
           </View>
-          <View style={[styles.tag, { borderColor: border }]}
-          >
+          <View style={[styles.tag, { borderColor: border }]}>
             <ThemedText style={{ color: prediction.tier === 'premium' ? premium : mutedText }}>
               {prediction.tier === 'premium' ? 'Premium' : 'Gratuit'}
             </ThemedText>
+          </View>
+          <View style={[styles.tag, { borderColor: border }]}>
+            <ThemedText style={{ color: mutedText }}>Cote • --</ThemedText>
           </View>
         </View>
       </View>
       <TouchableOpacity style={[styles.addButton, { borderColor: border }]} onPress={onAdd} disabled={locked}>
         <MaterialCommunityIcons name="plus" size={18} color={locked ? mutedText : accent} />
-        <ThemedText style={{ color: locked ? mutedText : accent }}>Ajouter</ThemedText>
+        <ThemedText style={{ color: locked ? mutedText : accent }}>+ Ticket</ThemedText>
       </TouchableOpacity>
     </View>
   );
