@@ -14,7 +14,7 @@ export default function SubscriptionScreen() {
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
       <ScreenHeader
-        title="Abonnement Premium"
+        title="MY TICKET +"
         subtitle="Débloque les pronostics premium et les meilleures cotes."
       />
       <View style={[styles.card, { backgroundColor: card, borderColor: border }]}>
@@ -42,6 +42,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 16,
+    paddingTop: 56,
     paddingBottom: 24,
     gap: 16,
   },

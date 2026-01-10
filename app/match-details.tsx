@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
   },
   matchCard: {
     borderWidth: 1,
-    borderRadius: 20,
+    borderRadius: 10,
     padding: 16,
     gap: 12,
   },
