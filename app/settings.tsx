@@ -178,46 +178,6 @@ export default function SettingsScreen() {
       ]
     : [];
 
-  const languageLabel = useMemo(() => {
-    return language === 'en' ? 'English' : 'Français';
-  }, [language]);
-
-  const themeLabel = useMemo(() => {
-    switch (themePreference) {
-      case 'light':
-        return 'Clair';
-      case 'dark':
-        return 'Sombre';
-      case 'system':
-        return 'Auto (système)';
-      case 'nocturne':
-      default:
-        return 'Nocturne (par défaut)';
-    }
-  }, [themePreference]);
-
-  const handleShare = async () => {
-    await Share.share({
-      message: 'Découvre MY TICKET : pronostics premium, suivi de tickets et alertes live !',
-    });
-  };
-
-  const handleRate = () => {
-    const url = Platform.select({
-      ios: 'itms-apps://itunes.apple.com/app/id0000000000',
-      android: 'market://details?id=com.myticket.app',
-      default: 'https://myticket.app',
-    });
-    if (url) {
-      void Linking.openURL(url);
-    }
-  };
-
-  const handleLogout = () => {
-    signOut();
-    router.replace('/onboarding');
-  };
-
   const sections: Section[] = [
     {
       id: 'general',
@@ -366,12 +326,7 @@ export default function SettingsScreen() {
                   }
 
                   return (
-                    <RowWrapper
-                      key={row.id}
-                      {...(row.type === 'link'
-                        ? { onPress: row.onPress, accessibilityRole: 'button' as const }
-                        : {})}
-                      style={[styles.rowButton, { borderColor: border }]}>
+                    <View key={row.id} style={[styles.rowButton, { borderColor: border }]}>
                       <View style={styles.rowContent}>
                         <View style={[styles.iconWrap, { backgroundColor: backgroundSecondary }]}>
                           <MaterialCommunityIcons name={row.icon as any} size={18} color={tint} />
