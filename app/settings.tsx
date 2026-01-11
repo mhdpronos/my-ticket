@@ -1,11 +1,14 @@
-import { Pressable, StyleSheet, Switch, View, Platform, ScrollView } from 'react-native';
-import { useState } from 'react';
+import { Alert, Modal, Platform, Pressable, ScrollView, Share, StyleSheet, Switch, View } from 'react-native';
+import { useMemo, useState } from 'react';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Constants from 'expo-constants';
+import { router } from 'expo-router';
+import * as Linking from 'expo-linking';
 
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { useAppStore } from '@/store/useAppStore';
 
 type RowItem = {
   id: string;
@@ -15,6 +18,7 @@ type RowItem = {
   type: 'link' | 'toggle' | 'info';
   toggleValue?: boolean;
   onToggle?: (value: boolean) => void;
+  onPress?: () => void;
 };
 
 type Section = {
@@ -32,10 +36,37 @@ export default function SettingsScreen() {
   const danger = useThemeColor({}, 'danger');
   const backgroundSecondary = useThemeColor({}, 'backgroundSecondary');
 
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [twoFactorEnabled, setTwoFactorEnabled] = useState(true);
-  const [appUnlockEnabled, setAppUnlockEnabled] = useState(true);
-  const [loginBiometricEnabled, setLoginBiometricEnabled] = useState(false);
+  const {
+    notificationsEnabled,
+    setNotificationsEnabled,
+    twoFactorEnabled,
+    setTwoFactorEnabled,
+    appUnlockEnabled,
+    setAppUnlockEnabled,
+    loginBiometricEnabled,
+    setLoginBiometricEnabled,
+    themePreference,
+    setThemePreference,
+    language,
+    setLanguage,
+    signOut,
+  } = useAppStore((state) => ({
+    notificationsEnabled: state.notificationsEnabled,
+    setNotificationsEnabled: state.setNotificationsEnabled,
+    twoFactorEnabled: state.twoFactorEnabled,
+    setTwoFactorEnabled: state.setTwoFactorEnabled,
+    appUnlockEnabled: state.appUnlockEnabled,
+    setAppUnlockEnabled: state.setAppUnlockEnabled,
+    loginBiometricEnabled: state.loginBiometricEnabled,
+    setLoginBiometricEnabled: state.setLoginBiometricEnabled,
+    themePreference: state.themePreference,
+    setThemePreference: state.setThemePreference,
+    language: state.language,
+    setLanguage: state.setLanguage,
+    signOut: state.signOut,
+  }));
+
+  const [activeSheet, setActiveSheet] = useState<null | 'language' | 'theme'>(null);
 
   const biometricLabel = Platform.select({
     ios: 'Face ID',
@@ -46,6 +77,69 @@ export default function SettingsScreen() {
   const appVersion =
     Constants.expoConfig?.version ?? Constants.nativeAppVersion ?? Constants.expoConfig?.runtimeVersion ?? '1.0.0';
 
+  const languageOptions = useMemo(
+    () => [
+      { id: 'fr' as const, label: 'Français' },
+      { id: 'en' as const, label: 'English' },
+    ],
+    []
+  );
+
+  const themeOptions = useMemo(
+    () => [
+      { id: 'system' as const, label: 'Auto (système)' },
+      { id: 'light' as const, label: 'Clair' },
+      { id: 'dark' as const, label: 'Sombre' },
+      { id: 'nocturne' as const, label: 'Nocturne (par défaut)' },
+    ],
+    []
+  );
+
+  const languageLabel = useMemo(
+    () => languageOptions.find((option) => option.id === language)?.label ?? 'Français',
+    [language, languageOptions]
+  );
+
+  const themeLabel = useMemo(
+    () => themeOptions.find((option) => option.id === themePreference)?.label ?? 'Nocturne (par défaut)',
+    [themeOptions, themePreference]
+  );
+
+  const handleShareApp = async () => {
+    try {
+      await Share.share({
+        message: 'Découvre MY TICKET et profite des meilleurs pronos sportifs.',
+      });
+    } catch (error) {
+      Alert.alert('Partage indisponible', "Le partage n'a pas pu être lancé pour le moment.");
+    }
+  };
+
+  const handleRateApp = async () => {
+    const url = 'https://myticket.app/avis';
+    try {
+      const canOpen = await Linking.canOpenURL(url);
+      if (!canOpen) {
+        Alert.alert('Lien indisponible', "Impossible d'ouvrir la page d'évaluation.");
+        return;
+      }
+      await Linking.openURL(url);
+    } catch (error) {
+      Alert.alert('Lien indisponible', "Impossible d'ouvrir la page d'évaluation.");
+    }
+  };
+
+  const handleSignOut = () => {
+    Alert.alert('Se déconnecter', 'Souhaites-tu vraiment te déconnecter ?', [
+      { text: 'Annuler', style: 'cancel' },
+      {
+        text: 'Se déconnecter',
+        style: 'destructive',
+        onPress: () => signOut(),
+      },
+    ]);
+  };
+
   const sections: Section[] = [
     {
       id: 'general',
@@ -54,16 +148,18 @@ export default function SettingsScreen() {
         {
           id: 'lang',
           label: 'Langue de l’application',
-          value: 'Français / English',
+          value: languageLabel,
           icon: 'translate',
           type: 'link',
+          onPress: () => setActiveSheet('language'),
         },
         {
           id: 'theme',
           label: 'Thème',
-          value: 'Nocturne (par défaut)',
+          value: themeLabel,
           icon: 'weather-night',
           type: 'link',
+          onPress: () => setActiveSheet('theme'),
         },
       ],
     },
@@ -137,6 +233,7 @@ export default function SettingsScreen() {
           value: 'Appareils connectés',
           icon: 'devices',
           type: 'link',
+          onPress: () => router.push('/sessions'),
         },
         {
           id: 'history',
@@ -144,6 +241,7 @@ export default function SettingsScreen() {
           value: 'Dernières activités',
           icon: 'history',
           type: 'link',
+          onPress: () => router.push('/login-history'),
         },
       ],
     },
@@ -157,6 +255,7 @@ export default function SettingsScreen() {
           value: 'Donne ton avis sur MY TICKET',
           icon: 'star-outline',
           type: 'link',
+          onPress: handleRateApp,
         },
         {
           id: 'share',
@@ -164,6 +263,7 @@ export default function SettingsScreen() {
           value: 'Invite un ami à rejoindre',
           icon: 'share-variant-outline',
           type: 'link',
+          onPress: handleShareApp,
         },
         {
           id: 'version',
@@ -175,6 +275,10 @@ export default function SettingsScreen() {
       ],
     },
   ];
+
+  const currentOptions = activeSheet === 'language' ? languageOptions : themeOptions;
+  const activeValue = activeSheet === 'language' ? language : themePreference;
+  const activeTitle = activeSheet === 'language' ? 'Choisir la langue' : 'Choisir le thème';
 
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
@@ -189,7 +293,12 @@ export default function SettingsScreen() {
                 {section.data.map((row) => {
                   const RowWrapper = row.type === 'link' ? Pressable : View;
                   return (
-                    <RowWrapper key={row.id} style={[styles.rowButton, { borderColor: border }]}>
+                    <RowWrapper
+                      key={row.id}
+                      {...(row.type === 'link'
+                        ? { onPress: row.onPress, accessibilityRole: 'button' as const }
+                        : {})}
+                      style={[styles.rowButton, { borderColor: border }]}>
                       <View style={styles.rowContent}>
                         <View style={[styles.iconWrap, { backgroundColor: backgroundSecondary }]}>
                           <MaterialCommunityIcons name={row.icon as any} size={18} color={tint} />
@@ -215,11 +324,41 @@ export default function SettingsScreen() {
               </View>
             </View>
           ))}
-        <Pressable style={[styles.logoutButton, { borderColor: danger }]}>
+        <Pressable accessibilityRole="button" onPress={handleSignOut} style={[styles.logoutButton, { borderColor: danger }]}>
           <MaterialCommunityIcons name="logout" size={18} color={danger} />
           <ThemedText style={[styles.logoutText, { color: danger }]}>Se déconnecter</ThemedText>
         </Pressable>
       </ScrollView>
+      <Modal visible={activeSheet !== null} transparent animationType="fade" onRequestClose={() => setActiveSheet(null)}>
+        <Pressable style={styles.modalBackdrop} onPress={() => setActiveSheet(null)}>
+          <Pressable
+            style={[styles.modalCard, { backgroundColor: card, borderColor: border }]}
+            onPress={() => undefined}>
+            <ThemedText type="defaultSemiBold">{activeTitle}</ThemedText>
+            <View style={styles.modalOptions}>
+              {currentOptions.map((option) => {
+                const selected = option.id === activeValue;
+                return (
+                  <Pressable
+                    key={option.id}
+                    style={[styles.optionRow, { borderColor: border }]}
+                    onPress={() => {
+                      if (activeSheet === 'language') {
+                        setLanguage(option.id as 'fr' | 'en');
+                      } else {
+                        setThemePreference(option.id as 'system' | 'light' | 'dark' | 'nocturne');
+                      }
+                      setActiveSheet(null);
+                    }}>
+                    <ThemedText>{option.label}</ThemedText>
+                    {selected ? <MaterialCommunityIcons name="check" size={18} color={tint} /> : null}
+                  </Pressable>
+                );
+              })}
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -281,5 +420,29 @@ const styles = StyleSheet.create({
   },
   logoutText: {
     fontSize: 16,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  modalCard: {
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 20,
+    gap: 16,
+  },
+  modalOptions: {
+    gap: 12,
+  },
+  optionRow: {
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
 });
