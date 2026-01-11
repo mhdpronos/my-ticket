@@ -1,7 +1,7 @@
 // Le code de la page profil avec authentification locale.
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { router } from 'expo-router';
+import { Link, router } from 'expo-router';
 import { useRef, useState } from 'react';
 import { useScrollToTop } from '@react-navigation/native';
 
@@ -189,16 +189,15 @@ export default function ProfileScreen() {
 
       <View style={[styles.card, { backgroundColor: card, borderColor: border }]}> 
         <ThemedText type="defaultSemiBold">Raccourcis</ThemedText>
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => router.push('/settings')}
-          style={[styles.actionRow, { borderColor: border }]}> 
-          <View style={styles.actionRowContent}>
-            <MaterialCommunityIcons name="cog-outline" size={18} color={tint} />
-            <ThemedText>Paramètres</ThemedText>
-          </View>
-          <MaterialCommunityIcons name="chevron-right" size={18} color={mutedText} />
-        </Pressable>
+        <Link href="/settings" asChild>
+          <Pressable accessibilityRole="button" style={[styles.actionRow, { borderColor: border }]}>
+            <View style={styles.actionRowContent}>
+              <MaterialCommunityIcons name="cog-outline" size={18} color={tint} />
+              <ThemedText>Paramètres</ThemedText>
+            </View>
+            <MaterialCommunityIcons name="chevron-right" size={18} color={mutedText} />
+          </Pressable>
+        </Link>
         <Pressable
           accessibilityRole="button"
           onPress={() => router.push('/support')}
