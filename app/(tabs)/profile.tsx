@@ -195,7 +195,7 @@ export default function ProfileScreen() {
           style={[styles.actionRow, { borderColor: border }]}> 
           <View style={styles.actionRowContent}>
             <MaterialCommunityIcons name="cog-outline" size={18} color={tint} />
-            <ThemedText>Réglages</ThemedText>
+            <ThemedText>Paramètres</ThemedText>
           </View>
           <MaterialCommunityIcons name="chevron-right" size={18} color={mutedText} />
         </Pressable>
