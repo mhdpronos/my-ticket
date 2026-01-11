@@ -39,6 +39,23 @@ export const Colors = {
     accent: '#3FA0FF',
     danger: '#F87171',
   },
+  nocturne: {
+    text: '#F2F5FF',
+    background: '#05070D',
+    backgroundSecondary: '#0D1626',
+    card: '#111B2E',
+    tint: '#4C8DFF',
+    icon: '#A7B4D6',
+    tabIconDefault: '#7F8FB4',
+    tabIconSelected: '#4C8DFF',
+    border: '#1E2A45',
+    mutedText: '#9AAAD0',
+    success: '#1EC980',
+    warning: '#F5A623',
+    premium: '#9B6BFF',
+    accent: '#3FA0FF',
+    danger: '#F87171',
+  },
 };
 
 export const Fonts = Platform.select({
