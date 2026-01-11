@@ -150,6 +150,34 @@ export default function SettingsScreen() {
     ]);
   };
 
+  const biometricSecurityRows: RowItem[] = biometricLabel
+    ? [
+        {
+          id: 'unlock',
+          label: `Déverrouiller avec ${biometricLabel}`,
+          value: 'Sinon via le mot de passe',
+          icon: biometricIcon,
+          type: 'toggle',
+          toggleValue: appUnlockEnabled,
+          onToggle: setAppUnlockEnabled,
+        },
+      ]
+    : [];
+
+  const biometricLoginRows: RowItem[] = biometricLabel
+    ? [
+        {
+          id: 'biometric-login',
+          label: `Connexion avec ${biometricLabel}`,
+          value: 'Option rapide sur l’écran de connexion',
+          icon: biometricIcon,
+          type: 'toggle',
+          toggleValue: loginBiometricEnabled,
+          onToggle: setLoginBiometricEnabled,
+        },
+      ]
+    : [];
+
   const sections: Section[] = [
     {
       id: 'general',
@@ -201,37 +229,13 @@ export default function SettingsScreen() {
           toggleValue: twoFactorEnabled,
           onToggle: setTwoFactorEnabled,
         },
-        ...(biometricLabel
-          ? [
-              {
-                id: 'unlock',
-                label: `Déverrouiller avec ${biometricLabel}`,
-                value: 'Sinon via le mot de passe',
-                icon: biometricIcon,
-                type: 'toggle',
-                toggleValue: appUnlockEnabled,
-                onToggle: setAppUnlockEnabled,
-              },
-            ]
-          : []),
+        ...biometricSecurityRows,
       ],
     },
     {
       id: 'login',
       title: 'Connexion',
-      data: biometricLabel
-        ? [
-            {
-              id: 'biometric-login',
-              label: `Connexion avec ${biometricLabel}`,
-              value: 'Option rapide sur l’écran de connexion',
-              icon: biometricIcon,
-              type: 'toggle',
-              toggleValue: loginBiometricEnabled,
-              onToggle: setLoginBiometricEnabled,
-            },
-          ]
-        : [],
+      data: biometricLoginRows,
     },
     {
       id: 'sessions',
