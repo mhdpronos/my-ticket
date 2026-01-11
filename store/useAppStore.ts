@@ -42,19 +42,24 @@ const initialProfile: UserProfile = {
 
 export const useAppStore = create<AppState>((set) => ({
   themePreference: 'nocturne',
-  setThemePreference: (theme) => set({ themePreference: theme }),
+  setThemePreference: (theme) =>
+    set((state) => (state.themePreference === theme ? state : { themePreference: theme })),
   language: 'fr',
-  setLanguage: (language) => set({ language }),
+  setLanguage: (language) => set((state) => (state.language === language ? state : { language })),
   notificationsEnabled: true,
-  setNotificationsEnabled: (enabled) => set({ notificationsEnabled: enabled }),
+  setNotificationsEnabled: (enabled) =>
+    set((state) => (state.notificationsEnabled === enabled ? state : { notificationsEnabled: enabled })),
   twoFactorEnabled: true,
-  setTwoFactorEnabled: (enabled) => set({ twoFactorEnabled: enabled }),
+  setTwoFactorEnabled: (enabled) =>
+    set((state) => (state.twoFactorEnabled === enabled ? state : { twoFactorEnabled: enabled })),
   appUnlockEnabled: true,
-  setAppUnlockEnabled: (enabled) => set({ appUnlockEnabled: enabled }),
+  setAppUnlockEnabled: (enabled) =>
+    set((state) => (state.appUnlockEnabled === enabled ? state : { appUnlockEnabled: enabled })),
   loginBiometricEnabled: false,
-  setLoginBiometricEnabled: (enabled) => set({ loginBiometricEnabled: enabled }),
+  setLoginBiometricEnabled: (enabled) =>
+    set((state) => (state.loginBiometricEnabled === enabled ? state : { loginBiometricEnabled: enabled })),
   selectedDateId: null,
-  setSelectedDateId: (dateId) => set({ selectedDateId: dateId }),
+  setSelectedDateId: (dateId) => set((state) => (state.selectedDateId === dateId ? state : { selectedDateId: dateId })),
   ticketItems: [],
   addTicketItem: (match, prediction) =>
     set((state) => {
