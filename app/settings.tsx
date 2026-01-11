@@ -178,6 +178,46 @@ export default function SettingsScreen() {
       ]
     : [];
 
+  const languageLabel = useMemo(() => {
+    return language === 'en' ? 'English' : 'Français';
+  }, [language]);
+
+  const themeLabel = useMemo(() => {
+    switch (themePreference) {
+      case 'light':
+        return 'Clair';
+      case 'dark':
+        return 'Sombre';
+      case 'system':
+        return 'Auto (système)';
+      case 'nocturne':
+      default:
+        return 'Nocturne (par défaut)';
+    }
+  }, [themePreference]);
+
+  const handleShare = async () => {
+    await Share.share({
+      message: 'Découvre MY TICKET : pronostics premium, suivi de tickets et alertes live !',
+    });
+  };
+
+  const handleRate = () => {
+    const url = Platform.select({
+      ios: 'itms-apps://itunes.apple.com/app/id0000000000',
+      android: 'market://details?id=com.myticket.app',
+      default: 'https://myticket.app',
+    });
+    if (url) {
+      void Linking.openURL(url);
+    }
+  };
+
+  const handleLogout = () => {
+    signOut();
+    router.replace('/onboarding');
+  };
+
   const sections: Section[] = [
     {
       id: 'general',
@@ -305,7 +345,26 @@ export default function SettingsScreen() {
               <ThemedText style={{ color: mutedText }}>{section.title.toUpperCase()}</ThemedText>
               <View style={[styles.card, { backgroundColor: card, borderColor: border }]}>
                 {section.data.map((row) => {
-                  const RowWrapper = row.type === 'link' ? Pressable : View;
+                  if (row.type === 'link') {
+                    return (
+                      <Pressable
+                        key={row.id}
+                        style={[styles.rowButton, { borderColor: border }]}
+                        onPress={row.onPress}>
+                        <View style={styles.rowContent}>
+                          <View style={[styles.iconWrap, { backgroundColor: backgroundSecondary }]}>
+                            <MaterialCommunityIcons name={row.icon as any} size={18} color={tint} />
+                          </View>
+                          <View style={styles.rowText}>
+                            <ThemedText>{row.label}</ThemedText>
+                            {row.value ? <ThemedText style={{ color: mutedText }}>{row.value}</ThemedText> : null}
+                          </View>
+                        </View>
+                        <MaterialCommunityIcons name="chevron-right" size={18} color={mutedText} />
+                      </Pressable>
+                    );
+                  }
+
                   return (
                     <RowWrapper
                       key={row.id}
@@ -329,10 +388,8 @@ export default function SettingsScreen() {
                           trackColor={{ false: border, true: tint }}
                           thumbColor={row.toggleValue ? '#FFFFFF' : '#F2F2F2'}
                         />
-                      ) : row.type === 'link' ? (
-                        <MaterialCommunityIcons name="chevron-right" size={18} color={mutedText} />
                       ) : null}
-                    </RowWrapper>
+                    </View>
                   );
                 })}
               </View>
