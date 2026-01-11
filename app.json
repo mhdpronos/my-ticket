@@ -7,7 +7,7 @@
     "icon": "./ressources/images/icon.png",
     "scheme": "myticket",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true
     },
