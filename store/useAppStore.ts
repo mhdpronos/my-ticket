@@ -4,18 +4,6 @@ import { create } from 'zustand';
 import { Match, Prediction, TicketItem, UserAccess, UserProfile } from '@/types';
 
 type AppState = {
-  language: 'fr' | 'en';
-  setLanguage: (language: 'fr' | 'en') => void;
-  themePreference: 'system' | 'light' | 'dark' | 'nocturne';
-  setThemePreference: (theme: 'system' | 'light' | 'dark' | 'nocturne') => void;
-  notificationsEnabled: boolean;
-  setNotificationsEnabled: (enabled: boolean) => void;
-  twoFactorEnabled: boolean;
-  setTwoFactorEnabled: (enabled: boolean) => void;
-  appUnlockEnabled: boolean;
-  setAppUnlockEnabled: (enabled: boolean) => void;
-  loginBiometricEnabled: boolean;
-  setLoginBiometricEnabled: (enabled: boolean) => void;
   selectedDateId: string | null;
   setSelectedDateId: (dateId: string) => void;
   ticketItems: TicketItem[];
@@ -41,18 +29,6 @@ const initialProfile: UserProfile = {
 };
 
 export const useAppStore = create<AppState>((set) => ({
-  language: 'fr',
-  setLanguage: (language) => set({ language }),
-  themePreference: 'nocturne',
-  setThemePreference: (themePreference) => set({ themePreference }),
-  notificationsEnabled: true,
-  setNotificationsEnabled: (enabled) => set({ notificationsEnabled: enabled }),
-  twoFactorEnabled: true,
-  setTwoFactorEnabled: (enabled) => set({ twoFactorEnabled: enabled }),
-  appUnlockEnabled: true,
-  setAppUnlockEnabled: (enabled) => set({ appUnlockEnabled: enabled }),
-  loginBiometricEnabled: false,
-  setLoginBiometricEnabled: (enabled) => set({ loginBiometricEnabled: enabled }),
   selectedDateId: null,
   setSelectedDateId: (dateId) => set({ selectedDateId: dateId }),
   ticketItems: [],

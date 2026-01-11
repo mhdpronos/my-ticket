@@ -1,13 +1,11 @@
-import { Pressable, StyleSheet, Switch, View, Platform, ScrollView, Modal, Share, Linking } from 'react-native';
-import { useMemo, useState } from 'react';
+import { Pressable, StyleSheet, Switch, View, Platform, ScrollView } from 'react-native';
+import { useState } from 'react';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Constants from 'expo-constants';
-import { router } from 'expo-router';
 
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { useAppStore } from '@/store/useAppStore';
 
 type RowItem = {
   id: string;
@@ -17,7 +15,6 @@ type RowItem = {
   type: 'link' | 'toggle' | 'info';
   toggleValue?: boolean;
   onToggle?: (value: boolean) => void;
-  onPress?: () => void;
 };
 
 type Section = {
@@ -35,37 +32,10 @@ export default function SettingsScreen() {
   const danger = useThemeColor({}, 'danger');
   const backgroundSecondary = useThemeColor({}, 'backgroundSecondary');
 
-  const {
-    notificationsEnabled,
-    setNotificationsEnabled,
-    twoFactorEnabled,
-    setTwoFactorEnabled,
-    appUnlockEnabled,
-    setAppUnlockEnabled,
-    loginBiometricEnabled,
-    setLoginBiometricEnabled,
-    language,
-    setLanguage,
-    themePreference,
-    setThemePreference,
-    signOut,
-  } = useAppStore((state) => ({
-    notificationsEnabled: state.notificationsEnabled,
-    setNotificationsEnabled: state.setNotificationsEnabled,
-    twoFactorEnabled: state.twoFactorEnabled,
-    setTwoFactorEnabled: state.setTwoFactorEnabled,
-    appUnlockEnabled: state.appUnlockEnabled,
-    setAppUnlockEnabled: state.setAppUnlockEnabled,
-    loginBiometricEnabled: state.loginBiometricEnabled,
-    setLoginBiometricEnabled: state.setLoginBiometricEnabled,
-    language: state.language,
-    setLanguage: state.setLanguage,
-    themePreference: state.themePreference,
-    setThemePreference: state.setThemePreference,
-    signOut: state.signOut,
-  }));
-  const [languageModalVisible, setLanguageModalVisible] = useState(false);
-  const [themeModalVisible, setThemeModalVisible] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(true);
+  const [appUnlockEnabled, setAppUnlockEnabled] = useState(true);
+  const [loginBiometricEnabled, setLoginBiometricEnabled] = useState(false);
 
   const biometricLabel = Platform.select({
     ios: 'Face ID',
@@ -75,46 +45,6 @@ export default function SettingsScreen() {
   const biometricIcon = Platform.OS === 'ios' ? 'face-recognition' : 'fingerprint';
   const appVersion =
     Constants.expoConfig?.version ?? Constants.nativeAppVersion ?? Constants.expoConfig?.runtimeVersion ?? '1.0.0';
-
-  const languageLabel = useMemo(() => {
-    return language === 'en' ? 'English' : 'Français';
-  }, [language]);
-
-  const themeLabel = useMemo(() => {
-    switch (themePreference) {
-      case 'light':
-        return 'Clair';
-      case 'dark':
-        return 'Sombre';
-      case 'system':
-        return 'Auto (système)';
-      case 'nocturne':
-      default:
-        return 'Nocturne (par défaut)';
-    }
-  }, [themePreference]);
-
-  const handleShare = async () => {
-    await Share.share({
-      message: 'Découvre MY TICKET : pronostics premium, suivi de tickets et alertes live !',
-    });
-  };
-
-  const handleRate = () => {
-    const url = Platform.select({
-      ios: 'itms-apps://itunes.apple.com/app/id0000000000',
-      android: 'market://details?id=com.myticket.app',
-      default: 'https://myticket.app',
-    });
-    if (url) {
-      void Linking.openURL(url);
-    }
-  };
-
-  const handleLogout = () => {
-    signOut();
-    router.replace('/onboarding');
-  };
 
   const sections: Section[] = [
     {
@@ -127,15 +57,13 @@ export default function SettingsScreen() {
           value: 'Français / English',
           icon: 'translate',
           type: 'link',
-          onPress: () => setLanguageModalVisible(true),
         },
         {
           id: 'theme',
           label: 'Thème',
-          value: themeLabel,
+          value: 'Nocturne (par défaut)',
           icon: 'weather-night',
           type: 'link',
-          onPress: () => setThemeModalVisible(true),
         },
       ],
     },
@@ -209,7 +137,6 @@ export default function SettingsScreen() {
           value: 'Appareils connectés',
           icon: 'devices',
           type: 'link',
-          onPress: () => router.push('/sessions'),
         },
         {
           id: 'history',
@@ -217,7 +144,6 @@ export default function SettingsScreen() {
           value: 'Dernières activités',
           icon: 'history',
           type: 'link',
-          onPress: () => router.push('/history'),
         },
       ],
     },
@@ -231,7 +157,6 @@ export default function SettingsScreen() {
           value: 'Donne ton avis sur MY TICKET',
           icon: 'star-outline',
           type: 'link',
-          onPress: handleRate,
         },
         {
           id: 'share',
@@ -239,7 +164,6 @@ export default function SettingsScreen() {
           value: 'Invite un ami à rejoindre',
           icon: 'share-variant-outline',
           type: 'link',
-          onPress: handleShare,
         },
         {
           id: 'version',
@@ -263,28 +187,9 @@ export default function SettingsScreen() {
               <ThemedText style={{ color: mutedText }}>{section.title.toUpperCase()}</ThemedText>
               <View style={[styles.card, { backgroundColor: card, borderColor: border }]}>
                 {section.data.map((row) => {
-                  if (row.type === 'link') {
-                    return (
-                      <Pressable
-                        key={row.id}
-                        style={[styles.rowButton, { borderColor: border }]}
-                        onPress={row.onPress}>
-                        <View style={styles.rowContent}>
-                          <View style={[styles.iconWrap, { backgroundColor: backgroundSecondary }]}>
-                            <MaterialCommunityIcons name={row.icon as any} size={18} color={tint} />
-                          </View>
-                          <View style={styles.rowText}>
-                            <ThemedText>{row.label}</ThemedText>
-                            {row.value ? <ThemedText style={{ color: mutedText }}>{row.value}</ThemedText> : null}
-                          </View>
-                        </View>
-                        <MaterialCommunityIcons name="chevron-right" size={18} color={mutedText} />
-                      </Pressable>
-                    );
-                  }
-
+                  const RowWrapper = row.type === 'link' ? Pressable : View;
                   return (
-                    <View key={row.id} style={[styles.rowButton, { borderColor: border }]}>
+                    <RowWrapper key={row.id} style={[styles.rowButton, { borderColor: border }]}>
                       <View style={styles.rowContent}>
                         <View style={[styles.iconWrap, { backgroundColor: backgroundSecondary }]}>
                           <MaterialCommunityIcons name={row.icon as any} size={18} color={tint} />
@@ -301,69 +206,20 @@ export default function SettingsScreen() {
                           trackColor={{ false: border, true: tint }}
                           thumbColor={row.toggleValue ? '#FFFFFF' : '#F2F2F2'}
                         />
+                      ) : row.type === 'link' ? (
+                        <MaterialCommunityIcons name="chevron-right" size={18} color={mutedText} />
                       ) : null}
-                    </View>
+                    </RowWrapper>
                   );
                 })}
               </View>
             </View>
           ))}
-        <Pressable style={[styles.logoutButton, { borderColor: danger }]} onPress={handleLogout}>
+        <Pressable style={[styles.logoutButton, { borderColor: danger }]}>
           <MaterialCommunityIcons name="logout" size={18} color={danger} />
           <ThemedText style={[styles.logoutText, { color: danger }]}>Se déconnecter</ThemedText>
         </Pressable>
       </ScrollView>
-      <Modal transparent visible={languageModalVisible} animationType="fade" onRequestClose={() => setLanguageModalVisible(false)}>
-        <Pressable style={styles.modalOverlay} onPress={() => setLanguageModalVisible(false)}>
-          <View style={[styles.modalCard, { backgroundColor: card, borderColor: border }]}>
-            <ThemedText type="defaultSemiBold">Choisir la langue</ThemedText>
-            <Pressable
-              style={[styles.optionRow, language === 'fr' && styles.optionRowActive]}
-              onPress={() => {
-                setLanguage('fr');
-                setLanguageModalVisible(false);
-              }}>
-              <ThemedText>Français</ThemedText>
-              {language === 'fr' ? <MaterialCommunityIcons name="check" size={18} color={tint} /> : null}
-            </Pressable>
-            <Pressable
-              style={[styles.optionRow, language === 'en' && styles.optionRowActive]}
-              onPress={() => {
-                setLanguage('en');
-                setLanguageModalVisible(false);
-              }}>
-              <ThemedText>English</ThemedText>
-              {language === 'en' ? <MaterialCommunityIcons name="check" size={18} color={tint} /> : null}
-            </Pressable>
-          </View>
-        </Pressable>
-      </Modal>
-      <Modal transparent visible={themeModalVisible} animationType="fade" onRequestClose={() => setThemeModalVisible(false)}>
-        <Pressable style={styles.modalOverlay} onPress={() => setThemeModalVisible(false)}>
-          <View style={[styles.modalCard, { backgroundColor: card, borderColor: border }]}>
-            <ThemedText type="defaultSemiBold">Choisir le thème</ThemedText>
-            {[
-              { id: 'nocturne', label: 'Nocturne (par défaut)' },
-              { id: 'light', label: 'Clair' },
-              { id: 'dark', label: 'Sombre' },
-              { id: 'system', label: 'Auto (système)' },
-            ].map((option) => (
-              <Pressable
-                key={option.id}
-                style={[styles.optionRow, themePreference === option.id && styles.optionRowActive]}
-                onPress={() => {
-                  setThemePreference(option.id as 'system' | 'light' | 'dark' | 'nocturne');
-                  setThemeModalVisible(false);
-                }}>
-                <ThemedText>{option.label}</ThemedText>
-                {themePreference === option.id ? (
-                  <MaterialCommunityIcons name="check" size={18} color={tint} />
-                ) : null}
-              </Pressable>
-            ))}
-          </View>
-        </Pressable>
-      </Modal>
     </View>
   );
 }
@@ -425,28 +281,5 @@ const styles = StyleSheet.create({
   },
   logoutText: {
     fontSize: 16,
-  },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    padding: 24,
-    backgroundColor: 'rgba(0, 0, 0, 0.45)',
-  },
-  modalCard: {
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 16,
-    gap: 12,
-  },
-  optionRow: {
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  optionRowActive: {
-    backgroundColor: 'rgba(63, 160, 255, 0.12)',
   },
 });
