@@ -80,7 +80,7 @@ export default function TopPicksScreen() {
             <View style={[styles.emptyCard, { backgroundColor: card, borderColor: border }]}>
               <ThemedText type="defaultSemiBold">Aucune sélection</ThemedText>
               <ThemedText style={{ color: mutedText }}>
-                Les meilleures sélections apparaîtront dès qu'elles seront disponibles.
+                Les meilleures sélections apparaîtront dès qu&apos;elles seront disponibles.
               </ThemedText>
             </View>
           }

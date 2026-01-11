@@ -120,7 +120,7 @@ export default function SettingsScreen() {
       await Share.share({
         message: 'Découvre MY TICKET et profite des meilleurs pronos sportifs.',
       });
-    } catch (error) {
+    } catch {
       Alert.alert('Partage indisponible', "Le partage n'a pas pu être lancé pour le moment.");
     }
   };
@@ -134,7 +134,7 @@ export default function SettingsScreen() {
         return;
       }
       await Linking.openURL(url);
-    } catch (error) {
+    } catch {
       Alert.alert('Lien indisponible', "Impossible d'ouvrir la page d'évaluation.");
     }
   };
