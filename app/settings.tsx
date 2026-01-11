@@ -74,8 +74,18 @@ export default function SettingsScreen() {
     default: null,
   });
   const biometricIcon = Platform.OS === 'ios' ? 'face-recognition' : 'fingerprint';
-  const appVersion =
-    Constants.expoConfig?.version ?? Constants.nativeAppVersion ?? Constants.expoConfig?.runtimeVersion ?? '1.0.0';
+  const appVersion = useMemo(() => {
+    if (typeof Constants.expoConfig?.version === 'string') {
+      return Constants.expoConfig.version;
+    }
+    if (typeof Constants.nativeAppVersion === 'string') {
+      return Constants.nativeAppVersion;
+    }
+    if (typeof Constants.expoConfig?.runtimeVersion === 'string') {
+      return Constants.expoConfig.runtimeVersion;
+    }
+    return '1.0.0';
+  }, []);
 
   const languageOptions = useMemo(
     () => [
