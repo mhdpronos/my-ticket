@@ -1,42 +1,42 @@
 // Le code qui centralise la palette de couleurs et les polices de l'app.
 import { Platform } from 'react-native';
 
-const tintColorLight = '#2F5BFF';
-const tintColorDark = '#5B8CFF';
+const tintColorLight = '#1B5BFF';
+const tintColorDark = '#3FA0FF';
 
 export const Colors = {
   light: {
-    text: '#0B1020',
-    background: '#F3F6FF',
-    backgroundSecondary: '#E8EDFF',
+    text: '#0B1220',
+    background: '#EFF3FB',
+    backgroundSecondary: '#E1E8F5',
     card: '#FFFFFF',
     tint: tintColorLight,
-    icon: '#3E4C6B',
-    tabIconDefault: '#5A6B8C',
+    icon: '#2D3C5F',
+    tabIconDefault: '#4B5A7D',
     tabIconSelected: tintColorLight,
-    border: '#D7E0FF',
-    mutedText: '#546079',
-    success: '#18B86F',
-    warning: '#F5A524',
-    premium: '#8B5CF6',
-    accent: '#FF3B6A',
-    danger: '#EF4444',
+    border: '#CBD6EA',
+    mutedText: '#4B5A7D',
+    success: '#1DBE71',
+    warning: '#F4A11D',
+    premium: '#7C5CFF',
+    accent: '#3FA0FF',
+    danger: '#E53E3E',
   },
   dark: {
-    text: '#F8FAFF',
-    background: '#0A0F1E',
-    backgroundSecondary: '#141A2E',
-    card: '#1A2240',
+    text: '#F5F8FF',
+    background: '#0B1426',
+    backgroundSecondary: '#121E35',
+    card: '#16243F',
     tint: tintColorDark,
-    icon: '#A9B5D1',
-    tabIconDefault: '#8B96B4',
+    icon: '#9FB0D3',
+    tabIconDefault: '#8193B5',
     tabIconSelected: tintColorDark,
-    border: '#2B3552',
-    mutedText: '#A9B5D1',
-    success: '#22C55E',
-    warning: '#F59E0B',
-    premium: '#A855F7',
-    accent: '#FF5C8D',
+    border: '#243251',
+    mutedText: '#9FB0D3',
+    success: '#20C97A',
+    warning: '#F5A623',
+    premium: '#9B6BFF',
+    accent: '#3FA0FF',
     danger: '#F87171',
   },
 };
