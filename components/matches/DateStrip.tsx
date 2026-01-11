@@ -70,7 +70,7 @@ export function DateStrip({ dates, selectedId, onSelect }: DateStripProps) {
             </ThemedText>
             {date.isToday ? (
               <View style={[styles.todayBadge, { backgroundColor: isSelected ? '#FFFFFF' : highlight }]}>
-                <ThemedText style={{ color: isSelected ? highlight : '#FFFFFF' }}>Aujourd'hui</ThemedText>
+                <ThemedText style={{ color: isSelected ? highlight : '#FFFFFF' }}>Aujourd&apos;hui</ThemedText>
               </View>
             ) : null}
           </TouchableOpacity>

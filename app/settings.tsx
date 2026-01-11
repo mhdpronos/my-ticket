@@ -1,9 +1,9 @@
-import { Pressable, StyleSheet, Switch, View, Platform, ScrollView, Modal, Share, Linking } from 'react-native';
+import { Alert, Modal, Platform, Pressable, ScrollView, Share, StyleSheet, Switch, View } from 'react-native';
 import { useMemo, useState } from 'react';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
-import { shallow } from 'zustand/shallow';
+import * as Linking from 'expo-linking';
 
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ThemedText } from '@/components/ui/ThemedText';
@@ -45,31 +45,28 @@ export default function SettingsScreen() {
     setAppUnlockEnabled,
     loginBiometricEnabled,
     setLoginBiometricEnabled,
-    language,
-    setLanguage,
     themePreference,
     setThemePreference,
+    language,
+    setLanguage,
     signOut,
-  } = useAppStore(
-    (state) => ({
-      notificationsEnabled: state.notificationsEnabled,
-      setNotificationsEnabled: state.setNotificationsEnabled,
-      twoFactorEnabled: state.twoFactorEnabled,
-      setTwoFactorEnabled: state.setTwoFactorEnabled,
-      appUnlockEnabled: state.appUnlockEnabled,
-      setAppUnlockEnabled: state.setAppUnlockEnabled,
-      loginBiometricEnabled: state.loginBiometricEnabled,
-      setLoginBiometricEnabled: state.setLoginBiometricEnabled,
-      language: state.language,
-      setLanguage: state.setLanguage,
-      themePreference: state.themePreference,
-      setThemePreference: state.setThemePreference,
-      signOut: state.signOut,
-    }),
-    shallow
-  );
-  const [languageModalVisible, setLanguageModalVisible] = useState(false);
-  const [themeModalVisible, setThemeModalVisible] = useState(false);
+  } = useAppStore((state) => ({
+    notificationsEnabled: state.notificationsEnabled,
+    setNotificationsEnabled: state.setNotificationsEnabled,
+    twoFactorEnabled: state.twoFactorEnabled,
+    setTwoFactorEnabled: state.setTwoFactorEnabled,
+    appUnlockEnabled: state.appUnlockEnabled,
+    setAppUnlockEnabled: state.setAppUnlockEnabled,
+    loginBiometricEnabled: state.loginBiometricEnabled,
+    setLoginBiometricEnabled: state.setLoginBiometricEnabled,
+    themePreference: state.themePreference,
+    setThemePreference: state.setThemePreference,
+    language: state.language,
+    setLanguage: state.setLanguage,
+    signOut: state.signOut,
+  }));
+
+  const [activeSheet, setActiveSheet] = useState<null | 'language' | 'theme'>(null);
 
   const biometricLabel = Platform.select({
     ios: 'Face ID',
@@ -77,8 +74,109 @@ export default function SettingsScreen() {
     default: null,
   });
   const biometricIcon = Platform.OS === 'ios' ? 'face-recognition' : 'fingerprint';
-  const appVersion =
-    Constants.expoConfig?.version ?? Constants.nativeAppVersion ?? Constants.expoConfig?.runtimeVersion ?? '1.0.0';
+  const appVersion = useMemo(() => {
+    if (typeof Constants.expoConfig?.version === 'string') {
+      return Constants.expoConfig.version;
+    }
+    if (typeof Constants.nativeAppVersion === 'string') {
+      return Constants.nativeAppVersion;
+    }
+    if (typeof Constants.expoConfig?.runtimeVersion === 'string') {
+      return Constants.expoConfig.runtimeVersion;
+    }
+    return '1.0.0';
+  }, []);
+
+  const languageOptions = useMemo(
+    () => [
+      { id: 'fr' as const, label: 'Français' },
+      { id: 'en' as const, label: 'English' },
+    ],
+    []
+  );
+
+  const themeOptions = useMemo(
+    () => [
+      { id: 'system' as const, label: 'Auto (système)' },
+      { id: 'light' as const, label: 'Clair' },
+      { id: 'dark' as const, label: 'Sombre' },
+      { id: 'nocturne' as const, label: 'Nocturne (par défaut)' },
+    ],
+    []
+  );
+
+  const languageLabel = useMemo(
+    () => languageOptions.find((option) => option.id === language)?.label ?? 'Français',
+    [language, languageOptions]
+  );
+
+  const themeLabel = useMemo(
+    () => themeOptions.find((option) => option.id === themePreference)?.label ?? 'Nocturne (par défaut)',
+    [themeOptions, themePreference]
+  );
+
+  const handleShareApp = async () => {
+    try {
+      await Share.share({
+        message: 'Découvre MY TICKET et profite des meilleurs pronos sportifs.',
+      });
+    } catch {
+      Alert.alert('Partage indisponible', "Le partage n'a pas pu être lancé pour le moment.");
+    }
+  };
+
+  const handleRateApp = async () => {
+    const url = 'https://myticket.app/avis';
+    try {
+      const canOpen = await Linking.canOpenURL(url);
+      if (!canOpen) {
+        Alert.alert('Lien indisponible', "Impossible d'ouvrir la page d'évaluation.");
+        return;
+      }
+      await Linking.openURL(url);
+    } catch {
+      Alert.alert('Lien indisponible', "Impossible d'ouvrir la page d'évaluation.");
+    }
+  };
+
+  const handleSignOut = () => {
+    Alert.alert('Se déconnecter', 'Souhaites-tu vraiment te déconnecter ?', [
+      { text: 'Annuler', style: 'cancel' },
+      {
+        text: 'Se déconnecter',
+        style: 'destructive',
+        onPress: () => signOut(),
+      },
+    ]);
+  };
+
+  const biometricSecurityRows: RowItem[] = biometricLabel
+    ? [
+        {
+          id: 'unlock',
+          label: `Déverrouiller avec ${biometricLabel}`,
+          value: 'Sinon via le mot de passe',
+          icon: biometricIcon,
+          type: 'toggle',
+          toggleValue: appUnlockEnabled,
+          onToggle: setAppUnlockEnabled,
+        },
+      ]
+    : [];
+
+  const biometricLoginRows: RowItem[] = biometricLabel
+    ? [
+        {
+          id: 'biometric-login',
+          label: `Connexion avec ${biometricLabel}`,
+          value: 'Option rapide sur l’écran de connexion',
+          icon: biometricIcon,
+          type: 'toggle',
+          toggleValue: loginBiometricEnabled,
+          onToggle: setLoginBiometricEnabled,
+        },
+      ]
+    : [];
 
   const languageLabel = useMemo(() => {
     return language === 'en' ? 'English' : 'Français';
@@ -127,11 +225,11 @@ export default function SettingsScreen() {
       data: [
         {
           id: 'lang',
-          label: 'Langue de l’app',
+          label: 'Langue de l’application',
           value: languageLabel,
           icon: 'translate',
           type: 'link',
-          onPress: () => setLanguageModalVisible(true),
+          onPress: () => setActiveSheet('language'),
         },
         {
           id: 'theme',
@@ -139,7 +237,7 @@ export default function SettingsScreen() {
           value: themeLabel,
           icon: 'weather-night',
           type: 'link',
-          onPress: () => setThemeModalVisible(true),
+          onPress: () => setActiveSheet('theme'),
         },
       ],
     },
@@ -171,37 +269,13 @@ export default function SettingsScreen() {
           toggleValue: twoFactorEnabled,
           onToggle: setTwoFactorEnabled,
         },
-        ...(biometricLabel
-          ? [
-              {
-                id: 'unlock',
-                label: `Déverrouiller avec ${biometricLabel}`,
-                value: 'Sinon via le mot de passe',
-                icon: biometricIcon,
-                type: 'toggle',
-                toggleValue: appUnlockEnabled,
-                onToggle: setAppUnlockEnabled,
-              },
-            ]
-          : []),
+        ...biometricSecurityRows,
       ],
     },
     {
       id: 'login',
       title: 'Connexion',
-      data: biometricLabel
-        ? [
-            {
-              id: 'biometric-login',
-              label: `Connexion avec ${biometricLabel}`,
-              value: 'Option rapide sur l’écran de connexion',
-              icon: biometricIcon,
-              type: 'toggle',
-              toggleValue: loginBiometricEnabled,
-              onToggle: setLoginBiometricEnabled,
-            },
-          ]
-        : [],
+      data: biometricLoginRows,
     },
     {
       id: 'sessions',
@@ -221,7 +295,7 @@ export default function SettingsScreen() {
           value: 'Dernières activités',
           icon: 'history',
           type: 'link',
-          onPress: () => router.push('/history'),
+          onPress: () => router.push('/login-history'),
         },
       ],
     },
@@ -231,11 +305,11 @@ export default function SettingsScreen() {
       data: [
         {
           id: 'rate',
-          label: 'Évaluer l’app',
+          label: 'Évaluer l’application',
           value: 'Donne ton avis sur MY TICKET',
           icon: 'star-outline',
           type: 'link',
-          onPress: handleRate,
+          onPress: handleRateApp,
         },
         {
           id: 'share',
@@ -243,7 +317,7 @@ export default function SettingsScreen() {
           value: 'Invite un ami à rejoindre',
           icon: 'share-variant-outline',
           type: 'link',
-          onPress: handleShare,
+          onPress: handleShareApp,
         },
         {
           id: 'version',
@@ -256,9 +330,13 @@ export default function SettingsScreen() {
     },
   ];
 
+  const currentOptions = activeSheet === 'language' ? languageOptions : themeOptions;
+  const activeValue = activeSheet === 'language' ? language : themePreference;
+  const activeTitle = activeSheet === 'language' ? 'Choisir la langue' : 'Choisir le thème';
+
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
-      <ScreenHeader title="Réglages" subtitle="Personnalise ton expérience MY TICKET." />
+      <ScreenHeader title="Paramètres" subtitle="Personnalise ton expérience MY TICKET." />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {sections
           .filter((section) => section.data.length > 0)
@@ -288,7 +366,12 @@ export default function SettingsScreen() {
                   }
 
                   return (
-                    <View key={row.id} style={[styles.rowButton, { borderColor: border }]}>
+                    <RowWrapper
+                      key={row.id}
+                      {...(row.type === 'link'
+                        ? { onPress: row.onPress, accessibilityRole: 'button' as const }
+                        : {})}
+                      style={[styles.rowButton, { borderColor: border }]}>
                       <View style={styles.rowContent}>
                         <View style={[styles.iconWrap, { backgroundColor: backgroundSecondary }]}>
                           <MaterialCommunityIcons name={row.icon as any} size={18} color={tint} />
@@ -312,60 +395,39 @@ export default function SettingsScreen() {
               </View>
             </View>
           ))}
-        <Pressable style={[styles.logoutButton, { borderColor: danger }]} onPress={handleLogout}>
+        <Pressable accessibilityRole="button" onPress={handleSignOut} style={[styles.logoutButton, { borderColor: danger }]}>
           <MaterialCommunityIcons name="logout" size={18} color={danger} />
           <ThemedText style={[styles.logoutText, { color: danger }]}>Se déconnecter</ThemedText>
         </Pressable>
       </ScrollView>
-      <Modal transparent visible={languageModalVisible} animationType="fade" onRequestClose={() => setLanguageModalVisible(false)}>
-        <Pressable style={styles.modalOverlay} onPress={() => setLanguageModalVisible(false)}>
-          <View style={[styles.modalCard, { backgroundColor: card, borderColor: border }]}>
-            <ThemedText type="defaultSemiBold">Choisir la langue</ThemedText>
-            <Pressable
-              style={[styles.optionRow, language === 'fr' && styles.optionRowActive]}
-              onPress={() => {
-                setLanguage('fr');
-                setLanguageModalVisible(false);
-              }}>
-              <ThemedText>Français</ThemedText>
-              {language === 'fr' ? <MaterialCommunityIcons name="check" size={18} color={tint} /> : null}
-            </Pressable>
-            <Pressable
-              style={[styles.optionRow, language === 'en' && styles.optionRowActive]}
-              onPress={() => {
-                setLanguage('en');
-                setLanguageModalVisible(false);
-              }}>
-              <ThemedText>English</ThemedText>
-              {language === 'en' ? <MaterialCommunityIcons name="check" size={18} color={tint} /> : null}
-            </Pressable>
-          </View>
-        </Pressable>
-      </Modal>
-      <Modal transparent visible={themeModalVisible} animationType="fade" onRequestClose={() => setThemeModalVisible(false)}>
-        <Pressable style={styles.modalOverlay} onPress={() => setThemeModalVisible(false)}>
-          <View style={[styles.modalCard, { backgroundColor: card, borderColor: border }]}>
-            <ThemedText type="defaultSemiBold">Choisir le thème</ThemedText>
-            {[
-              { id: 'nocturne', label: 'Nocturne (par défaut)' },
-              { id: 'light', label: 'Clair' },
-              { id: 'dark', label: 'Sombre' },
-              { id: 'system', label: 'Auto (système)' },
-            ].map((option) => (
-              <Pressable
-                key={option.id}
-                style={[styles.optionRow, themePreference === option.id && styles.optionRowActive]}
-                onPress={() => {
-                  setThemePreference(option.id as 'system' | 'light' | 'dark' | 'nocturne');
-                  setThemeModalVisible(false);
-                }}>
-                <ThemedText>{option.label}</ThemedText>
-                {themePreference === option.id ? (
-                  <MaterialCommunityIcons name="check" size={18} color={tint} />
-                ) : null}
-              </Pressable>
-            ))}
-          </View>
+      <Modal visible={activeSheet !== null} transparent animationType="fade" onRequestClose={() => setActiveSheet(null)}>
+        <Pressable style={styles.modalBackdrop} onPress={() => setActiveSheet(null)}>
+          <Pressable
+            style={[styles.modalCard, { backgroundColor: card, borderColor: border }]}
+            onPress={() => undefined}>
+            <ThemedText type="defaultSemiBold">{activeTitle}</ThemedText>
+            <View style={styles.modalOptions}>
+              {currentOptions.map((option) => {
+                const selected = option.id === activeValue;
+                return (
+                  <Pressable
+                    key={option.id}
+                    style={[styles.optionRow, { borderColor: border }]}
+                    onPress={() => {
+                      if (activeSheet === 'language') {
+                        setLanguage(option.id as 'fr' | 'en');
+                      } else {
+                        setThemePreference(option.id as 'system' | 'light' | 'dark' | 'nocturne');
+                      }
+                      setActiveSheet(null);
+                    }}>
+                    <ThemedText>{option.label}</ThemedText>
+                    {selected ? <MaterialCommunityIcons name="check" size={18} color={tint} /> : null}
+                  </Pressable>
+                );
+              })}
+            </View>
+          </Pressable>
         </Pressable>
       </Modal>
     </View>
@@ -430,27 +492,28 @@ const styles = StyleSheet.create({
   logoutText: {
     fontSize: 16,
   },
-  modalOverlay: {
+  modalBackdrop: {
     flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
     justifyContent: 'center',
-    padding: 24,
-    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    paddingHorizontal: 24,
   },
   modalCard: {
-    borderRadius: 16,
     borderWidth: 1,
-    padding: 16,
+    borderRadius: 16,
+    padding: 20,
+    gap: 16,
+  },
+  modalOptions: {
     gap: 12,
   },
   optionRow: {
-    paddingVertical: 12,
-    paddingHorizontal: 12,
+    borderWidth: 1,
     borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-  },
-  optionRowActive: {
-    backgroundColor: 'rgba(63, 160, 255, 0.12)',
   },
 });

@@ -2,21 +2,15 @@ import { useColorScheme as useNativeColorScheme } from 'react-native';
 
 import { useAppStore } from '@/store/useAppStore';
 
+type ThemeName = 'light' | 'dark' | 'nocturne';
+
 export function useColorScheme() {
-  const systemScheme = useNativeColorScheme() ?? 'light';
   const themePreference = useAppStore((state) => state.themePreference);
+  const systemScheme = (useNativeColorScheme() ?? 'light') as ThemeName;
 
   if (themePreference === 'system') {
     return systemScheme;
   }
 
-  if (themePreference === 'light') {
-    return 'light';
-  }
-
-  if (themePreference === 'dark' || themePreference === 'nocturne') {
-    return 'dark';
-  }
-
-  return systemScheme;
+  return themePreference as ThemeName;
 }

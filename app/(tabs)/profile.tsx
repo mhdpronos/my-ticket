@@ -1,13 +1,14 @@
 // Le code de la page profil avec authentification locale.
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { router } from 'expo-router';
+import { Link, router } from 'expo-router';
 import { useRef, useState } from 'react';
 import { useScrollToTop } from '@react-navigation/native';
 
 import { ThemedText } from '@/components/ui/ThemedText';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useAppStore } from '@/store/useAppStore';
+import { UserProfile } from '@/types';
 
 export default function ProfileScreen() {
   const scrollRef = useRef<ScrollView>(null);
@@ -30,8 +31,18 @@ export default function ProfileScreen() {
 
   useScrollToTop(scrollRef);
 
+  const handleProfileChange =
+    (field: keyof UserProfile) =>
+    (value: string) => {
+      if (userProfile[field] !== value) {
+        updateUserProfile({ [field]: value });
+      }
+    };
+
   const handleAuth = () => {
-    updateUserProfile({ email: emailInput });
+    if (userProfile.email !== emailInput) {
+      updateUserProfile({ email: emailInput });
+    }
     setUserAccess({ status: 'FREE', isGuest: false });
   };
 
@@ -107,7 +118,7 @@ export default function ProfileScreen() {
             <ThemedText type="defaultSemiBold">Nom complet</ThemedText>
             <TextInput
               value={userProfile.fullName}
-              onChangeText={(value) => updateUserProfile({ fullName: value })}
+              onChangeText={handleProfileChange('fullName')}
               placeholder="Prénom Nom"
               placeholderTextColor={mutedText}
               style={[styles.input, { borderColor: border, color: mutedText }]}
@@ -135,7 +146,7 @@ export default function ProfileScreen() {
           <ThemedText>Ville</ThemedText>
           <TextInput
             value={userProfile.city}
-            onChangeText={(value) => updateUserProfile({ city: value })}
+            onChangeText={handleProfileChange('city')}
             placeholder="Paris"
             placeholderTextColor={mutedText}
             style={[styles.input, { borderColor: border, color: mutedText }]}
@@ -145,7 +156,7 @@ export default function ProfileScreen() {
           <ThemedText>Téléphone</ThemedText>
           <TextInput
             value={userProfile.phone}
-            onChangeText={(value) => updateUserProfile({ phone: value })}
+            onChangeText={handleProfileChange('phone')}
             placeholder="+33 6 00 00 00 00"
             placeholderTextColor={mutedText}
             keyboardType="phone-pad"
@@ -156,7 +167,7 @@ export default function ProfileScreen() {
           <ThemedText>Club préféré</ThemedText>
           <TextInput
             value={userProfile.favoriteTeam}
-            onChangeText={(value) => updateUserProfile({ favoriteTeam: value })}
+            onChangeText={handleProfileChange('favoriteTeam')}
             placeholder="PSG, Marseille..."
             placeholderTextColor={mutedText}
             style={[styles.input, { borderColor: border, color: mutedText }]}
@@ -166,7 +177,7 @@ export default function ProfileScreen() {
           <ThemedText>Date de naissance</ThemedText>
           <TextInput
             value={userProfile.birthDate}
-            onChangeText={(value) => updateUserProfile({ birthDate: value })}
+            onChangeText={handleProfileChange('birthDate')}
             placeholder="JJ/MM/AAAA"
             placeholderTextColor={mutedText}
             style={[styles.input, { borderColor: border, color: mutedText }]}
@@ -189,16 +200,15 @@ export default function ProfileScreen() {
 
       <View style={[styles.card, { backgroundColor: card, borderColor: border }]}> 
         <ThemedText type="defaultSemiBold">Raccourcis</ThemedText>
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => router.push('/settings')}
-          style={[styles.actionRow, { borderColor: border }]}> 
-          <View style={styles.actionRowContent}>
-            <MaterialCommunityIcons name="cog-outline" size={18} color={tint} />
-            <ThemedText>Réglages</ThemedText>
-          </View>
-          <MaterialCommunityIcons name="chevron-right" size={18} color={mutedText} />
-        </Pressable>
+        <Link href="/settings" asChild>
+          <Pressable accessibilityRole="button" style={[styles.actionRow, { borderColor: border }]}>
+            <View style={styles.actionRowContent}>
+              <MaterialCommunityIcons name="cog-outline" size={18} color={tint} />
+              <ThemedText>Paramètres</ThemedText>
+            </View>
+            <MaterialCommunityIcons name="chevron-right" size={18} color={mutedText} />
+          </Pressable>
+        </Link>
         <Pressable
           accessibilityRole="button"
           onPress={() => router.push('/support')}
