@@ -123,8 +123,8 @@ export default function SettingsScreen() {
       data: [
         {
           id: 'lang',
-          label: 'Langue de l’app',
-          value: languageLabel,
+          label: 'Langue de l’application',
+          value: 'Français / English',
           icon: 'translate',
           type: 'link',
           onPress: () => setLanguageModalVisible(true),
@@ -227,7 +227,7 @@ export default function SettingsScreen() {
       data: [
         {
           id: 'rate',
-          label: 'Évaluer l’app',
+          label: 'Évaluer l’application',
           value: 'Donne ton avis sur MY TICKET',
           icon: 'star-outline',
           type: 'link',
@@ -254,7 +254,7 @@ export default function SettingsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
-      <ScreenHeader title="Réglages" subtitle="Personnalise ton expérience MY TICKET." />
+      <ScreenHeader title="Paramètres" subtitle="Personnalise ton expérience MY TICKET." />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {sections
           .filter((section) => section.data.length > 0)
