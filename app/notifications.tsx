@@ -4,24 +4,25 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const notifications = [
   {
     id: 'notif-1',
-    title: 'Cote boostée disponible',
-    description: 'Barça vs Sevilla • 1xBet propose 1.60',
+    title: 'notificationsBoostedOdds',
+    description: 'notificationsBoostedOddsDetail',
   },
   {
     id: 'notif-2',
-    title: 'Nouveau ticket publié',
-    description: 'MHD Pronos a partagé un ticket Safe',
+    title: 'notificationsNewTicket',
+    description: 'notificationsNewTicketDetail',
   },
   {
     id: 'notif-3',
-    title: 'Match en approche',
-    description: 'PSG vs Lyon commence dans 2 heures',
+    title: 'notificationsMatchSoon',
+    description: 'notificationsMatchSoonDetail',
   },
-];
+] as const;
 
 export default function NotificationsScreen() {
   const background = useThemeColor({}, 'background');
@@ -29,10 +30,11 @@ export default function NotificationsScreen() {
   const border = useThemeColor({}, 'border');
   const mutedText = useThemeColor({}, 'mutedText');
   const tint = useThemeColor({}, 'tint');
+  const { t } = useTranslation();
 
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
-      <ScreenHeader title="Notifications" subtitle="Reste informé des mises à jour clés." />
+      <ScreenHeader title={t('notificationsTitle')} subtitle={t('notificationsSubtitle')} />
       <FlatList
         data={notifications}
         keyExtractor={(item) => item.id}
@@ -41,15 +43,15 @@ export default function NotificationsScreen() {
           <View style={[styles.card, { borderColor: border, backgroundColor: card }]}>
             <MaterialCommunityIcons name="bell-ring-outline" size={20} color={tint} />
             <View style={styles.textBlock}>
-              <ThemedText type="defaultSemiBold">{item.title}</ThemedText>
-              <ThemedText style={{ color: mutedText }}>{item.description}</ThemedText>
+              <ThemedText type="defaultSemiBold">{t(item.title)}</ThemedText>
+              <ThemedText style={{ color: mutedText }}>{t(item.description)}</ThemedText>
             </View>
           </View>
         )}
         ListEmptyComponent={
           <View style={[styles.card, { borderColor: border, backgroundColor: card }]}>
-            <ThemedText type="defaultSemiBold">Aucune notification</ThemedText>
-            <ThemedText style={{ color: mutedText }}>Tout est calme pour le moment.</ThemedText>
+            <ThemedText type="defaultSemiBold">{t('notificationsEmptyTitle')}</ThemedText>
+            <ThemedText style={{ color: mutedText }}>{t('notificationsEmptySubtitle')}</ThemedText>
           </View>
         }
       />

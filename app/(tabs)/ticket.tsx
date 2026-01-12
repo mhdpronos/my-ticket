@@ -6,6 +6,7 @@ import { useScrollToTop } from '@react-navigation/native';
 import { TicketItemRow } from '@/components/ticket/TicketItemRow';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useAppStore } from '@/store/useAppStore';
 import { TicketItem } from '@/types';
 
@@ -19,6 +20,7 @@ export default function TicketScreen() {
   const card = useThemeColor({}, 'card');
   const border = useThemeColor({}, 'border');
   const mutedText = useThemeColor({}, 'mutedText');
+  const { t } = useTranslation();
 
   useScrollToTop(listRef);
 
@@ -26,15 +28,15 @@ export default function TicketScreen() {
     <View style={[styles.container, { backgroundColor: background }]}>
       <View style={styles.header}>
         <View>
-          <ThemedText type="title">Ticket</ThemedText>
-          <ThemedText style={{ color: mutedText }}>Résumé de tes sélections</ThemedText>
+          <ThemedText type="title">{t('tabsTicket')}</ThemedText>
+          <ThemedText style={{ color: mutedText }}>{t('headerTicketSubtitle')}</ThemedText>
         </View>
         <TouchableOpacity
           accessibilityRole="button"
           onPress={clearTicket}
           style={[styles.clearButton, { borderColor: border, backgroundColor: card }]}>
           <MaterialCommunityIcons name="broom" size={18} color={mutedText} />
-          <ThemedText style={{ color: mutedText }}>Vider</ThemedText>
+          <ThemedText style={{ color: mutedText }}>{t('buttonClear')}</ThemedText>
         </TouchableOpacity>
       </View>
 
@@ -48,10 +50,8 @@ export default function TicketScreen() {
         )}
         ListEmptyComponent={
           <View style={[styles.emptyCard, { borderColor: border, backgroundColor: card }]}>
-            <ThemedText type="defaultSemiBold">Aucune sélection pour le moment</ThemedText>
-            <ThemedText style={{ color: mutedText }}>
-              Ajoute un pronostic depuis la page Matchs pour composer ton ticket.
-            </ThemedText>
+            <ThemedText type="defaultSemiBold">{t('ticketEmptyTitle')}</ThemedText>
+            <ThemedText style={{ color: mutedText }}>{t('ticketEmptySubtitle')}</ThemedText>
           </View>
         }
         showsVerticalScrollIndicator={false}

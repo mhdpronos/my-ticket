@@ -4,11 +4,12 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const historyItems = [
-  { id: 'hist-1', label: 'PSG vs Lyon', result: 'Ticket gagné' },
-  { id: 'hist-2', label: 'Barcelona vs Sevilla', result: 'Ticket perdu' },
-  { id: 'hist-3', label: 'Chelsea vs Arsenal', result: 'Ticket gagné' },
+  { id: 'hist-1', label: 'PSG vs Lyon', result: 'won' },
+  { id: 'hist-2', label: 'Barcelona vs Sevilla', result: 'lost' },
+  { id: 'hist-3', label: 'Chelsea vs Arsenal', result: 'won' },
 ];
 
 export default function HistoryScreen() {
@@ -16,10 +17,11 @@ export default function HistoryScreen() {
   const card = useThemeColor({}, 'card');
   const border = useThemeColor({}, 'border');
   const mutedText = useThemeColor({}, 'mutedText');
+  const { t } = useTranslation();
 
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
-      <ScreenHeader title="Historique" subtitle="Retrouve tes tickets passés." />
+      <ScreenHeader title={t('ticketHistoryTitle')} subtitle={t('ticketHistorySubtitle')} />
       <FlatList
         data={historyItems}
         keyExtractor={(item) => item.id}
@@ -29,14 +31,16 @@ export default function HistoryScreen() {
             <MaterialCommunityIcons name="history" size={20} color={mutedText} />
             <View style={styles.textBlock}>
               <ThemedText type="defaultSemiBold">{item.label}</ThemedText>
-              <ThemedText style={{ color: mutedText }}>{item.result}</ThemedText>
+              <ThemedText style={{ color: mutedText }}>
+                {item.result === 'won' ? t('ticketWon') : t('ticketLost')}
+              </ThemedText>
             </View>
           </View>
         )}
         ListEmptyComponent={
           <View style={[styles.card, { borderColor: border, backgroundColor: card }]}>
-            <ThemedText type="defaultSemiBold">Aucun historique</ThemedText>
-            <ThemedText style={{ color: mutedText }}>Tes tickets passés apparaîtront ici.</ThemedText>
+            <ThemedText type="defaultSemiBold">{t('ticketHistoryEmptyTitle')}</ThemedText>
+            <ThemedText style={{ color: mutedText }}>{t('ticketHistoryEmptySubtitle')}</ThemedText>
           </View>
         }
       />

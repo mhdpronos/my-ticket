@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function SubscriptionScreen() {
   const background = useThemeColor({}, 'background');
@@ -10,28 +11,29 @@ export default function SubscriptionScreen() {
   const border = useThemeColor({}, 'border');
   const mutedText = useThemeColor({}, 'mutedText');
   const tint = useThemeColor({}, 'tint');
+  const { t } = useTranslation();
 
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
       <ScreenHeader
-        title="MY TICKET +"
-        subtitle="Débloque les pronostics premium et les meilleures cotes."
+        title={t('subscriptionTitle')}
+        subtitle={t('subscriptionSubtitle')}
       />
       <View style={[styles.card, { backgroundColor: card, borderColor: border }]}>
-        <ThemedText type="defaultSemiBold">Plan Mensuel</ThemedText>
-        <ThemedText style={{ color: mutedText }}>Accès complet • 30 jours</ThemedText>
+        <ThemedText type="defaultSemiBold">{t('planMonthly')}</ThemedText>
+        <ThemedText style={{ color: mutedText }}>{t('planMonthlyDetail')}</ThemedText>
         <ThemedText type="subtitle">9 900 FCFA</ThemedText>
         <Pressable style={[styles.primaryButton, { backgroundColor: tint }]}>
-          <ThemedText style={styles.primaryButtonText}>Choisir ce plan</ThemedText>
+          <ThemedText style={styles.primaryButtonText}>{t('buttonChoosePlan')}</ThemedText>
         </Pressable>
       </View>
 
       <View style={[styles.card, { backgroundColor: card, borderColor: border }]}>
-        <ThemedText type="defaultSemiBold">Plan Annuel</ThemedText>
-        <ThemedText style={{ color: mutedText }}>2 mois offerts • 12 mois</ThemedText>
+        <ThemedText type="defaultSemiBold">{t('planAnnual')}</ThemedText>
+        <ThemedText style={{ color: mutedText }}>{t('planAnnualDetail')}</ThemedText>
         <ThemedText type="subtitle">99 000 FCFA</ThemedText>
         <Pressable style={[styles.primaryButton, { backgroundColor: tint }]}>
-          <ThemedText style={styles.primaryButtonText}>Choisir ce plan</ThemedText>
+          <ThemedText style={styles.primaryButtonText}>{t('buttonChoosePlan')}</ThemedText>
         </Pressable>
       </View>
     </View>

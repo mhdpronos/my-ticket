@@ -4,19 +4,15 @@ import { useState } from 'react';
 
 import { ThemedText } from '@/components/ui/ThemedText';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { useTranslation } from '@/hooks/useTranslation';
 import { Prediction } from '@/types';
+import { translatePredictionLabel } from '@/utils/i18n';
 
 type PredictionRowProps = {
   prediction: Prediction;
   locked: boolean;
   onAdd: () => void;
   oddsLabel?: string;
-};
-
-const riskLabels: Record<Prediction['risk'], string> = {
-  safe: 'Safe',
-  medium: 'Medium',
-  risky: 'Risky',
 };
 
 export function PredictionRow({ prediction, locked, onAdd, oddsLabel = '—' }: PredictionRowProps) {
@@ -26,6 +22,13 @@ export function PredictionRow({ prediction, locked, onAdd, oddsLabel = '—' }: 
   const accent = useThemeColor({}, 'accent');
   const success = useThemeColor({}, 'success');
   const [isAdded, setIsAdded] = useState(false);
+  const { t, language } = useTranslation();
+
+  const riskLabels: Record<Prediction['risk'], string> = {
+    safe: t('riskSafe'),
+    medium: t('riskMedium'),
+    risky: t('riskRisky'),
+  };
 
   const handleAdd = () => {
     if (locked) {
@@ -35,16 +38,16 @@ export function PredictionRow({ prediction, locked, onAdd, oddsLabel = '—' }: 
     setIsAdded(true);
   };
 
-  const buttonLabel = isAdded ? 'Ajouté' : 'Ajouter';
+  const buttonLabel = isAdded ? t('ticketAdded') : t('ticketAdd');
   const buttonColor = isAdded ? success : accent;
 
   return (
     <View style={[styles.row, { borderColor: border, opacity: locked ? 0.5 : 1 }]}> 
       <View style={styles.info}>
         <ThemedText type="defaultSemiBold" numberOfLines={1}>
-          {prediction.label}
+          {translatePredictionLabel(language, prediction.label)}
         </ThemedText>
-        <ThemedText style={{ color: mutedText }}>Cote {oddsLabel}</ThemedText>
+        <ThemedText style={{ color: mutedText }}>{t('ticketOddsLabel', { value: oddsLabel })}</ThemedText>
         <View style={styles.metaRow}>
           <View style={[styles.tag, { borderColor: border }]}>
             <ThemedText style={{ color: mutedText }}>{prediction.market}</ThemedText>
@@ -54,7 +57,7 @@ export function PredictionRow({ prediction, locked, onAdd, oddsLabel = '—' }: 
           </View>
           <View style={[styles.tag, { borderColor: border }]}>
             <ThemedText style={{ color: prediction.tier === 'premium' ? premium : mutedText }}>
-              {prediction.tier === 'premium' ? 'Premium' : 'Gratuit'}
+              {prediction.tier === 'premium' ? t('tierPremium') : t('tierFree')}
             </ThemedText>
           </View>
         </View>

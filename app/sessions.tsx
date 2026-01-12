@@ -3,10 +3,11 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const sessions = [
-  { id: '1', device: 'iPhone 15 Pro', location: 'Abidjan, CI', lastActive: 'Actif maintenant' },
-  { id: '2', device: 'Pixel 8', location: 'Bouaké, CI', lastActive: 'Il y a 2 heures' },
+  { id: '1', device: 'iPhone 15 Pro', location: 'Abidjan, CI', lastActive: { fr: 'Actif maintenant', en: 'Active now' } },
+  { id: '2', device: 'Pixel 8', location: 'Bouaké, CI', lastActive: { fr: 'Il y a 2 heures', en: '2 hours ago' } },
 ];
 
 export default function SessionsScreen() {
@@ -15,21 +16,20 @@ export default function SessionsScreen() {
   const border = useThemeColor({}, 'border');
   const mutedText = useThemeColor({}, 'mutedText');
   const tint = useThemeColor({}, 'tint');
+  const { t, language } = useTranslation();
 
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
-      <ScreenHeader title="Sessions actives" subtitle="Gère les appareils connectés à ton compte." />
+      <ScreenHeader title={t('sessionsTitle')} subtitle={t('sessionsSubtitle')} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {sessions.map((session) => (
           <View key={session.id} style={[styles.card, { backgroundColor: card, borderColor: border }]}>
             <ThemedText type="defaultSemiBold">{session.device}</ThemedText>
             <ThemedText style={{ color: mutedText }}>{session.location}</ThemedText>
-            <ThemedText style={[styles.status, { color: tint }]}>{session.lastActive}</ThemedText>
+            <ThemedText style={[styles.status, { color: tint }]}>{session.lastActive[language]}</ThemedText>
           </View>
         ))}
-        <ThemedText style={{ color: mutedText }}>
-          Tu peux déconnecter un appareil depuis cette liste à tout moment.
-        </ThemedText>
+        <ThemedText style={{ color: mutedText }}>{t('sessionsHint')}</ThemedText>
       </ScrollView>
     </View>
   );

@@ -8,10 +8,12 @@ import { PredictionRow } from '@/components/matches/PredictionRow';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { useTranslation } from '@/hooks/useTranslation';
 import { getAllMatches } from '@/services/matchesService';
 import { getPredictionsForMatch } from '@/services/predictionsService';
 import { useAppStore } from '@/store/useAppStore';
 import { Match, Prediction } from '@/types';
+import { getLocale } from '@/utils/i18n';
 
 export default function MatchDetailsScreen() {
   const { matchId } = useLocalSearchParams<{ matchId?: string | string[] }>();
@@ -29,6 +31,8 @@ export default function MatchDetailsScreen() {
   const tint = useThemeColor({}, 'tint');
   const success = useThemeColor({}, 'success');
   const danger = useThemeColor({}, 'danger');
+  const { t, language } = useTranslation();
+  const locale = getLocale(language);
 
   const matchIdValue = Array.isArray(matchId) ? matchId[0] : matchId;
 
@@ -63,7 +67,7 @@ export default function MatchDetailsScreen() {
     return (
       <View style={[styles.loading, { backgroundColor: background }]}>
         <ActivityIndicator size="large" color={tint} />
-        <ThemedText style={{ color: mutedText }}>Chargement du match...</ThemedText>
+        <ThemedText style={{ color: mutedText }}>{t('loadingMatch')}</ThemedText>
       </View>
     );
   }
@@ -71,26 +75,24 @@ export default function MatchDetailsScreen() {
   if (!match) {
     return (
       <View style={[styles.loading, { backgroundColor: background }]}>
-        <ThemedText type="defaultSemiBold">Match introuvable</ThemedText>
-        <ThemedText style={{ color: mutedText }}>
-          Retourne à la liste pour choisir un match disponible.
-        </ThemedText>
+        <ThemedText type="defaultSemiBold">{t('matchNotFound')}</ThemedText>
+        <ThemedText style={{ color: mutedText }}>{t('matchNotFoundSubtitle')}</ThemedText>
         <TouchableOpacity
           accessibilityRole="button"
           onPress={() => router.back()}
           style={[styles.backHomeButton, { borderColor: border }]}>
-          <ThemedText style={{ color: mutedText }}>Retour</ThemedText>
+          <ThemedText style={{ color: mutedText }}>{t('buttonBack')}</ThemedText>
         </TouchableOpacity>
       </View>
     );
   }
 
-  const scoreLabel = match.score ? `${match.score.home} : ${match.score.away}` : '-- : --';
+  const scoreLabel = match.score ? `${match.score.home} : ${match.score.away}` : t('matchScoreFallback');
   const winRate = match.winRate;
 
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
-      <ScreenHeader title="Détails du match" subtitle={match.league.name} />
+      <ScreenHeader title={t('matchDetailsTitle')} subtitle={match.league.name} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={[styles.matchCard, { backgroundColor: card, borderColor: border }]}>
           <View style={styles.matchHeader}>
@@ -103,10 +105,14 @@ export default function MatchDetailsScreen() {
                 {scoreLabel}
               </ThemedText>
               <ThemedText style={{ color: mutedText }}>
-                {match.status === 'live' ? `LIVE ${match.liveMinute ?? 0}'` : match.status === 'finished' ? 'Terminé' : 'À venir'}
+                {match.status === 'live'
+                  ? t('matchStatusLive', { minute: match.liveMinute ?? 0 })
+                  : match.status === 'finished'
+                  ? t('matchStatusFinished')
+                  : t('matchStatusUpcoming')}
               </ThemedText>
               <ThemedText style={{ color: mutedText }}>
-                {new Date(match.kickoffIso).toLocaleString('fr-FR')}
+                {new Date(match.kickoffIso).toLocaleString(locale)}
               </ThemedText>
             </View>
             <View style={styles.teamColumn}>
@@ -115,18 +121,20 @@ export default function MatchDetailsScreen() {
             </View>
           </View>
           <View style={styles.metaRow}>
-            <ThemedText style={{ color: mutedText }}>{match.venue ?? 'Stade principal'}</ThemedText>
+            <ThemedText style={{ color: mutedText }}>{match.venue ?? t('matchVenueFallback')}</ThemedText>
             <ThemedText style={{ color: mutedText }}>{match.league.country}</ThemedText>
           </View>
         </View>
 
         <View style={[styles.card, { backgroundColor: card, borderColor: border }]}>
           <View style={styles.cardHeader}>
-            <ThemedText type="defaultSemiBold">Pronostics</ThemedText>
-            <ThemedText style={{ color: mutedText }}>{isPremium ? '6 pronostics' : '3 pronostics'}</ThemedText>
+            <ThemedText type="defaultSemiBold">{t('predictions')}</ThemedText>
+            <ThemedText style={{ color: mutedText }}>
+              {isPremium ? t('predictionsPremium') : t('predictionsFree')}
+            </ThemedText>
           </View>
           {visiblePredictions.length === 0 ? (
-            <ThemedText style={{ color: mutedText }}>Chargement des pronostics...</ThemedText>
+            <ThemedText style={{ color: mutedText }}>{t('predictionsLoading')}</ThemedText>
           ) : (
             visiblePredictions.map((prediction) => (
               <PredictionRow
@@ -141,12 +149,12 @@ export default function MatchDetailsScreen() {
 
         {winRate && (
           <View style={[styles.card, { backgroundColor: card, borderColor: border }]}>
-            <ThemedText type="defaultSemiBold">Taux de réussite estimé</ThemedText>
+            <ThemedText type="defaultSemiBold">{t('estimatedSuccessRate')}</ThemedText>
             <View style={styles.rateRow}>
               <ThemedText style={{ color: winRate.home >= 60 ? success : danger }}>
                 {match.homeTeam.name} {winRate.home}%
               </ThemedText>
-              <ThemedText style={{ color: mutedText }}>{winRate.draw}% nul</ThemedText>
+              <ThemedText style={{ color: mutedText }}>{winRate.draw}% {t('drawLabel')}</ThemedText>
               <ThemedText style={{ color: winRate.away >= 60 ? success : danger }}>
                 {match.awayTeam.name} {winRate.away}%
               </ThemedText>
@@ -156,15 +164,13 @@ export default function MatchDetailsScreen() {
 
         {!isPremium && (
           <View style={[styles.premiumBanner, { borderColor: border, backgroundColor: card }]}>
-            <ThemedText type="defaultSemiBold">Passe en Premium</ThemedText>
-            <ThemedText style={{ color: mutedText }}>
-              Débloque 3 pronostics supplémentaires par match et les meilleures cotes.
-            </ThemedText>
+            <ThemedText type="defaultSemiBold">{t('premiumTitle')}</ThemedText>
+            <ThemedText style={{ color: mutedText }}>{t('premiumDescription')}</ThemedText>
             <TouchableOpacity
               accessibilityRole="button"
               onPress={() => router.push('/subscription')}
               style={[styles.upgradeButton, { backgroundColor: tint }]}>
-              <ThemedText style={styles.upgradeButtonText}>Passer Premium</ThemedText>
+              <ThemedText style={styles.upgradeButtonText}>{t('buttonUpgrade')}</ThemedText>
             </TouchableOpacity>
           </View>
         )}

@@ -5,9 +5,11 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { HapticTab } from '@/components/ui/HapticTab';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const { t } = useTranslation();
 
   return (
     <Tabs
@@ -34,35 +36,35 @@ export default function TabLayout() {
       <Tabs.Screen
         name="matches"
         options={{
-          title: 'Matchs',
+          title: t('tabsMatches'),
           tabBarIcon: ({ color }) => <MaterialCommunityIcons name="soccer" size={24} color={color} />,
         }}
       />
       <Tabs.Screen
         name="top-picks"
         options={{
-          title: 'Top picks',
+          title: t('tabsTopPicks'),
           tabBarIcon: ({ color }) => <MaterialCommunityIcons name="fire" size={24} color={color} />,
         }}
       />
       <Tabs.Screen
         name="ticket"
         options={{
-          title: 'Ticket',
+          title: t('tabsTicket'),
           tabBarIcon: ({ color }) => <MaterialCommunityIcons name="ticket-outline" size={24} color={color} />,
         }}
       />
       <Tabs.Screen
         name="favorites"
         options={{
-          title: 'Favoris',
+          title: t('tabsFavorites'),
           tabBarIcon: ({ color }) => <MaterialCommunityIcons name="star-outline" size={24} color={color} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profil',
+          title: t('tabsProfile'),
           tabBarIcon: ({ color }) => <MaterialCommunityIcons name="account-outline" size={24} color={color} />,
         }}
       />

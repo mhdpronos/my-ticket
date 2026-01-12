@@ -3,27 +3,25 @@ import { StyleSheet, View } from 'react-native';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function LegalScreen() {
   const background = useThemeColor({}, 'background');
   const card = useThemeColor({}, 'card');
   const border = useThemeColor({}, 'border');
   const mutedText = useThemeColor({}, 'mutedText');
+  const { t } = useTranslation();
 
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
-      <ScreenHeader title="Mentions légales" subtitle="Informations essentielles pour rester en règle." />
+      <ScreenHeader title={t('legalTitle')} subtitle={t('legalSubtitle')} />
       <View style={[styles.card, { backgroundColor: card, borderColor: border }]}>
-        <ThemedText type="defaultSemiBold">Mentions légales</ThemedText>
-        <ThemedText style={{ color: mutedText }}>
-          MY TICKET propose des informations et comparaisons de cotes. Pas un bookmaker.
-        </ThemedText>
+        <ThemedText type="defaultSemiBold">{t('legalNoticeTitle')}</ThemedText>
+        <ThemedText style={{ color: mutedText }}>{t('legalNoticeBody')}</ThemedText>
       </View>
       <View style={[styles.card, { backgroundColor: card, borderColor: border }]}>
-        <ThemedText type="defaultSemiBold">Responsabilité</ThemedText>
-        <ThemedText style={{ color: mutedText }}>
-          Pariez de manière responsable. Les pronostics sont à titre indicatif et ne garantissent aucun gain.
-        </ThemedText>
+        <ThemedText type="defaultSemiBold">{t('legalResponsibilityTitle')}</ThemedText>
+        <ThemedText style={{ color: mutedText }}>{t('legalResponsibilityBody')}</ThemedText>
       </View>
     </View>
   );

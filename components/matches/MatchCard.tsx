@@ -6,7 +6,9 @@ import { Image } from 'expo-image';
 
 import { ThemedText } from '@/components/ui/ThemedText';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { useTranslation } from '@/hooks/useTranslation';
 import { Match } from '@/types';
+import { getLocale } from '@/utils/i18n';
 
 type MatchCardProps = {
   match: Match;
@@ -15,19 +17,9 @@ type MatchCardProps = {
   isMatchFavorite: (matchId: string) => boolean;
 };
 
-const formatStatus = (match: Match) => {
-  if (match.status === 'live') {
-    return `LIVE ${match.liveMinute ?? 0}'`;
-  }
-  if (match.status === 'finished') {
-    return 'FT';
-  }
-  return 'À venir';
-};
-
-const formatScore = (match: Match) => {
+const formatScore = (match: Match, fallback: string) => {
   if (!match.score) {
-    return '-- : --';
+    return fallback;
   }
   return `${match.score.home} : ${match.score.away}`;
 };
@@ -46,14 +38,21 @@ function MatchCardComponent({
   const backgroundSecondary = useThemeColor({}, 'backgroundSecondary');
   const warning = useThemeColor({}, 'warning');
   const danger = useThemeColor({}, 'danger');
+  const { t, language } = useTranslation();
+  const locale = getLocale(language);
 
   const isLive = match.status === 'live';
   const isFinished = match.status === 'finished';
-  const kickoffLabel = new Date(match.kickoffIso).toLocaleTimeString('fr-FR', {
+  const kickoffLabel = new Date(match.kickoffIso).toLocaleTimeString(locale, {
     hour: '2-digit',
     minute: '2-digit',
   });
   const statusColor = isLive ? danger : isFinished ? warning : tint;
+  const statusLabel = isLive
+    ? t('matchStatusLive', { minute: match.liveMinute ?? 0 })
+    : isFinished
+    ? 'FT'
+    : t('matchUpcoming');
 
   return (
     <Pressable style={[styles.card, { backgroundColor: card, borderColor: border }]} onPress={onPress}>
@@ -79,7 +78,7 @@ function MatchCardComponent({
           </TouchableOpacity>
           <View style={[styles.statusPill, { backgroundColor: statusColor, borderColor: border }]}>
             <View style={[styles.statusDot, { backgroundColor: '#FFFFFF' }]} />
-            <ThemedText style={{ color: '#FFFFFF' }}>{formatStatus(match)}</ThemedText>
+            <ThemedText style={{ color: '#FFFFFF' }}>{statusLabel}</ThemedText>
           </View>
         </View>
       </View>
@@ -101,10 +100,10 @@ function MatchCardComponent({
         <View style={styles.scoreBlock}>
           <View style={[styles.scorePill, { backgroundColor: backgroundSecondary, borderColor: border }]}>
             <ThemedText type="defaultSemiBold" style={{ color: tint }}>
-              {match.status === 'upcoming' ? kickoffLabel : formatScore(match)}
+              {match.status === 'upcoming' ? kickoffLabel : formatScore(match, t('matchScoreFallback'))}
             </ThemedText>
             {match.status === 'upcoming' ? null : (
-              <ThemedText style={{ color: mutedText }}>{isLive ? 'En direct' : 'Terminé'}</ThemedText>
+              <ThemedText style={{ color: mutedText }}>{isLive ? t('matchLive') : t('matchFinished')}</ThemedText>
             )}
           </View>
         </View>
@@ -131,7 +130,7 @@ function MatchCardComponent({
         <View style={styles.footerInfo}>
           <MaterialCommunityIcons name="map-marker-outline" size={16} color={mutedText} />
           <ThemedText style={{ color: mutedText }} numberOfLines={1}>
-            {match.venue ?? '—'}
+            {match.venue ?? t('matchVenueFallback')}
           </ThemedText>
         </View>
         <View style={styles.footerInfoRight}>
@@ -139,7 +138,7 @@ function MatchCardComponent({
             accessibilityRole="button"
             onPress={onPress}
             style={[styles.pronoButton, { backgroundColor: tint }]}>
-            <ThemedText style={styles.pronoButtonText}>Voir les pronos</ThemedText>
+            <ThemedText style={styles.pronoButtonText}>{t('buttonViewPredictions')}</ThemedText>
             <MaterialCommunityIcons name="chevron-right" size={16} color="#FFFFFF" />
           </TouchableOpacity>
         </View>

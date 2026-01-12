@@ -3,25 +3,27 @@ import { router } from 'expo-router';
 
 import { ThemedText } from '@/components/ui/ThemedText';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function OnboardingScreen() {
   const background = useThemeColor({}, 'background');
   const tint = useThemeColor({}, 'tint');
   const mutedText = useThemeColor({}, 'mutedText');
+  const { t } = useTranslation();
 
   return (
     <View style={[styles.container, { backgroundColor: background }]}> 
       <View style={styles.content}>
-        <ThemedText type="title">MY TICKET</ThemedText>
+        <ThemedText type="title">{t('appName')}</ThemedText>
         <ThemedText style={{ color: mutedText }}>
-          Crée ton ticket. Compare les cotes. Parie où tu veux.
+          {t('onboardingTagline')}
         </ThemedText>
       </View>
       <Pressable
         accessibilityRole="button"
         onPress={() => router.replace('/matches')}
         style={[styles.primaryButton, { backgroundColor: tint }]}>
-        <ThemedText style={styles.primaryButtonText}>Commencer</ThemedText>
+        <ThemedText style={styles.primaryButtonText}>{t('buttonStart')}</ThemedText>
       </Pressable>
     </View>
   );

@@ -7,6 +7,7 @@ import { useScrollToTop } from '@react-navigation/native';
 import { MatchCard } from '@/components/matches/MatchCard';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { useTranslation } from '@/hooks/useTranslation';
 import { getAllMatches } from '@/services/matchesService';
 import { useAppStore } from '@/store/useAppStore';
 import { Match } from '@/types';
@@ -21,6 +22,7 @@ export default function TopPicksScreen() {
   const border = useThemeColor({}, 'border');
   const mutedText = useThemeColor({}, 'mutedText');
   const tint = useThemeColor({}, 'tint');
+  const { t } = useTranslation();
 
   const favoriteMatches = useAppStore((state) => state.favoriteMatches);
   const toggleFavoriteMatch = useAppStore((state) => state.toggleFavoriteMatch);
@@ -43,24 +45,22 @@ export default function TopPicksScreen() {
     <View style={[styles.container, { backgroundColor: background }]}>
       <View style={styles.header}>
         <View>
-          <ThemedText type="title">Top picks</ThemedText>
-          <ThemedText style={{ color: mutedText }}>
-            Les meilleures sélections du jour pour préparer ton ticket.
-          </ThemedText>
+          <ThemedText type="title">{t('tabsTopPicks')}</ThemedText>
+          <ThemedText style={{ color: mutedText }}>{t('headerTopPicksSubtitle')}</ThemedText>
         </View>
         <TouchableOpacity
           accessibilityRole="button"
           onPress={() => router.push('/matches')}
           style={[styles.actionButton, { borderColor: border, backgroundColor: card }]}>
           <MaterialCommunityIcons name="soccer" size={18} color={mutedText} />
-          <ThemedText style={{ color: mutedText }}>Matchs</ThemedText>
+          <ThemedText style={{ color: mutedText }}>{t('buttonMatches')}</ThemedText>
         </TouchableOpacity>
       </View>
 
       {isLoading ? (
         <View style={styles.loadingState}>
           <ActivityIndicator size="large" color={tint} />
-          <ThemedText style={{ color: mutedText }}>Chargement des picks...</ThemedText>
+          <ThemedText style={{ color: mutedText }}>{t('topPicksLoading')}</ThemedText>
         </View>
       ) : (
         <FlatList
@@ -78,10 +78,8 @@ export default function TopPicksScreen() {
           )}
           ListEmptyComponent={
             <View style={[styles.emptyCard, { backgroundColor: card, borderColor: border }]}>
-              <ThemedText type="defaultSemiBold">Aucune sélection</ThemedText>
-              <ThemedText style={{ color: mutedText }}>
-                Les meilleures sélections apparaîtront dès qu&apos;elles seront disponibles.
-              </ThemedText>
+              <ThemedText type="defaultSemiBold">{t('topPicksEmptyTitle')}</ThemedText>
+              <ThemedText style={{ color: mutedText }}>{t('topPicksEmptySubtitle')}</ThemedText>
             </View>
           }
           showsVerticalScrollIndicator={false}
