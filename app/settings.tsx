@@ -86,12 +86,12 @@ export default function SettingsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
-      <ScreenHeader title={t('settingsTitle')} subtitle={t('settingsSubtitle')} />
+      <ScreenHeader title={t('settingsTitle')} subtitle={t('settingsSubtitle')} containerStyle={styles.header} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={[styles.card, { backgroundColor: card, borderColor: border }]}>
           <ThemedText type="defaultSemiBold">{t('settingsPreferences')}</ThemedText>
 
-          <View style={styles.optionBlock}>
+          <View style={[styles.settingItem, { borderColor: border }]}>
             <View style={styles.optionHeader}>
               <MaterialCommunityIcons name="translate" size={20} color={tint} />
               <ThemedText type="defaultSemiBold">{t('settingsLanguage')}</ThemedText>
@@ -102,7 +102,7 @@ export default function SettingsScreen() {
             </View>
           </View>
 
-          <View style={styles.optionBlock}>
+          <View style={[styles.settingItem, { borderColor: border }]}>
             <View style={styles.optionHeader}>
               <MaterialCommunityIcons name="theme-light-dark" size={20} color={tint} />
               <ThemedText type="defaultSemiBold">{t('settingsTheme')}</ThemedText>
@@ -119,59 +119,67 @@ export default function SettingsScreen() {
         <View style={[styles.card, { backgroundColor: card, borderColor: border }]}>
           <ThemedText type="defaultSemiBold">{t('settingsSecurity')}</ThemedText>
 
-          <View style={styles.switchRow}>
-            <View style={styles.switchText}>
-              <ThemedText type="defaultSemiBold">{t('settingsNotifications')}</ThemedText>
-              <ThemedText style={{ color: mutedText }}>{t('notificationsSubtitle')}</ThemedText>
+          <View style={[styles.settingItem, { borderColor: border }]}>
+            <View style={styles.switchRow}>
+              <View style={styles.switchText}>
+                <ThemedText type="defaultSemiBold">{t('settingsNotifications')}</ThemedText>
+                <ThemedText style={{ color: mutedText }}>{t('notificationsSubtitle')}</ThemedText>
+              </View>
+              <Switch
+                value={notificationsEnabled}
+                onValueChange={setNotificationsEnabled}
+                thumbColor={notificationsEnabled ? tint : '#FFFFFF'}
+                trackColor={{ true: tint, false: border }}
+              />
             </View>
-            <Switch
-              value={notificationsEnabled}
-              onValueChange={setNotificationsEnabled}
-              thumbColor={notificationsEnabled ? tint : '#FFFFFF'}
-              trackColor={{ true: tint, false: border }}
-            />
           </View>
 
-          <View style={styles.switchRow}>
-            <View style={styles.switchText}>
-              <ThemedText type="defaultSemiBold">{t('settingsTwoFactor')}</ThemedText>
-              <ThemedText style={{ color: mutedText }}>{t('settingsTwoFactorDetail')}</ThemedText>
+          <View style={[styles.settingItem, { borderColor: border }]}>
+            <View style={styles.switchRow}>
+              <View style={styles.switchText}>
+                <ThemedText type="defaultSemiBold">{t('settingsTwoFactor')}</ThemedText>
+                <ThemedText style={{ color: mutedText }}>{t('settingsTwoFactorDetail')}</ThemedText>
+              </View>
+              <Switch
+                value={twoFactorEnabled}
+                onValueChange={setTwoFactorEnabled}
+                thumbColor={twoFactorEnabled ? tint : '#FFFFFF'}
+                trackColor={{ true: tint, false: border }}
+              />
             </View>
-            <Switch
-              value={twoFactorEnabled}
-              onValueChange={setTwoFactorEnabled}
-              thumbColor={twoFactorEnabled ? tint : '#FFFFFF'}
-              trackColor={{ true: tint, false: border }}
-            />
           </View>
 
-          <View style={styles.switchRow}>
-            <View style={styles.switchText}>
-              <ThemedText type="defaultSemiBold">{t('settingsAppUnlock')}</ThemedText>
-              <ThemedText style={{ color: mutedText }}>{t('settingsAppUnlockDetail')}</ThemedText>
+          <View style={[styles.settingItem, { borderColor: border }]}>
+            <View style={styles.switchRow}>
+              <View style={styles.switchText}>
+                <ThemedText type="defaultSemiBold">{t('settingsAppUnlock')}</ThemedText>
+                <ThemedText style={{ color: mutedText }}>{t('settingsAppUnlockDetail')}</ThemedText>
+              </View>
+              <Switch
+                value={appUnlockEnabled}
+                onValueChange={setAppUnlockEnabled}
+                thumbColor={appUnlockEnabled ? tint : '#FFFFFF'}
+                trackColor={{ true: tint, false: border }}
+              />
             </View>
-            <Switch
-              value={appUnlockEnabled}
-              onValueChange={setAppUnlockEnabled}
-              thumbColor={appUnlockEnabled ? tint : '#FFFFFF'}
-              trackColor={{ true: tint, false: border }}
-            />
           </View>
 
           {isBiometricSupported ? (
-            <View style={styles.switchRow}>
-              <View style={styles.switchText}>
-                <ThemedText type="defaultSemiBold">{t('settingsLoginBiometric')}</ThemedText>
-                <ThemedText style={{ color: mutedText }}>
-                  {t('settingsLoginBiometricDetail', { method: biometricMethod })}
-                </ThemedText>
+            <View style={[styles.settingItem, { borderColor: border }]}>
+              <View style={styles.switchRow}>
+                <View style={styles.switchText}>
+                  <ThemedText type="defaultSemiBold">{t('settingsLoginBiometric')}</ThemedText>
+                  <ThemedText style={{ color: mutedText }}>
+                    {t('settingsLoginBiometricDetail', { method: biometricMethod })}
+                  </ThemedText>
+                </View>
+                <Switch
+                  value={loginBiometricEnabled}
+                  onValueChange={setLoginBiometricEnabled}
+                  thumbColor={loginBiometricEnabled ? tint : '#FFFFFF'}
+                  trackColor={{ true: tint, false: border }}
+                />
               </View>
-              <Switch
-                value={loginBiometricEnabled}
-                onValueChange={setLoginBiometricEnabled}
-                thumbColor={loginBiometricEnabled ? tint : '#FFFFFF'}
-                trackColor={{ true: tint, false: border }}
-              />
             </View>
           ) : null}
         </View>
@@ -240,14 +248,20 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
     gap: 16,
   },
+  header: {
+    paddingTop: 56,
+  },
   card: {
     borderWidth: 1,
     borderRadius: 18,
     padding: 16,
     gap: 12,
   },
-  optionBlock: {
-    gap: 8,
+  settingItem: {
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 12,
+    gap: 12,
   },
   optionHeader: {
     flexDirection: 'row',
