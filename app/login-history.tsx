@@ -1,4 +1,6 @@
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ThemedText } from '@/components/ui/ThemedText';
@@ -12,6 +14,9 @@ const historyItems = [
 ];
 
 export default function LoginHistoryScreen() {
+  const [items, setItems] = useState(historyItems);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const hasFocusedOnce = useRef(false);
   const background = useThemeColor({}, 'background');
   const card = useThemeColor({}, 'card');
   const border = useThemeColor({}, 'border');
@@ -19,11 +24,34 @@ export default function LoginHistoryScreen() {
   const warning = useThemeColor({}, 'warning');
   const { t, language } = useTranslation();
 
+  const reloadHistory = useCallback(async () => {
+    setIsRefreshing(true);
+    setItems([...historyItems]);
+    setIsRefreshing(false);
+  }, []);
+
+  useEffect(() => {
+    setItems([...historyItems]);
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!hasFocusedOnce.current) {
+        hasFocusedOnce.current = true;
+        return;
+      }
+      reloadHistory();
+    }, [reloadHistory])
+  );
+
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
       <ScreenHeader title={t('loginHistoryTitle')} subtitle={t('loginHistorySubtitle')} />
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {historyItems.map((item) => (
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={reloadHistory} />}>
+        {items.map((item) => (
           <View key={item.id} style={[styles.card, { backgroundColor: card, borderColor: border }]}>
             <ThemedText type="defaultSemiBold">
               {item.activity === 'blocked' ? t('loginHistoryBlocked') : t('loginHistorySuccess')}

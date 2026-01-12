@@ -1,5 +1,7 @@
-import { FlatList, StyleSheet, View } from 'react-native';
+import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ThemedText } from '@/components/ui/ThemedText';
@@ -13,17 +15,40 @@ const historyItems = [
 ];
 
 export default function HistoryScreen() {
+  const [items, setItems] = useState(historyItems);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const hasFocusedOnce = useRef(false);
   const background = useThemeColor({}, 'background');
   const card = useThemeColor({}, 'card');
   const border = useThemeColor({}, 'border');
   const mutedText = useThemeColor({}, 'mutedText');
   const { t } = useTranslation();
 
+  const reloadHistory = useCallback(async () => {
+    setIsRefreshing(true);
+    setItems([...historyItems]);
+    setIsRefreshing(false);
+  }, []);
+
+  useEffect(() => {
+    setItems([...historyItems]);
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!hasFocusedOnce.current) {
+        hasFocusedOnce.current = true;
+        return;
+      }
+      reloadHistory();
+    }, [reloadHistory])
+  );
+
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
       <ScreenHeader title={t('ticketHistoryTitle')} subtitle={t('ticketHistorySubtitle')} />
       <FlatList
-        data={historyItems}
+        data={items}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         renderItem={({ item }) => (
@@ -43,6 +68,7 @@ export default function HistoryScreen() {
             <ThemedText style={{ color: mutedText }}>{t('ticketHistoryEmptySubtitle')}</ThemedText>
           </View>
         }
+        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={reloadHistory} />}
       />
     </View>
   );

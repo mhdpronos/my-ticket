@@ -1,8 +1,9 @@
 // Le code de la page qui affiche les détails avancés d'un match.
-import { ActivityIndicator, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, router } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 
 import { PredictionRow } from '@/components/matches/PredictionRow';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
@@ -20,6 +21,8 @@ export default function MatchDetailsScreen() {
   const [match, setMatch] = useState<Match | null>(null);
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const hasFocusedOnce = useRef(false);
 
   const userAccess = useAppStore((state) => state.userAccess);
   const addTicketItem = useAppStore((state) => state.addTicketItem);
@@ -36,11 +39,17 @@ export default function MatchDetailsScreen() {
 
   const matchIdValue = Array.isArray(matchId) ? matchId[0] : matchId;
 
-  useEffect(() => {
-    const loadMatch = async () => {
+  const loadMatch = useCallback(
+    async ({ showLoading }: { showLoading?: boolean } = {}) => {
       if (!matchIdValue) {
         setIsLoading(false);
+        setIsRefreshing(false);
         return;
+      }
+      if (showLoading) {
+        setIsLoading(true);
+      } else {
+        setIsRefreshing(true);
       }
       const data = await getAllMatches();
       const foundMatch = data.find((item) => item.id === matchIdValue) ?? null;
@@ -50,10 +59,24 @@ export default function MatchDetailsScreen() {
         setPredictions(predictionsData);
       }
       setIsLoading(false);
-    };
+      setIsRefreshing(false);
+    },
+    [matchIdValue]
+  );
 
-    loadMatch();
-  }, [matchIdValue]);
+  useEffect(() => {
+    loadMatch({ showLoading: true });
+  }, [loadMatch]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!hasFocusedOnce.current) {
+        hasFocusedOnce.current = true;
+        return;
+      }
+      loadMatch();
+    }, [loadMatch])
+  );
 
   const isPremium = userAccess.status === 'PREMIUM';
   const freePredictions = useMemo(() => predictions.filter((prediction) => prediction.tier === 'free'), [predictions]);
@@ -93,7 +116,10 @@ export default function MatchDetailsScreen() {
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
       <ScreenHeader title={t('matchDetailsTitle')} subtitle={match.league.name} />
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={loadMatch} tintColor={tint} />}>
         <View style={[styles.matchCard, { backgroundColor: card, borderColor: border }]}>
           <View style={styles.matchHeader}>
             <View style={styles.teamColumn}>

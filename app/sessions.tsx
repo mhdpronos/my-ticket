@@ -1,4 +1,6 @@
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ThemedText } from '@/components/ui/ThemedText';
@@ -11,6 +13,9 @@ const sessions = [
 ];
 
 export default function SessionsScreen() {
+  const [items, setItems] = useState(sessions);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const hasFocusedOnce = useRef(false);
   const background = useThemeColor({}, 'background');
   const card = useThemeColor({}, 'card');
   const border = useThemeColor({}, 'border');
@@ -18,11 +23,34 @@ export default function SessionsScreen() {
   const tint = useThemeColor({}, 'tint');
   const { t, language } = useTranslation();
 
+  const reloadSessions = useCallback(async () => {
+    setIsRefreshing(true);
+    setItems([...sessions]);
+    setIsRefreshing(false);
+  }, []);
+
+  useEffect(() => {
+    setItems([...sessions]);
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!hasFocusedOnce.current) {
+        hasFocusedOnce.current = true;
+        return;
+      }
+      reloadSessions();
+    }, [reloadSessions])
+  );
+
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
       <ScreenHeader title={t('sessionsTitle')} subtitle={t('sessionsSubtitle')} />
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {sessions.map((session) => (
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={reloadSessions} tintColor={tint} />}>
+        {items.map((session) => (
           <View key={session.id} style={[styles.card, { backgroundColor: card, borderColor: border }]}>
             <ThemedText type="defaultSemiBold">{session.device}</ThemedText>
             <ThemedText style={{ color: mutedText }}>{session.location}</ThemedText>
