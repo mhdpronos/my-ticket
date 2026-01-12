@@ -2,7 +2,7 @@ import { Platform, Pressable, ScrollView, StyleSheet, Switch, View } from 'react
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ThemedText } from '@/components/ui/ThemedText';
@@ -37,6 +37,9 @@ export default function SettingsScreen() {
   const versionLabel = Constants.expoConfig?.version ?? '1.0.0';
   const biometricMethod = Platform.OS === 'ios' ? t('biometricFaceId') : t('biometricFingerprint');
   const isBiometricSupported = Platform.OS === 'ios' || Platform.OS === 'android';
+
+  const [isLanguageOpen, setIsLanguageOpen] = useState(false);
+  const [isThemeOpen, setIsThemeOpen] = useState(false);
 
   const renderChip = (label: string, active: boolean, onPress: () => void) => (
     <Pressable
@@ -83,6 +86,8 @@ export default function SettingsScreen() {
     { id: 'nocturne', label: t('settingsThemeNocturne') },
     { id: 'system', label: t('settingsThemeSystem') },
   ];
+  const currentThemeLabel = themeOptions.find((option) => option.id === themePreference)?.label ?? '';
+  const currentLanguageLabel = language === 'fr' ? 'FR' : 'EN';
 
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
@@ -266,7 +271,18 @@ const styles = StyleSheet.create({
   optionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  optionLabel: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
+  },
+  optionValue: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   chipRow: {
     flexDirection: 'row',
@@ -284,6 +300,20 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 12,
     alignItems: 'center',
+  },
+  switchContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  switchIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   switchText: {
     flex: 1,
