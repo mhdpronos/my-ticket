@@ -121,9 +121,14 @@ export default function SettingsScreen() {
 
           <View style={[styles.settingItem, { borderColor: border }]}>
             <View style={styles.switchRow}>
-              <View style={styles.switchText}>
-                <ThemedText type="defaultSemiBold">{t('settingsNotifications')}</ThemedText>
-                <ThemedText style={{ color: mutedText }}>{t('notificationsSubtitle')}</ThemedText>
+              <View style={styles.switchContent}>
+                <View style={[styles.switchIcon, { backgroundColor: background, borderColor: border }]}>
+                  <MaterialCommunityIcons name="bell-ring-outline" size={18} color={tint} />
+                </View>
+                <View style={styles.switchText}>
+                  <ThemedText type="defaultSemiBold">{t('settingsNotifications')}</ThemedText>
+                  <ThemedText style={{ color: mutedText }}>{t('notificationsSubtitle')}</ThemedText>
+                </View>
               </View>
               <Switch
                 value={notificationsEnabled}
@@ -136,9 +141,14 @@ export default function SettingsScreen() {
 
           <View style={[styles.settingItem, { borderColor: border }]}>
             <View style={styles.switchRow}>
-              <View style={styles.switchText}>
-                <ThemedText type="defaultSemiBold">{t('settingsTwoFactor')}</ThemedText>
-                <ThemedText style={{ color: mutedText }}>{t('settingsTwoFactorDetail')}</ThemedText>
+              <View style={styles.switchContent}>
+                <View style={[styles.switchIcon, { backgroundColor: background, borderColor: border }]}>
+                  <MaterialCommunityIcons name="shield-key-outline" size={18} color={tint} />
+                </View>
+                <View style={styles.switchText}>
+                  <ThemedText type="defaultSemiBold">{t('settingsTwoFactor')}</ThemedText>
+                  <ThemedText style={{ color: mutedText }}>{t('settingsTwoFactorDetail')}</ThemedText>
+                </View>
               </View>
               <Switch
                 value={twoFactorEnabled}
@@ -151,9 +161,14 @@ export default function SettingsScreen() {
 
           <View style={[styles.settingItem, { borderColor: border }]}>
             <View style={styles.switchRow}>
-              <View style={styles.switchText}>
-                <ThemedText type="defaultSemiBold">{t('settingsAppUnlock')}</ThemedText>
-                <ThemedText style={{ color: mutedText }}>{t('settingsAppUnlockDetail')}</ThemedText>
+              <View style={styles.switchContent}>
+                <View style={[styles.switchIcon, { backgroundColor: background, borderColor: border }]}>
+                  <MaterialCommunityIcons name="lock-open-variant-outline" size={18} color={tint} />
+                </View>
+                <View style={styles.switchText}>
+                  <ThemedText type="defaultSemiBold">{t('settingsAppUnlock')}</ThemedText>
+                  <ThemedText style={{ color: mutedText }}>{t('settingsAppUnlockDetail')}</ThemedText>
+                </View>
               </View>
               <Switch
                 value={appUnlockEnabled}
@@ -167,11 +182,16 @@ export default function SettingsScreen() {
           {isBiometricSupported ? (
             <View style={[styles.settingItem, { borderColor: border }]}>
               <View style={styles.switchRow}>
-                <View style={styles.switchText}>
-                  <ThemedText type="defaultSemiBold">{t('settingsLoginBiometric')}</ThemedText>
-                  <ThemedText style={{ color: mutedText }}>
-                    {t('settingsLoginBiometricDetail', { method: biometricMethod })}
-                  </ThemedText>
+                <View style={styles.switchContent}>
+                  <View style={[styles.switchIcon, { backgroundColor: background, borderColor: border }]}>
+                    <MaterialCommunityIcons name="fingerprint" size={18} color={tint} />
+                  </View>
+                  <View style={styles.switchText}>
+                    <ThemedText type="defaultSemiBold">{t('settingsLoginBiometric')}</ThemedText>
+                    <ThemedText style={{ color: mutedText }}>
+                      {t('settingsLoginBiometricDetail', { method: biometricMethod })}
+                    </ThemedText>
+                  </View>
                 </View>
                 <Switch
                   value={loginBiometricEnabled}
@@ -284,6 +304,20 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 12,
     alignItems: 'center',
+  },
+  switchContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  switchIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   switchText: {
     flex: 1,
