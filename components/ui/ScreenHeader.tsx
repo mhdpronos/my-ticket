@@ -1,5 +1,6 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { router } from 'expo-router';
+import type { StyleProp, ViewStyle } from 'react-native';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 
 import { useThemeColor } from '@/hooks/useThemeColor';
@@ -9,15 +10,16 @@ import { ThemedText } from './ThemedText';
 type ScreenHeaderProps = {
   title: string;
   subtitle?: string;
+  containerStyle?: StyleProp<ViewStyle>;
 };
 
-export function ScreenHeader({ title, subtitle }: ScreenHeaderProps) {
+export function ScreenHeader({ title, subtitle, containerStyle }: ScreenHeaderProps) {
   const border = useThemeColor({}, 'border');
   const mutedText = useThemeColor({}, 'mutedText');
   const card = useThemeColor({}, 'card');
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, containerStyle]}>
       <TouchableOpacity
         accessibilityRole="button"
         onPress={() => router.back()}

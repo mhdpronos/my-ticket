@@ -2,7 +2,7 @@ import { Platform, Pressable, ScrollView, StyleSheet, Switch, View } from 'react
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ThemedText } from '@/components/ui/ThemedText';
@@ -37,6 +37,9 @@ export default function SettingsScreen() {
   const versionLabel = Constants.expoConfig?.version ?? '1.0.0';
   const biometricMethod = Platform.OS === 'ios' ? t('biometricFaceId') : t('biometricFingerprint');
   const isBiometricSupported = Platform.OS === 'ios' || Platform.OS === 'android';
+
+  const [isLanguageOpen, setIsLanguageOpen] = useState(false);
+  const [isThemeOpen, setIsThemeOpen] = useState(false);
 
   const renderChip = (label: string, active: boolean, onPress: () => void) => (
     <Pressable
@@ -83,35 +86,68 @@ export default function SettingsScreen() {
     { id: 'nocturne', label: t('settingsThemeNocturne') },
     { id: 'system', label: t('settingsThemeSystem') },
   ];
+  const currentThemeLabel = themeOptions.find((option) => option.id === themePreference)?.label ?? '';
+  const currentLanguageLabel = language === 'fr' ? 'FR' : 'EN';
 
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
-      <ScreenHeader title={t('settingsTitle')} subtitle={t('settingsSubtitle')} />
+      <ScreenHeader title={t('settingsTitle')} subtitle={t('settingsSubtitle')} containerStyle={styles.header} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={[styles.card, { backgroundColor: card, borderColor: border }]}>
           <ThemedText type="defaultSemiBold">{t('settingsPreferences')}</ThemedText>
 
-          <View style={styles.optionBlock}>
-            <View style={styles.optionHeader}>
-              <MaterialCommunityIcons name="translate" size={20} color={tint} />
-              <ThemedText type="defaultSemiBold">{t('settingsLanguage')}</ThemedText>
-            </View>
-            <View style={styles.chipRow}>
-              {renderChip('FR', language === 'fr', () => setLanguage('fr'))}
-              {renderChip('EN', language === 'en', () => setLanguage('en'))}
-            </View>
+          <View style={[styles.settingItem, { borderColor: border }]}>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => setIsLanguageOpen((prev) => !prev)}
+              style={styles.optionHeader}>
+              <View style={styles.optionLabel}>
+                <MaterialCommunityIcons name="translate" size={20} color={tint} />
+                <ThemedText type="defaultSemiBold">{t('settingsLanguage')}</ThemedText>
+              </View>
+              <View style={styles.optionValue}>
+                <ThemedText style={{ color: mutedText }}>{currentLanguageLabel}</ThemedText>
+                <MaterialCommunityIcons name="chevron-down" size={18} color={mutedText} />
+              </View>
+            </Pressable>
+            {isLanguageOpen ? (
+              <View style={styles.chipRow}>
+                {renderChip('FR', language === 'fr', () => {
+                  setLanguage('fr');
+                  setIsLanguageOpen(false);
+                })}
+                {renderChip('EN', language === 'en', () => {
+                  setLanguage('en');
+                  setIsLanguageOpen(false);
+                })}
+              </View>
+            ) : null}
           </View>
 
-          <View style={styles.optionBlock}>
-            <View style={styles.optionHeader}>
-              <MaterialCommunityIcons name="theme-light-dark" size={20} color={tint} />
-              <ThemedText type="defaultSemiBold">{t('settingsTheme')}</ThemedText>
-            </View>
-            <View style={styles.chipRow}>
-              {themeOptions.map((option) =>
-                renderChip(option.label, themePreference === option.id, () => setThemePreference(option.id))
-              )}
-            </View>
+          <View style={[styles.settingItem, { borderColor: border }]}>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => setIsThemeOpen((prev) => !prev)}
+              style={styles.optionHeader}>
+              <View style={styles.optionLabel}>
+                <MaterialCommunityIcons name="theme-light-dark" size={20} color={tint} />
+                <ThemedText type="defaultSemiBold">{t('settingsTheme')}</ThemedText>
+              </View>
+              <View style={styles.optionValue}>
+                <ThemedText style={{ color: mutedText }}>{currentThemeLabel}</ThemedText>
+                <MaterialCommunityIcons name="chevron-down" size={18} color={mutedText} />
+              </View>
+            </Pressable>
+            {isThemeOpen ? (
+              <View style={styles.chipRow}>
+                {themeOptions.map((option) =>
+                  renderChip(option.label, themePreference === option.id, () => {
+                    setThemePreference(option.id);
+                    setIsThemeOpen(false);
+                  })
+                )}
+              </View>
+            ) : null}
             <ThemedText style={{ color: mutedText }}>{t('settingsThemeSystemHint')}</ThemedText>
           </View>
         </View>
@@ -119,59 +155,87 @@ export default function SettingsScreen() {
         <View style={[styles.card, { backgroundColor: card, borderColor: border }]}>
           <ThemedText type="defaultSemiBold">{t('settingsSecurity')}</ThemedText>
 
-          <View style={styles.switchRow}>
-            <View style={styles.switchText}>
-              <ThemedText type="defaultSemiBold">{t('settingsNotifications')}</ThemedText>
-              <ThemedText style={{ color: mutedText }}>{t('notificationsSubtitle')}</ThemedText>
+          <View style={[styles.settingItem, { borderColor: border }]}>
+            <View style={styles.switchRow}>
+              <View style={styles.switchContent}>
+                <View style={[styles.switchIcon, { backgroundColor: background, borderColor: border }]}>
+                  <MaterialCommunityIcons name="bell-outline" size={18} color={tint} />
+                </View>
+                <View style={styles.switchText}>
+                  <ThemedText type="defaultSemiBold">{t('settingsNotifications')}</ThemedText>
+                  <ThemedText style={{ color: mutedText }}>{t('notificationsSubtitle')}</ThemedText>
+                </View>
+              </View>
+              <Switch
+                value={notificationsEnabled}
+                onValueChange={setNotificationsEnabled}
+                thumbColor={notificationsEnabled ? tint : '#FFFFFF'}
+                trackColor={{ true: tint, false: border }}
+              />
             </View>
-            <Switch
-              value={notificationsEnabled}
-              onValueChange={setNotificationsEnabled}
-              thumbColor={notificationsEnabled ? tint : '#FFFFFF'}
-              trackColor={{ true: tint, false: border }}
-            />
           </View>
 
-          <View style={styles.switchRow}>
-            <View style={styles.switchText}>
-              <ThemedText type="defaultSemiBold">{t('settingsTwoFactor')}</ThemedText>
-              <ThemedText style={{ color: mutedText }}>{t('settingsTwoFactorDetail')}</ThemedText>
+          <View style={[styles.settingItem, { borderColor: border }]}>
+            <View style={styles.switchRow}>
+              <View style={styles.switchContent}>
+                <View style={[styles.switchIcon, { backgroundColor: background, borderColor: border }]}>
+                  <MaterialCommunityIcons name="shield-key-outline" size={18} color={tint} />
+                </View>
+                <View style={styles.switchText}>
+                  <ThemedText type="defaultSemiBold">{t('settingsTwoFactor')}</ThemedText>
+                  <ThemedText style={{ color: mutedText }}>{t('settingsTwoFactorDetail')}</ThemedText>
+                </View>
+              </View>
+              <Switch
+                value={twoFactorEnabled}
+                onValueChange={setTwoFactorEnabled}
+                thumbColor={twoFactorEnabled ? tint : '#FFFFFF'}
+                trackColor={{ true: tint, false: border }}
+              />
             </View>
-            <Switch
-              value={twoFactorEnabled}
-              onValueChange={setTwoFactorEnabled}
-              thumbColor={twoFactorEnabled ? tint : '#FFFFFF'}
-              trackColor={{ true: tint, false: border }}
-            />
           </View>
 
-          <View style={styles.switchRow}>
-            <View style={styles.switchText}>
-              <ThemedText type="defaultSemiBold">{t('settingsAppUnlock')}</ThemedText>
-              <ThemedText style={{ color: mutedText }}>{t('settingsAppUnlockDetail')}</ThemedText>
+          <View style={[styles.settingItem, { borderColor: border }]}>
+            <View style={styles.switchRow}>
+              <View style={styles.switchContent}>
+                <View style={[styles.switchIcon, { backgroundColor: background, borderColor: border }]}>
+                  <MaterialCommunityIcons name="lock-outline" size={18} color={tint} />
+                </View>
+                <View style={styles.switchText}>
+                  <ThemedText type="defaultSemiBold">{t('settingsAppUnlock')}</ThemedText>
+                  <ThemedText style={{ color: mutedText }}>{t('settingsAppUnlockDetail')}</ThemedText>
+                </View>
+              </View>
+              <Switch
+                value={appUnlockEnabled}
+                onValueChange={setAppUnlockEnabled}
+                thumbColor={appUnlockEnabled ? tint : '#FFFFFF'}
+                trackColor={{ true: tint, false: border }}
+              />
             </View>
-            <Switch
-              value={appUnlockEnabled}
-              onValueChange={setAppUnlockEnabled}
-              thumbColor={appUnlockEnabled ? tint : '#FFFFFF'}
-              trackColor={{ true: tint, false: border }}
-            />
           </View>
 
           {isBiometricSupported ? (
-            <View style={styles.switchRow}>
-              <View style={styles.switchText}>
-                <ThemedText type="defaultSemiBold">{t('settingsLoginBiometric')}</ThemedText>
-                <ThemedText style={{ color: mutedText }}>
-                  {t('settingsLoginBiometricDetail', { method: biometricMethod })}
-                </ThemedText>
+            <View style={[styles.settingItem, { borderColor: border }]}>
+              <View style={styles.switchRow}>
+                <View style={styles.switchContent}>
+                  <View style={[styles.switchIcon, { backgroundColor: background, borderColor: border }]}>
+                    <MaterialCommunityIcons name="fingerprint" size={18} color={tint} />
+                  </View>
+                  <View style={styles.switchText}>
+                    <ThemedText type="defaultSemiBold">{t('settingsLoginBiometric')}</ThemedText>
+                    <ThemedText style={{ color: mutedText }}>
+                      {t('settingsLoginBiometricDetail', { method: biometricMethod })}
+                    </ThemedText>
+                  </View>
+                </View>
+                <Switch
+                  value={loginBiometricEnabled}
+                  onValueChange={setLoginBiometricEnabled}
+                  thumbColor={loginBiometricEnabled ? tint : '#FFFFFF'}
+                  trackColor={{ true: tint, false: border }}
+                />
               </View>
-              <Switch
-                value={loginBiometricEnabled}
-                onValueChange={setLoginBiometricEnabled}
-                thumbColor={loginBiometricEnabled ? tint : '#FFFFFF'}
-                trackColor={{ true: tint, false: border }}
-              />
             </View>
           ) : null}
         </View>
@@ -240,19 +304,36 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
     gap: 16,
   },
+  header: {
+    paddingTop: 56,
+  },
   card: {
     borderWidth: 1,
     borderRadius: 18,
     padding: 16,
     gap: 12,
   },
-  optionBlock: {
-    gap: 8,
+  settingItem: {
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 12,
+    gap: 12,
   },
   optionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  optionLabel: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
+  },
+  optionValue: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   chipRow: {
     flexDirection: 'row',
@@ -270,6 +351,20 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 12,
     alignItems: 'center',
+  },
+  switchContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  switchIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   switchText: {
     flex: 1,
