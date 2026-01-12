@@ -19,10 +19,12 @@ import { DateStrip } from '@/components/matches/DateStrip';
 import { MatchCard } from '@/components/matches/MatchCard';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { useTranslation } from '@/hooks/useTranslation';
 import { getMatchesByDate } from '@/services/matchesService';
 import { useAppStore } from '@/store/useAppStore';
 import { Match, MatchStatus } from '@/types';
 import { buildRollingDates } from '@/utils/dateRange';
+import { getLocale } from '@/utils/i18n';
 
 type MatchSection = {
   key: 'calendar' | 'matches';
@@ -40,8 +42,10 @@ export default function MatchesScreen() {
   const [isLeagueModalOpen, setIsLeagueModalOpen] = useState(false);
   const [isCountryModalOpen, setIsCountryModalOpen] = useState(false);
   const listRef = useRef<SectionList<Match>>(null);
+  const { t, language } = useTranslation();
+  const locale = getLocale(language);
 
-  const dates = useMemo(() => buildRollingDates(), []);
+  const dates = useMemo(() => buildRollingDates(new Date(), locale), [locale]);
 
   const selectedDateId = useAppStore((state) => state.selectedDateId);
   const setSelectedDateId = useAppStore((state) => state.setSelectedDateId);
@@ -79,13 +83,13 @@ export default function MatchesScreen() {
 
   const leagueOptions = useMemo(() => {
     const unique = new Map(matches.map((match) => [match.league.id, match.league]));
-    return Array.from(unique.values()).sort((a, b) => a.name.localeCompare(b.name, 'fr'));
-  }, [matches]);
+    return Array.from(unique.values()).sort((a, b) => a.name.localeCompare(b.name, locale));
+  }, [matches, locale]);
 
   const countryOptions = useMemo(() => {
     const unique = new Set(matches.map((match) => match.league.country));
-    return Array.from(unique.values()).sort((a, b) => a.localeCompare(b, 'fr'));
-  }, [matches]);
+    return Array.from(unique.values()).sort((a, b) => a.localeCompare(b, locale));
+  }, [matches, locale]);
 
   const visibleMatches = useMemo(() => {
     return matches.filter((match) => {
@@ -130,8 +134,8 @@ export default function MatchesScreen() {
   };
 
   const selectedLeagueLabel =
-    leagueOptions.find((league) => league.id === selectedLeagueId)?.name ?? 'Championnat';
-  const selectedCountryLabel = selectedCountry ?? 'Pays';
+    leagueOptions.find((league) => league.id === selectedLeagueId)?.name ?? t('filterLeague');
+  const selectedCountryLabel = selectedCountry ?? t('filterCountry');
 
   const isMatchFavorite = (matchId: string) => favoriteMatches.some((match) => match.id === matchId);
 
@@ -195,7 +199,7 @@ export default function MatchesScreen() {
         renderSectionHeader={({ section }) =>
           section.key === 'calendar' ? (
             <View style={[styles.calendarHeader, { backgroundColor: background, borderBottomColor: border }]}>
-              <ThemedText style={[styles.sectionTitle, { color: mutedText }]}>CALENDRIER</ThemedText>
+              <ThemedText style={[styles.sectionTitle, { color: mutedText }]}>{t('calendar')}</ThemedText>
               <DateStrip dates={dates} selectedId={selectedDateId ?? dates[2].id} onSelect={setSelectedDateId} />
             </View>
           ) : null
@@ -207,10 +211,10 @@ export default function MatchesScreen() {
             <View style={styles.headerRow}>
               <View style={styles.brandBlock}>
                 <ThemedText type="title" style={styles.brandTitle} numberOfLines={1}>
-                  MY TICKET
+                  {t('appName')}
                 </ThemedText>
                 <ThemedText style={{ color: mutedText }} numberOfLines={1} ellipsizeMode="tail">
-                  Crée ton ticket, compare les cotes et suis tes pronostics en direct.
+                  {t('headerMatchesSubtitle')}
                 </ThemedText>
               </View>
               <TouchableOpacity
@@ -226,7 +230,7 @@ export default function MatchesScreen() {
               <View style={[styles.searchBox, { backgroundColor: card, borderColor: border }]}>
                 <MaterialCommunityIcons name="magnify" size={18} color={mutedText} />
                 <TextInput
-                  placeholder="Rechercher un match, équipe, ligue…"
+                  placeholder={t('searchPlaceholder')}
                   placeholderTextColor={mutedText}
                   value={searchValue}
                   onChangeText={setSearchValue}
@@ -258,12 +262,12 @@ export default function MatchesScreen() {
                 {renderChip({
                   label:
                     selectedTimeSlot === 'all'
-                      ? 'Toutes heures'
+                      ? t('filterTimeAll')
                       : selectedTimeSlot === 'morning'
-                      ? 'Matin'
+                      ? t('filterTimeMorning')
                       : selectedTimeSlot === 'afternoon'
-                      ? 'Après-midi'
-                      : 'Soir',
+                      ? t('filterTimeAfternoon')
+                      : t('filterTimeEvening'),
                   icon: 'clock-outline',
                   active: selectedTimeSlot !== 'all',
                   activeColor: tint,
@@ -273,21 +277,21 @@ export default function MatchesScreen() {
                     ),
                 })}
                 {renderChip({
-                  label: 'À venir',
+                  label: t('filterUpcoming'),
                   icon: 'calendar-check-outline',
                   active: selectedStatus === 'upcoming',
                   activeColor: tint,
                   onPress: () => setSelectedStatus((prev) => (prev === 'upcoming' ? 'all' : 'upcoming')),
                 })}
                 {renderChip({
-                  label: 'En direct',
+                  label: t('filterLive'),
                   icon: 'access-point',
                   active: selectedStatus === 'live',
                   activeColor: danger,
                   onPress: () => setSelectedStatus((prev) => (prev === 'live' ? 'all' : 'live')),
                 })}
                 {renderChip({
-                  label: 'Terminés',
+                  label: t('filterFinished'),
                   icon: 'flag-checkered',
                   active: selectedStatus === 'finished',
                   activeColor: warning,
@@ -300,8 +304,8 @@ export default function MatchesScreen() {
         ListFooterComponent={
           !isLoading && visibleMatches.length === 0 ? (
             <View style={[styles.emptyCard, { borderColor: border, backgroundColor: card }]}>
-              <ThemedText type="defaultSemiBold">Aucun match trouvé</ThemedText>
-              <ThemedText style={{ color: mutedText }}>Ajuste tes filtres ou change de date.</ThemedText>
+              <ThemedText type="defaultSemiBold">{t('emptyMatchesTitle')}</ThemedText>
+              <ThemedText style={{ color: mutedText }}>{t('emptyMatchesSubtitle')}</ThemedText>
             </View>
           ) : null
         }
@@ -314,7 +318,7 @@ export default function MatchesScreen() {
       {isLoading ? (
         <View style={styles.loadingState}>
           <ActivityIndicator size="large" color={tint} />
-          <ThemedText style={{ color: mutedText }}>Chargement des matchs...</ThemedText>
+          <ThemedText style={{ color: mutedText }}>{t('loadingMatches')}</ThemedText>
         </View>
       ) : null}
 
@@ -324,7 +328,7 @@ export default function MatchesScreen() {
             style={[styles.modalCard, { backgroundColor: card, borderColor: border }]}
             onStartShouldSetResponder={() => true}>
             <View style={styles.modalHeader}>
-              <ThemedText type="defaultSemiBold">Choisir un championnat</ThemedText>
+              <ThemedText type="defaultSemiBold">{t('modalSelectLeague')}</ThemedText>
               <TouchableOpacity
                 accessibilityRole="button"
                 onPress={() => setIsLeagueModalOpen(false)}
@@ -338,7 +342,7 @@ export default function MatchesScreen() {
                 setSelectedLeagueId(null);
                 setIsLeagueModalOpen(false);
               }}>
-              <ThemedText style={{ color: mutedText }}>Tous les championnats</ThemedText>
+              <ThemedText style={{ color: mutedText }}>{t('modalAllLeagues')}</ThemedText>
             </TouchableOpacity>
             {leagueOptions.map((league) => (
               <TouchableOpacity
@@ -361,7 +365,7 @@ export default function MatchesScreen() {
             style={[styles.modalCard, { backgroundColor: card, borderColor: border }]}
             onStartShouldSetResponder={() => true}>
             <View style={styles.modalHeader}>
-              <ThemedText type="defaultSemiBold">Choisir un pays</ThemedText>
+              <ThemedText type="defaultSemiBold">{t('modalSelectCountry')}</ThemedText>
               <TouchableOpacity
                 accessibilityRole="button"
                 onPress={() => setIsCountryModalOpen(false)}
@@ -375,7 +379,7 @@ export default function MatchesScreen() {
                 setSelectedCountry(null);
                 setIsCountryModalOpen(false);
               }}>
-              <ThemedText style={{ color: mutedText }}>Tous les pays</ThemedText>
+              <ThemedText style={{ color: mutedText }}>{t('modalAllCountries')}</ThemedText>
             </TouchableOpacity>
             {countryOptions.map((country) => (
               <TouchableOpacity

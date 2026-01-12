@@ -2,7 +2,9 @@ import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 import { ThemedText } from '@/components/ui/ThemedText';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { useTranslation } from '@/hooks/useTranslation';
 import { RollingDate } from '@/utils/dateRange';
+import { getLocale } from '@/utils/i18n';
 
 type DateStripProps = {
   dates: RollingDate[];
@@ -10,17 +12,17 @@ type DateStripProps = {
   onSelect: (id: string) => void;
 };
 
-const formatDay = (date: Date) =>
+const formatDay = (date: Date, locale: string) =>
   date
-    .toLocaleDateString('fr-FR', {
+    .toLocaleDateString(locale, {
       weekday: 'short',
     })
     .replace('.', '')
     .replace(/^[a-z]/, (value) => value.toUpperCase());
 
-const formatDate = (date: Date) =>
+const formatDate = (date: Date, locale: string) =>
   date
-    .toLocaleDateString('fr-FR', {
+    .toLocaleDateString(locale, {
       day: '2-digit',
       month: 'short',
     })
@@ -32,6 +34,8 @@ export function DateStrip({ dates, selectedId, onSelect }: DateStripProps) {
   const border = useThemeColor({}, 'border');
   const card = useThemeColor({}, 'card');
   const mutedText = useThemeColor({}, 'mutedText');
+  const { t, language } = useTranslation();
+  const locale = getLocale(language);
 
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.container} contentContainerStyle={styles.row}>
@@ -57,7 +61,7 @@ export function DateStrip({ dates, selectedId, onSelect }: DateStripProps) {
                   color: isSelected ? '#FFFFFF' : mutedText,
                 },
               ]}>
-              {formatDay(date.date)}
+              {formatDay(date.date, locale)}
             </ThemedText>
             <ThemedText
               style={[
@@ -66,11 +70,11 @@ export function DateStrip({ dates, selectedId, onSelect }: DateStripProps) {
                   color: isSelected ? '#FFFFFF' : mutedText,
                 },
               ]}>
-              {formatDate(date.date)}
+              {formatDate(date.date, locale)}
             </ThemedText>
             {date.isToday ? (
               <View style={[styles.todayBadge, { backgroundColor: isSelected ? '#FFFFFF' : highlight }]}>
-                <ThemedText style={{ color: isSelected ? highlight : '#FFFFFF' }}>Aujourd&apos;hui</ThemedText>
+                <ThemedText style={{ color: isSelected ? highlight : '#FFFFFF' }}>{t('today')}</ThemedText>
               </View>
             ) : null}
           </TouchableOpacity>

@@ -5,8 +5,10 @@ import { Image } from 'expo-image';
 
 import { ThemedText } from '@/components/ui/ThemedText';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { useTranslation } from '@/hooks/useTranslation';
 import { getBookmakers, getOddsForPrediction } from '@/services/oddsService';
 import { TicketItem } from '@/types';
+import { translatePredictionLabel } from '@/utils/i18n';
 
 type TicketItemRowProps = {
   item: TicketItem;
@@ -18,10 +20,13 @@ export function TicketItemRow({ item, onRemove }: TicketItemRowProps) {
   const border = useThemeColor({}, 'border');
   const mutedText = useThemeColor({}, 'mutedText');
   const tint = useThemeColor({}, 'tint');
+  const { t, language } = useTranslation();
 
   const bookmakers = getBookmakers();
   const oddsByBookmaker = getOddsForPrediction(item.prediction);
-  const scoreLabel = item.match.score ? `${item.match.score.home} : ${item.match.score.away}` : '-- : --';
+  const scoreLabel = item.match.score
+    ? `${item.match.score.home} : ${item.match.score.away}`
+    : t('matchScoreFallback');
 
   return (
     <View style={[styles.card, { backgroundColor: card, borderColor: border }]}> 
@@ -39,10 +44,10 @@ export function TicketItemRow({ item, onRemove }: TicketItemRowProps) {
           <MaterialCommunityIcons name="trash-can-outline" size={18} color={mutedText} />
         </TouchableOpacity>
       </View>
-      <ThemedText style={{ color: mutedText }}>{item.prediction.label}</ThemedText>
+      <ThemedText style={{ color: mutedText }}>{translatePredictionLabel(language, item.prediction.label)}</ThemedText>
 
       <View style={styles.bookmakerHeader}>
-        <ThemedText type="defaultSemiBold">Parier avec</ThemedText>
+        <ThemedText type="defaultSemiBold">{t('ticketPartners')}</ThemedText>
       </View>
       <View style={styles.bookmakers}>
         {bookmakers.map((bookmaker) => (

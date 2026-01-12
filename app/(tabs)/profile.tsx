@@ -7,6 +7,7 @@ import { useScrollToTop } from '@react-navigation/native';
 
 import { ThemedText } from '@/components/ui/ThemedText';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useAppStore } from '@/store/useAppStore';
 import { UserProfile } from '@/types';
 
@@ -18,6 +19,7 @@ export default function ProfileScreen() {
   const mutedText = useThemeColor({}, 'mutedText');
   const tint = useThemeColor({}, 'tint');
   const success = useThemeColor({}, 'success');
+  const { t } = useTranslation();
 
   const userAccess = useAppStore((state) => state.userAccess);
   const userProfile = useAppStore((state) => state.userProfile);
@@ -56,9 +58,9 @@ export default function ProfileScreen() {
           <MaterialCommunityIcons name="account-outline" size={30} color={mutedText} />
         </View>
         <View style={styles.identity}>
-          <ThemedText type="title">Profil</ThemedText>
+          <ThemedText type="title">{t('profileTitle')}</ThemedText>
           <ThemedText style={{ color: mutedText }}>
-            {userAccess.isGuest ? 'Compte invité' : 'Compte connecté'} • {userAccess.status}
+            {userAccess.isGuest ? t('profileGuest') : t('profileConnected')} • {userAccess.status}
           </ThemedText>
         </View>
         {!userAccess.isGuest && (
@@ -67,7 +69,7 @@ export default function ProfileScreen() {
             onPress={signOut}
             style={[styles.signOut, { borderColor: border }]}> 
             <MaterialCommunityIcons name="logout" size={16} color={mutedText} />
-            <ThemedText style={{ color: mutedText }}>Sortir</ThemedText>
+            <ThemedText style={{ color: mutedText }}>{t('profileSignOut')}</ThemedText>
           </Pressable>
         )}
       </View>
@@ -78,22 +80,22 @@ export default function ProfileScreen() {
             accessibilityRole="button"
             onPress={() => setAuthMode('login')}
             style={[styles.authTab, { backgroundColor: authMode === 'login' ? tint : background }]}> 
-            <ThemedText style={{ color: authMode === 'login' ? '#FFFFFF' : mutedText }}>Connexion</ThemedText>
+            <ThemedText style={{ color: authMode === 'login' ? '#FFFFFF' : mutedText }}>{t('authLogin')}</ThemedText>
           </Pressable>
           <Pressable
             accessibilityRole="button"
             onPress={() => setAuthMode('signup')}
             style={[styles.authTab, { backgroundColor: authMode === 'signup' ? tint : background }]}> 
-            <ThemedText style={{ color: authMode === 'signup' ? '#FFFFFF' : mutedText }}>Inscription</ThemedText>
+            <ThemedText style={{ color: authMode === 'signup' ? '#FFFFFF' : mutedText }}>{t('authSignup')}</ThemedText>
           </Pressable>
         </View>
 
         <View style={styles.fieldGroup}>
-          <ThemedText type="defaultSemiBold">Email</ThemedText>
+          <ThemedText type="defaultSemiBold">{t('authEmail')}</ThemedText>
           <TextInput
             value={emailInput}
             onChangeText={setEmailInput}
-            placeholder="nom@email.com"
+            placeholder={t('authEmailPlaceholder')}
             placeholderTextColor={mutedText}
             autoCapitalize="none"
             keyboardType="email-address"
@@ -102,11 +104,11 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.fieldGroup}>
-          <ThemedText type="defaultSemiBold">Mot de passe</ThemedText>
+          <ThemedText type="defaultSemiBold">{t('authPassword')}</ThemedText>
           <TextInput
             value={passwordInput}
             onChangeText={setPasswordInput}
-            placeholder="••••••••"
+            placeholder={t('authPasswordPlaceholder')}
             placeholderTextColor={mutedText}
             secureTextEntry
             style={[styles.input, { borderColor: border, color: mutedText }]}
@@ -115,11 +117,11 @@ export default function ProfileScreen() {
 
         {authMode === 'signup' && (
           <View style={styles.fieldGroup}>
-            <ThemedText type="defaultSemiBold">Nom complet</ThemedText>
+            <ThemedText type="defaultSemiBold">{t('authFullName')}</ThemedText>
             <TextInput
               value={userProfile.fullName}
               onChangeText={handleProfileChange('fullName')}
-              placeholder="Prénom Nom"
+              placeholder={t('authFullNamePlaceholder')}
               placeholderTextColor={mutedText}
               style={[styles.input, { borderColor: border, color: mutedText }]}
             />
@@ -131,54 +133,54 @@ export default function ProfileScreen() {
           onPress={handleAuth}
           style={[styles.primaryButton, { backgroundColor: tint }]}> 
           <ThemedText style={styles.primaryButtonText}>
-            {authMode === 'login' ? 'Se connecter' : 'Créer mon compte'}
+            {authMode === 'login' ? t('authLoginButton') : t('authSignupButton')}
           </ThemedText>
         </Pressable>
 
         {!userAccess.isGuest && (
-          <ThemedText style={{ color: success }}>Connexion réussie, accès activé.</ThemedText>
+          <ThemedText style={{ color: success }}>{t('authSuccess')}</ThemedText>
         )}
       </View>
 
       <View style={[styles.card, { backgroundColor: card, borderColor: border }]}> 
-        <ThemedText type="defaultSemiBold">Mes informations</ThemedText>
+        <ThemedText type="defaultSemiBold">{t('profileInfoTitle')}</ThemedText>
         <View style={styles.fieldGroup}>
-          <ThemedText>Ville</ThemedText>
+          <ThemedText>{t('profileCity')}</ThemedText>
           <TextInput
             value={userProfile.city}
             onChangeText={handleProfileChange('city')}
-            placeholder="Paris"
+            placeholder={t('profileCityPlaceholder')}
             placeholderTextColor={mutedText}
             style={[styles.input, { borderColor: border, color: mutedText }]}
           />
         </View>
         <View style={styles.fieldGroup}>
-          <ThemedText>Téléphone</ThemedText>
+          <ThemedText>{t('profilePhone')}</ThemedText>
           <TextInput
             value={userProfile.phone}
             onChangeText={handleProfileChange('phone')}
-            placeholder="+33 6 00 00 00 00"
+            placeholder={t('profilePhonePlaceholder')}
             placeholderTextColor={mutedText}
             keyboardType="phone-pad"
             style={[styles.input, { borderColor: border, color: mutedText }]}
           />
         </View>
         <View style={styles.fieldGroup}>
-          <ThemedText>Club préféré</ThemedText>
+          <ThemedText>{t('profileFavoriteTeam')}</ThemedText>
           <TextInput
             value={userProfile.favoriteTeam}
             onChangeText={handleProfileChange('favoriteTeam')}
-            placeholder="PSG, Marseille..."
+            placeholder={t('profileFavoriteTeamPlaceholder')}
             placeholderTextColor={mutedText}
             style={[styles.input, { borderColor: border, color: mutedText }]}
           />
         </View>
         <View style={styles.fieldGroup}>
-          <ThemedText>Date de naissance</ThemedText>
+          <ThemedText>{t('profileBirthDate')}</ThemedText>
           <TextInput
             value={userProfile.birthDate}
             onChangeText={handleProfileChange('birthDate')}
-            placeholder="JJ/MM/AAAA"
+            placeholder={t('profileBirthDatePlaceholder')}
             placeholderTextColor={mutedText}
             style={[styles.input, { borderColor: border, color: mutedText }]}
           />
@@ -186,27 +188,37 @@ export default function ProfileScreen() {
       </View>
 
       <View style={[styles.card, { backgroundColor: card, borderColor: border }]}> 
-        <ThemedText type="defaultSemiBold">Abonnement</ThemedText>
+        <ThemedText type="defaultSemiBold">{t('subscriptionCardTitle')}</ThemedText>
         <ThemedText style={{ color: mutedText }}>
-          {userAccess.status === 'PREMIUM' ? 'Premium actif' : 'Passe en Premium pour débloquer +3 pronos'}
+          {userAccess.status === 'PREMIUM' ? t('subscriptionCardSubtitlePremium') : t('subscriptionCardSubtitleFree')}
         </ThemedText>
         <Pressable
           accessibilityRole="button"
           onPress={() => router.push('/subscription')}
           style={[styles.primaryButton, { backgroundColor: tint }]}> 
-          <ThemedText style={styles.primaryButtonText}>Voir les offres</ThemedText>
+          <ThemedText style={styles.primaryButtonText}>{t('buttonSeeOffers')}</ThemedText>
         </Pressable>
       </View>
 
       <View style={[styles.card, { backgroundColor: card, borderColor: border }]}> 
-        <ThemedText type="defaultSemiBold">Raccourcis</ThemedText>
+        <ThemedText type="defaultSemiBold">{t('shortcutsTitle')}</ThemedText>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push('/settings')}
+          style={[styles.actionRow, { borderColor: border }]}> 
+          <View style={styles.actionRowContent}>
+            <MaterialCommunityIcons name="cog-outline" size={18} color={tint} />
+            <ThemedText>{t('buttonSettings')}</ThemedText>
+          </View>
+          <MaterialCommunityIcons name="chevron-right" size={18} color={mutedText} />
+        </Pressable>
         <Pressable
           accessibilityRole="button"
           onPress={() => router.push('/support')}
           style={[styles.actionRow, { borderColor: border }]}> 
           <View style={styles.actionRowContent}>
             <MaterialCommunityIcons name="help-circle-outline" size={18} color={tint} />
-            <ThemedText>Aide & support</ThemedText>
+            <ThemedText>{t('buttonSupport')}</ThemedText>
           </View>
           <MaterialCommunityIcons name="chevron-right" size={18} color={mutedText} />
         </Pressable>
@@ -216,7 +228,7 @@ export default function ProfileScreen() {
           style={[styles.actionRow, { borderColor: border }]}> 
           <View style={styles.actionRowContent}>
             <MaterialCommunityIcons name="file-document-outline" size={18} color={tint} />
-            <ThemedText>Mentions légales</ThemedText>
+            <ThemedText>{t('legalTitle')}</ThemedText>
           </View>
           <MaterialCommunityIcons name="chevron-right" size={18} color={mutedText} />
         </Pressable>

@@ -7,6 +7,7 @@ import { router } from 'expo-router';
 import { MatchCard } from '@/components/matches/MatchCard';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useAppStore } from '@/store/useAppStore';
 import { Match } from '@/types';
 
@@ -16,6 +17,7 @@ export default function FavoritesScreen() {
   const border = useThemeColor({}, 'border');
   const mutedText = useThemeColor({}, 'mutedText');
   const listRef = useRef<FlatList<Match>>(null);
+  const { t } = useTranslation();
 
   const favoriteMatches = useAppStore((state) => state.favoriteMatches);
   const toggleFavoriteMatch = useAppStore((state) => state.toggleFavoriteMatch);
@@ -27,8 +29,8 @@ export default function FavoritesScreen() {
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
       <View style={styles.header}>
-        <ThemedText type="title">Favoris</ThemedText>
-        <ThemedText style={{ color: mutedText }}>Tes matchs suivis.</ThemedText>
+        <ThemedText type="title">{t('tabsFavorites')}</ThemedText>
+        <ThemedText style={{ color: mutedText }}>{t('headerFavoritesSubtitle')}</ThemedText>
       </View>
 
       <FlatList
@@ -47,8 +49,8 @@ export default function FavoritesScreen() {
         ListEmptyComponent={
           <View style={[styles.emptyStateCard, { borderColor: border, backgroundColor: card }]}>
             <MaterialCommunityIcons name="star-circle-outline" size={48} color={mutedText} />
-            <ThemedText type="defaultSemiBold">Aucun favori pour le moment</ThemedText>
-            <ThemedText style={{ color: mutedText }}>Ajoute des matchs depuis la page Matchs.</ThemedText>
+            <ThemedText type="defaultSemiBold">{t('favoritesEmptyTitle')}</ThemedText>
+            <ThemedText style={{ color: mutedText }}>{t('favoritesEmptySubtitle')}</ThemedText>
           </View>
         }
         showsVerticalScrollIndicator={false}

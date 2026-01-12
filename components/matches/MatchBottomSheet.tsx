@@ -9,7 +9,9 @@ import { router } from 'expo-router';
 import { PredictionRow } from '@/components/matches/PredictionRow';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { useTranslation } from '@/hooks/useTranslation';
 import { Match, Prediction, UserAccess } from '@/types';
+import { getLocale } from '@/utils/i18n';
 
 type MatchBottomSheetProps = {
   match: Match | null;
@@ -37,6 +39,8 @@ export function MatchBottomSheet({
   const danger = useThemeColor({}, 'danger');
   const warning = useThemeColor({}, 'warning');
   const accent = useThemeColor({}, 'accent');
+  const { t, language } = useTranslation();
+  const locale = getLocale(language);
 
   const snapPoints = useMemo(() => ['65%', '92%'], []);
 
@@ -65,14 +69,14 @@ export function MatchBottomSheet({
   const freePredictions = predictions.filter((prediction) => prediction.tier === 'free');
   const premiumPredictions = predictions.filter((prediction) => prediction.tier === 'premium');
   const visiblePredictions = isPremium ? [...freePredictions, ...premiumPredictions] : freePredictions;
-  const scoreLabel = match.score ? `${match.score.home} : ${match.score.away}` : '-- : --';
+  const scoreLabel = match.score ? `${match.score.home} : ${match.score.away}` : t('matchScoreFallback');
   const winRate = match.winRate;
   const bookmakers = ['1xBet', 'Betwinner', 'Melbet', 'Bet365'];
 
   const sections = [
-    { key: 'safe', label: 'Safe', tone: success },
-    { key: 'medium', label: 'Medium', tone: warning },
-    { key: 'risky', label: 'Risky', tone: danger },
+    { key: 'safe', label: t('riskSafe'), tone: success },
+    { key: 'medium', label: t('riskMedium'), tone: warning },
+    { key: 'risky', label: t('riskRisky'), tone: danger },
   ] as const;
 
   return (
@@ -99,10 +103,10 @@ export function MatchBottomSheet({
               <View style={[styles.statusPill, { backgroundColor: match.status === 'live' ? danger : accent }]}> 
                 <ThemedText style={styles.statusPillText}>
                   {match.status === 'live'
-                    ? `LIVE ${match.liveMinute ?? 0}'`
+                    ? t('matchStatusLive', { minute: match.liveMinute ?? 0 })
                     : match.status === 'finished'
                     ? 'FT'
-                    : 'À venir'}
+                    : t('matchUpcoming')}
                 </ThemedText>
               </View>
             </View>
@@ -120,22 +124,22 @@ export function MatchBottomSheet({
 
         <View style={styles.metaRow}>
           <ThemedText style={{ color: mutedText }} numberOfLines={1}>
-            {match.league.name} • {new Date(match.kickoffIso).toLocaleString('fr-FR')}
+            {match.league.name} • {new Date(match.kickoffIso).toLocaleString(locale)}
           </ThemedText>
           <ThemedText style={{ color: mutedText }} numberOfLines={1}>
-            {match.venue ?? '—'}
+            {match.venue ?? t('matchVenueFallback')}
           </ThemedText>
         </View>
 
         {winRate ? (
           <View style={[styles.winRateCard, { borderColor: border }]}> 
             <View style={styles.winRateRow}>
-              <ThemedText type="defaultSemiBold">Forme estimée</ThemedText>
+              <ThemedText type="defaultSemiBold">{t('estimatedForm')}</ThemedText>
               <View style={styles.winRateSplit}>
                 <ThemedText style={{ color: winRate.home >= 60 ? success : danger }}>
                   {match.homeTeam.name} {winRate.home}%
                 </ThemedText>
-                <ThemedText style={{ color: mutedText }}>{winRate.draw}% nul</ThemedText>
+                <ThemedText style={{ color: mutedText }}>{winRate.draw}% {t('drawLabel')}</ThemedText>
                 <ThemedText style={{ color: winRate.away >= 60 ? success : danger }}>
                   {match.awayTeam.name} {winRate.away}%
                 </ThemedText>
@@ -145,12 +149,12 @@ export function MatchBottomSheet({
         ) : null}
 
         <View style={styles.sectionHeader}>
-          <ThemedText type="defaultSemiBold">Pronostics</ThemedText>
-          <ThemedText style={{ color: mutedText }}>{isPremium ? 'Premium actif' : 'Mode gratuit'}</ThemedText>
+          <ThemedText type="defaultSemiBold">{t('predictions')}</ThemedText>
+          <ThemedText style={{ color: mutedText }}>{isPremium ? t('predictionsPremiumActive') : t('predictionsFreeMode')}</ThemedText>
         </View>
 
         {visiblePredictions.length === 0 ? (
-          <ThemedText style={{ color: mutedText }}>Chargement des pronostics...</ThemedText>
+          <ThemedText style={{ color: mutedText }}>{t('predictionsLoading')}</ThemedText>
         ) : (
           sections.map((section) => {
             const sectionPredictions = visiblePredictions.filter((prediction) => prediction.risk === section.key);
@@ -159,10 +163,12 @@ export function MatchBottomSheet({
                 <View style={styles.riskHeader}>
                   <View style={[styles.riskDot, { backgroundColor: section.tone }]} />
                   <ThemedText type="defaultSemiBold">{section.label}</ThemedText>
-                  <ThemedText style={{ color: mutedText }}>{sectionPredictions.length} pronos</ThemedText>
+                  <ThemedText style={{ color: mutedText }}>
+                    {t('predictionsCountShort', { count: sectionPredictions.length })}
+                  </ThemedText>
                 </View>
                 {sectionPredictions.length === 0 ? (
-                  <ThemedText style={{ color: mutedText }}>Aucun prono disponible.</ThemedText>
+                  <ThemedText style={{ color: mutedText }}>{t('predictionsNone')}</ThemedText>
                 ) : (
                   sectionPredictions.map((prediction) => (
                     <PredictionRow
@@ -180,8 +186,8 @@ export function MatchBottomSheet({
         )}
 
         <View style={styles.sectionHeader}>
-          <ThemedText type="defaultSemiBold">Parier avec</ThemedText>
-          <ThemedText style={{ color: mutedText }}>Bookmakers partenaires</ThemedText>
+          <ThemedText type="defaultSemiBold">{t('ticketPartners')}</ThemedText>
+          <ThemedText style={{ color: mutedText }}>{t('ticketPartnersSubtitle')}</ThemedText>
         </View>
         <View style={styles.bookmakersRow}>
           {bookmakers.map((bookmaker) => (
@@ -197,15 +203,13 @@ export function MatchBottomSheet({
 
         {!isPremium && (
           <View style={[styles.premiumBanner, { borderColor: border }]}> 
-            <ThemedText type="defaultSemiBold">Passe en Premium</ThemedText>
-            <ThemedText style={{ color: mutedText }}>
-              Débloque 3 pronostics supplémentaires par match et les meilleures cotes.
-            </ThemedText>
+            <ThemedText type="defaultSemiBold">{t('premiumTitle')}</ThemedText>
+            <ThemedText style={{ color: mutedText }}>{t('premiumDescription')}</ThemedText>
             <TouchableOpacity
               accessibilityRole="button"
               onPress={() => router.push('/subscription')}
               style={[styles.upgradeButton, { backgroundColor: tint }]}>
-              <ThemedText style={styles.upgradeButtonText}>Passer Premium</ThemedText>
+              <ThemedText style={styles.upgradeButtonText}>{t('buttonUpgrade')}</ThemedText>
             </TouchableOpacity>
           </View>
         )}

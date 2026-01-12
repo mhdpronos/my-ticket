@@ -6,14 +6,14 @@ export type RollingDate = {
   date: Date;
 };
 
-const formatLabel = (date: Date) =>
-  date.toLocaleDateString('fr-FR', {
+const formatLabel = (date: Date, locale: string) =>
+  date.toLocaleDateString(locale, {
     weekday: 'short',
     day: '2-digit',
     month: 'short',
   });
 
-export const buildRollingDates = (today = new Date()): RollingDate[] => {
+export const buildRollingDates = (today = new Date(), locale = 'fr-FR'): RollingDate[] => {
   const start = new Date(today);
   start.setDate(today.getDate() - 2);
 
@@ -23,7 +23,7 @@ export const buildRollingDates = (today = new Date()): RollingDate[] => {
 
     return {
       id: current.toISOString(),
-      label: formatLabel(current),
+      label: formatLabel(current, locale),
       iso: current.toISOString(),
       isToday: current.toDateString() === today.toDateString(),
       date: current,
