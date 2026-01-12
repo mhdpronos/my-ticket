@@ -1,8 +1,8 @@
-import { ActivityIndicator, FlatList, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, TouchableOpacity, View } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { router } from 'expo-router';
-import { useScrollToTop } from '@react-navigation/native';
+import { useFocusEffect, useScrollToTop } from '@react-navigation/native';
 
 import { MatchCard } from '@/components/matches/MatchCard';
 import { ThemedText } from '@/components/ui/ThemedText';
@@ -15,7 +15,9 @@ import { Match } from '@/types';
 export default function TopPicksScreen() {
   const [picks, setPicks] = useState<Match[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const listRef = useRef<FlatList<Match>>(null);
+  const hasFocusedOnce = useRef(false);
 
   const background = useThemeColor({}, 'background');
   const card = useThemeColor({}, 'card');
@@ -27,15 +29,34 @@ export default function TopPicksScreen() {
   const favoriteMatches = useAppStore((state) => state.favoriteMatches);
   const toggleFavoriteMatch = useAppStore((state) => state.toggleFavoriteMatch);
 
-  useEffect(() => {
-    const loadPicks = async () => {
+  const loadPicks = useCallback(
+    async ({ showLoading }: { showLoading?: boolean } = {}) => {
+      if (showLoading) {
+        setIsLoading(true);
+      } else {
+        setIsRefreshing(true);
+      }
       const matches = await getAllMatches();
       setPicks(matches.slice(0, 6));
       setIsLoading(false);
-    };
+      setIsRefreshing(false);
+    },
+    []
+  );
 
-    loadPicks();
-  }, []);
+  useEffect(() => {
+    loadPicks({ showLoading: true });
+  }, [loadPicks]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!hasFocusedOnce.current) {
+        hasFocusedOnce.current = true;
+        return;
+      }
+      loadPicks();
+    }, [loadPicks])
+  );
 
   const isMatchFavorite = (matchId: string) => favoriteMatches.some((match) => match.id === matchId);
 
@@ -76,6 +97,7 @@ export default function TopPicksScreen() {
               isMatchFavorite={isMatchFavorite}
             />
           )}
+          refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={loadPicks} tintColor={tint} />}
           ListEmptyComponent={
             <View style={[styles.emptyCard, { backgroundColor: card, borderColor: border }]}>
               <ThemedText type="defaultSemiBold">{t('topPicksEmptyTitle')}</ThemedText>

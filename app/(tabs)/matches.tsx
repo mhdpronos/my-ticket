@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Modal,
   Pressable,
+  RefreshControl,
   ScrollView,
   SectionList,
   StyleSheet,
@@ -11,9 +12,9 @@ import {
   View,
 } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { router } from 'expo-router';
-import { useScrollToTop } from '@react-navigation/native';
+import { useFocusEffect, useScrollToTop } from '@react-navigation/native';
 
 import { DateStrip } from '@/components/matches/DateStrip';
 import { MatchCard } from '@/components/matches/MatchCard';
@@ -35,6 +36,7 @@ export default function MatchesScreen() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [searchValue, setSearchValue] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedLeagueId, setSelectedLeagueId] = useState<string | null>(null);
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<'all' | 'morning' | 'afternoon' | 'evening'>('all');
@@ -42,6 +44,7 @@ export default function MatchesScreen() {
   const [isLeagueModalOpen, setIsLeagueModalOpen] = useState(false);
   const [isCountryModalOpen, setIsCountryModalOpen] = useState(false);
   const listRef = useRef<SectionList<Match>>(null);
+  const hasFocusedOnce = useRef(false);
   const { t, language } = useTranslation();
   const locale = getLocale(language);
 
@@ -67,19 +70,37 @@ export default function MatchesScreen() {
     }
   }, [dates, selectedDateId, setSelectedDateId]);
 
-  useEffect(() => {
-    if (!selectedDateId) {
-      return;
-    }
-    const loadMatches = async () => {
-      setIsLoading(true);
+  const loadMatches = useCallback(
+    async ({ showLoading }: { showLoading?: boolean } = {}) => {
+      if (!selectedDateId) {
+        return;
+      }
+      if (showLoading) {
+        setIsLoading(true);
+      } else {
+        setIsRefreshing(true);
+      }
       const data = await getMatchesByDate(selectedDateId);
       setMatches(data);
       setIsLoading(false);
-    };
+      setIsRefreshing(false);
+    },
+    [selectedDateId]
+  );
 
-    loadMatches();
-  }, [selectedDateId]);
+  useEffect(() => {
+    loadMatches({ showLoading: true });
+  }, [loadMatches]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!hasFocusedOnce.current) {
+        hasFocusedOnce.current = true;
+        return;
+      }
+      loadMatches();
+    }, [loadMatches])
+  );
 
   const leagueOptions = useMemo(() => {
     const unique = new Map(matches.map((match) => [match.league.id, match.league]));
@@ -206,6 +227,7 @@ export default function MatchesScreen() {
         }
         stickySectionHeadersEnabled
         contentContainerStyle={styles.list}
+        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={loadMatches} tintColor={tint} />}
         ListHeaderComponent={
           <View>
             <View style={styles.headerRow}>

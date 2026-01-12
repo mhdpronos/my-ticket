@@ -1,5 +1,7 @@
-import { FlatList, StyleSheet, View } from 'react-native';
+import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ThemedText } from '@/components/ui/ThemedText';
@@ -25,6 +27,9 @@ const notifications = [
 ] as const;
 
 export default function NotificationsScreen() {
+  const [items, setItems] = useState(notifications);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const hasFocusedOnce = useRef(false);
   const background = useThemeColor({}, 'background');
   const card = useThemeColor({}, 'card');
   const border = useThemeColor({}, 'border');
@@ -32,11 +37,31 @@ export default function NotificationsScreen() {
   const tint = useThemeColor({}, 'tint');
   const { t } = useTranslation();
 
+  const reloadNotifications = useCallback(async () => {
+    setIsRefreshing(true);
+    setItems([...notifications]);
+    setIsRefreshing(false);
+  }, []);
+
+  useEffect(() => {
+    setItems([...notifications]);
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!hasFocusedOnce.current) {
+        hasFocusedOnce.current = true;
+        return;
+      }
+      reloadNotifications();
+    }, [reloadNotifications])
+  );
+
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
       <ScreenHeader title={t('notificationsTitle')} subtitle={t('notificationsSubtitle')} />
       <FlatList
-        data={notifications}
+        data={items}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         renderItem={({ item }) => (
@@ -54,6 +79,7 @@ export default function NotificationsScreen() {
             <ThemedText style={{ color: mutedText }}>{t('notificationsEmptySubtitle')}</ThemedText>
           </View>
         }
+        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={reloadNotifications} tintColor={tint} />}
       />
     </View>
   );
