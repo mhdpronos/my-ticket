@@ -16,6 +16,16 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    npx expo start
    ```
 
+3. (Optional) Start the API proxy for API-Football
+
+   ```bash
+   cp .env.example .env
+   npm run server
+   ```
+
+   Update `API_FOOTBALL_KEY` in `.env` with your API-Football key. The Expo app expects
+   `EXPO_PUBLIC_API_BASE_URL` to point to this proxy (defaults to `http://localhost:3001`).
+
 In the output, you'll find options to open the app in a
 
 - [development build](https://docs.expo.dev/develop/development-builds/introduction/)

@@ -1,5 +1,5 @@
 // Le code qui affiche la fiche détaillée d'un match en bottom sheet.
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { BottomSheetBackdrop, BottomSheetModal } from '@gorhom/bottom-sheet';
@@ -10,7 +10,8 @@ import { PredictionRow } from '@/components/matches/PredictionRow';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useTranslation } from '@/hooks/useTranslation';
-import { Match, Prediction, UserAccess } from '@/types';
+import { fetchBookmakers } from '@/services/oddsService';
+import { Bookmaker, Match, Prediction, UserAccess } from '@/types';
 import { getLocale } from '@/utils/i18n';
 
 type MatchBottomSheetProps = {
@@ -41,6 +42,7 @@ export function MatchBottomSheet({
   const accent = useThemeColor({}, 'accent');
   const { t, language } = useTranslation();
   const locale = getLocale(language);
+  const [bookmakers, setBookmakers] = useState<Bookmaker[]>([]);
 
   const snapPoints = useMemo(() => ['65%', '92%'], []);
 
@@ -51,6 +53,24 @@ export function MatchBottomSheet({
       sheetRef.current?.dismiss();
     }
   }, [visible, match]);
+
+  useEffect(() => {
+    let isMounted = true;
+    fetchBookmakers()
+      .then((data) => {
+        if (isMounted) {
+          setBookmakers(data);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setBookmakers([]);
+        }
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleDismiss = useCallback(() => {
     onClose();
@@ -70,8 +90,25 @@ export function MatchBottomSheet({
   const premiumPredictions = predictions.filter((prediction) => prediction.tier === 'premium');
   const visiblePredictions = isPremium ? [...freePredictions, ...premiumPredictions] : freePredictions;
   const scoreLabel = match.score ? `${match.score.home} : ${match.score.away}` : t('matchScoreFallback');
-  const winRate = match.winRate;
-  const bookmakers = ['1xBet', 'Betwinner', 'Melbet', 'Bet365'];
+  const predictionWinRate = predictions.reduce(
+    (acc, prediction) => {
+      if (prediction.market !== '1X2' || prediction.confidence === undefined) {
+        return acc;
+      }
+      if (prediction.selection === 'HOME') {
+        acc.home = prediction.confidence;
+      } else if (prediction.selection === 'DRAW') {
+        acc.draw = prediction.confidence;
+      } else if (prediction.selection === 'AWAY') {
+        acc.away = prediction.confidence;
+      }
+      return acc;
+    },
+    { home: 0, draw: 0, away: 0 }
+  );
+  const hasPredictionRates =
+    predictionWinRate.home + predictionWinRate.draw + predictionWinRate.away > 0;
+  const winRate = match.winRate ?? (hasPredictionRates ? predictionWinRate : null);
 
   const sections = [
     { key: 'safe', label: t('riskSafe'), tone: success },
@@ -192,11 +229,11 @@ export function MatchBottomSheet({
         <View style={styles.bookmakersRow}>
           {bookmakers.map((bookmaker) => (
             <TouchableOpacity
-              key={bookmaker}
+              key={bookmaker.id}
               accessibilityRole="button"
               style={[styles.bookmakerChip, { borderColor: border }]}
               onPress={() => {}}>
-              <ThemedText style={{ color: mutedText }}>{bookmaker}</ThemedText>
+              <ThemedText style={{ color: mutedText }}>{bookmaker.name}</ThemedText>
             </TouchableOpacity>
           ))}
         </View>
