@@ -2,7 +2,7 @@ import { Platform, Pressable, ScrollView, StyleSheet, Switch, View } from 'react
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ThemedText } from '@/components/ui/ThemedText';
@@ -37,6 +37,8 @@ export default function SettingsScreen() {
   const versionLabel = Constants.expoConfig?.version ?? '1.0.0';
   const biometricMethod = Platform.OS === 'ios' ? t('biometricFaceId') : t('biometricFingerprint');
   const isBiometricSupported = Platform.OS === 'ios' || Platform.OS === 'android';
+  const [languageMenuOpen, setLanguageMenuOpen] = useState(false);
+  const [themeMenuOpen, setThemeMenuOpen] = useState(false);
 
   const renderChip = (label: string, active: boolean, onPress: () => void) => (
     <Pressable
@@ -77,6 +79,16 @@ export default function SettingsScreen() {
     </Pressable>
   );
 
+  const renderSelectTrigger = (label: string, onPress: () => void) => (
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      style={[styles.selectTrigger, { backgroundColor: card, borderColor: border }]}>
+      <ThemedText type="defaultSemiBold">{label}</ThemedText>
+      <MaterialCommunityIcons name="chevron-down" size={18} color={mutedText} />
+    </Pressable>
+  );
+
   const themeOptions: { id: ThemeOption; label: string }[] = [
     { id: 'light', label: t('settingsThemeLight') },
     { id: 'dark', label: t('settingsThemeDark') },
@@ -96,10 +108,19 @@ export default function SettingsScreen() {
               <MaterialCommunityIcons name="translate" size={20} color={tint} />
               <ThemedText type="defaultSemiBold">{t('settingsLanguage')}</ThemedText>
             </View>
-            <View style={styles.chipRow}>
-              {renderChip('FR', language === 'fr', () => setLanguage('fr'))}
-              {renderChip('EN', language === 'en', () => setLanguage('en'))}
-            </View>
+            {renderSelectTrigger(language === 'fr' ? 'FR' : 'EN', () => setLanguageMenuOpen((prev) => !prev))}
+            {languageMenuOpen ? (
+              <View style={[styles.dropdownCard, { backgroundColor: card, borderColor: border }]}>
+                {renderChip('FR', language === 'fr', () => {
+                  setLanguage('fr');
+                  setLanguageMenuOpen(false);
+                })}
+                {renderChip('EN', language === 'en', () => {
+                  setLanguage('en');
+                  setLanguageMenuOpen(false);
+                })}
+              </View>
+            ) : null}
           </View>
 
           <View style={[styles.settingItem, { borderColor: border }]}>
@@ -107,11 +128,20 @@ export default function SettingsScreen() {
               <MaterialCommunityIcons name="theme-light-dark" size={20} color={tint} />
               <ThemedText type="defaultSemiBold">{t('settingsTheme')}</ThemedText>
             </View>
-            <View style={styles.chipRow}>
-              {themeOptions.map((option) =>
-                renderChip(option.label, themePreference === option.id, () => setThemePreference(option.id))
-              )}
-            </View>
+            {renderSelectTrigger(
+              themeOptions.find((option) => option.id === themePreference)?.label ?? t('settingsThemeSystem'),
+              () => setThemeMenuOpen((prev) => !prev)
+            )}
+            {themeMenuOpen ? (
+              <View style={[styles.dropdownCard, { backgroundColor: card, borderColor: border }]}>
+                {themeOptions.map((option) =>
+                  renderChip(option.label, themePreference === option.id, () => {
+                    setThemePreference(option.id);
+                    setThemeMenuOpen(false);
+                  })
+                )}
+              </View>
+            ) : null}
             <ThemedText style={{ color: mutedText }}>{t('settingsThemeSystemHint')}</ThemedText>
           </View>
         </View>
@@ -287,6 +317,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+  },
+  selectTrigger: {
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  dropdownCard: {
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 10,
+    gap: 8,
+    shadowColor: '#000000',
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
   },
   chipRow: {
     flexDirection: 'row',
