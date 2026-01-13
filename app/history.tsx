@@ -69,6 +69,7 @@ export default function HistoryScreen() {
           </View>
         }
         refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={reloadHistory} />}
+        contentInsetAdjustmentBehavior="never"
       />
     </View>
   );

@@ -65,9 +65,9 @@ export default function TopPicksScreen() {
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
       <View style={styles.header}>
-        <View>
-          <ThemedText type="title">{t('tabsTopPicks')}</ThemedText>
-          <ThemedText style={{ color: mutedText }}>{t('headerTopPicksSubtitle')}</ThemedText>
+        <View style={styles.headerText}>
+          <ThemedText type="pageTitle">{t('tabsTopPicks')}</ThemedText>
+          <ThemedText style={[styles.subtitle, { color: mutedText }]}>{t('headerTopPicksSubtitle')}</ThemedText>
         </View>
         <TouchableOpacity
           accessibilityRole="button"
@@ -105,6 +105,7 @@ export default function TopPicksScreen() {
             </View>
           }
           showsVerticalScrollIndicator={false}
+          contentInsetAdjustmentBehavior="never"
         />
       )}
     </View>
@@ -117,12 +118,14 @@ const styles = StyleSheet.create({
     paddingTop: 56,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     gap: 12,
     marginBottom: 16,
     paddingHorizontal: 16,
+    justifyContent: 'center',
+  },
+  headerText: {
+    alignItems: 'center',
   },
   actionButton: {
     flexDirection: 'row',
@@ -132,6 +135,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 12,
     borderWidth: 1,
+    position: 'absolute',
+    right: 16,
+  },
+  subtitle: {
+    textAlign: 'center',
   },
   list: {
     gap: 12,

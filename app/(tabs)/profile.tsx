@@ -58,8 +58,8 @@ export default function ProfileScreen() {
           <MaterialCommunityIcons name="account-outline" size={30} color={mutedText} />
         </View>
         <View style={styles.identity}>
-          <ThemedText type="title">{t('profileTitle')}</ThemedText>
-          <ThemedText style={{ color: mutedText }}>
+          <ThemedText type="pageTitle">{t('profileTitle')}</ThemedText>
+          <ThemedText style={[styles.subtitle, { color: mutedText }]}>
             {userAccess.isGuest ? t('profileGuest') : t('profileConnected')} • {userAccess.status}
           </ThemedText>
         </View>
@@ -248,9 +248,8 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   header: {
-    flexDirection: 'row',
-    gap: 12,
     alignItems: 'center',
+    gap: 12,
   },
   avatar: {
     width: 56,
@@ -261,8 +260,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   identity: {
-    flex: 1,
     gap: 4,
+    alignItems: 'center',
   },
   signOut: {
     flexDirection: 'row',
@@ -272,6 +271,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 6,
     paddingHorizontal: 10,
+  },
+  subtitle: {
+    textAlign: 'center',
   },
   card: {
     borderWidth: 1,

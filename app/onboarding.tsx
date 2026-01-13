@@ -14,8 +14,8 @@ export default function OnboardingScreen() {
   return (
     <View style={[styles.container, { backgroundColor: background }]}> 
       <View style={styles.content}>
-        <ThemedText type="title">{t('appName')}</ThemedText>
-        <ThemedText style={{ color: mutedText }}>
+        <ThemedText type="pageTitle">{t('appName')}</ThemedText>
+        <ThemedText style={[styles.subtitle, { color: mutedText }]}>
           {t('onboardingTagline')}
         </ThemedText>
       </View>
@@ -38,6 +38,10 @@ const styles = StyleSheet.create({
   },
   content: {
     gap: 10,
+    alignItems: 'center',
+  },
+  subtitle: {
+    textAlign: 'center',
   },
   primaryButton: {
     borderRadius: 12,

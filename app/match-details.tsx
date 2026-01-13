@@ -119,7 +119,8 @@ export default function MatchDetailsScreen() {
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={loadMatch} tintColor={tint} />}>
+        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={loadMatch} tintColor={tint} />}
+        contentInsetAdjustmentBehavior="never">
         <View style={[styles.matchCard, { backgroundColor: card, borderColor: border }]}>
           <View style={styles.matchHeader}>
             <View style={styles.teamColumn}>
