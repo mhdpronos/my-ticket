@@ -227,25 +227,24 @@ export default function MatchesScreen() {
         }
         stickySectionHeadersEnabled
         contentContainerStyle={styles.list}
+        contentInsetAdjustmentBehavior="never"
         refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={loadMatches} tintColor={tint} />}
         ListHeaderComponent={
           <View>
-            <View style={styles.headerRow}>
-              <View style={styles.brandBlock}>
-                <ThemedText type="title" style={styles.brandTitle} numberOfLines={1}>
-                  {t('appName')}
-                </ThemedText>
-                <ThemedText style={{ color: mutedText }} numberOfLines={1} ellipsizeMode="tail">
-                  {t('headerMatchesSubtitle')}
-                </ThemedText>
-              </View>
+            <View style={[styles.titleBar, { backgroundColor: tint }]}>
+              <ThemedText type="title" style={styles.titleText} numberOfLines={1}>
+                {t('appName')}
+              </ThemedText>
               <TouchableOpacity
                 accessibilityRole="button"
                 onPress={() => router.push('/notifications')}
-                style={[styles.notificationButton, { borderColor: border, backgroundColor: card }]}>
+                style={[styles.notificationButton, { borderColor: '#FFFFFF', backgroundColor: card }]}>
                 <MaterialCommunityIcons name="bell-outline" size={20} color={mutedText} />
               </TouchableOpacity>
             </View>
+            <ThemedText style={[styles.subtitleText, { color: mutedText }]} numberOfLines={1} ellipsizeMode="tail">
+              {t('headerMatchesSubtitle')}
+            </ThemedText>
             <View style={[styles.divider, { backgroundColor: border }]} />
 
             <View style={styles.searchRow}>
@@ -426,21 +425,27 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingTop: 56,
   },
-  headerRow: {
+  titleBar: {
+    marginHorizontal: 16,
+    borderRadius: 16,
+    paddingVertical: 12,
     paddingHorizontal: 16,
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
+    justifyContent: 'center',
   },
-  brandBlock: {
-    flex: 1,
-    gap: 6,
-  },
-  brandTitle: {
+  titleText: {
+    color: '#FFFFFF',
+    textAlign: 'center',
     letterSpacing: 1,
   },
+  subtitleText: {
+    textAlign: 'center',
+    marginTop: 6,
+    marginHorizontal: 16,
+  },
   notificationButton: {
+    position: 'absolute',
+    right: 12,
     width: 44,
     height: 44,
     borderRadius: 22,

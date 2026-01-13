@@ -1,6 +1,6 @@
-import { FlatList, StyleSheet, View } from 'react-native';
+import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useScrollToTop } from '@react-navigation/native';
 import { router } from 'expo-router';
 
@@ -16,21 +16,31 @@ export default function FavoritesScreen() {
   const card = useThemeColor({}, 'card');
   const border = useThemeColor({}, 'border');
   const mutedText = useThemeColor({}, 'mutedText');
+  const tint = useThemeColor({}, 'tint');
   const listRef = useRef<FlatList<Match>>(null);
   const { t } = useTranslation();
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const favoriteMatches = useAppStore((state) => state.favoriteMatches);
   const toggleFavoriteMatch = useAppStore((state) => state.toggleFavoriteMatch);
 
   const isMatchFavorite = (matchId: string) => favoriteMatches.some((match) => match.id === matchId);
+  const handleRefresh = useCallback(() => {
+    setIsRefreshing(true);
+    requestAnimationFrame(() => setIsRefreshing(false));
+  }, []);
 
   useScrollToTop(listRef);
 
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
       <View style={styles.header}>
-        <ThemedText type="title">{t('tabsFavorites')}</ThemedText>
-        <ThemedText style={{ color: mutedText }}>{t('headerFavoritesSubtitle')}</ThemedText>
+        <View style={[styles.titleBar, { backgroundColor: tint }]}>
+          <ThemedText type="title" style={styles.titleText}>
+            {t('tabsFavorites')}
+          </ThemedText>
+        </View>
+        <ThemedText style={[styles.subtitleText, { color: mutedText }]}>{t('headerFavoritesSubtitle')}</ThemedText>
       </View>
 
       <FlatList
@@ -53,6 +63,8 @@ export default function FavoritesScreen() {
             <ThemedText style={{ color: mutedText }}>{t('favoritesEmptySubtitle')}</ThemedText>
           </View>
         }
+        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={tint} />}
+        contentInsetAdjustmentBehavior="never"
         showsVerticalScrollIndicator={false}
       />
     </View>
@@ -68,6 +80,19 @@ const styles = StyleSheet.create({
   header: {
     gap: 6,
     paddingHorizontal: 16,
+  },
+  titleBar: {
+    borderRadius: 16,
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  titleText: {
+    color: '#FFFFFF',
+    textAlign: 'center',
+  },
+  subtitleText: {
+    textAlign: 'center',
   },
   list: {
     gap: 12,

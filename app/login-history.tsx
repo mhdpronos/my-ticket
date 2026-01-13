@@ -50,6 +50,7 @@ export default function LoginHistoryScreen() {
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
+        contentInsetAdjustmentBehavior="never"
         refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={reloadHistory} />}>
         {items.map((item) => (
           <View key={item.id} style={[styles.card, { backgroundColor: card, borderColor: border }]}>
