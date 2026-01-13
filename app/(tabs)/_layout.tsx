@@ -1,15 +1,20 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { HapticTab } from '@/components/ui/HapticTab';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useAppStore } from '@/store/useAppStore';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const { t } = useTranslation();
+  const ticketCount = useAppStore((state) => state.ticketItems.length);
+  const tint = Colors[colorScheme ?? 'light'].tint;
+  const border = Colors[colorScheme ?? 'light'].border;
 
   return (
     <Tabs
@@ -26,7 +31,7 @@ export default function TabLayout() {
         },
         tabBarLabelStyle: {
           fontSize: 12,
-          marginTop: 4,
+          marginTop: 6,
         },
         tabBarItemStyle: {
           alignItems: 'center',
@@ -51,7 +56,18 @@ export default function TabLayout() {
         name="ticket"
         options={{
           title: t('tabsTicket'),
-          tabBarIcon: ({ color }) => <MaterialCommunityIcons name="ticket-outline" size={24} color={color} />,
+          tabBarIcon: () => (
+            <View style={styles.ticketIconWrapper}>
+              <View style={[styles.ticketIconCircle, { backgroundColor: tint, borderColor: border }]}>
+                <MaterialCommunityIcons name="ticket-outline" size={28} color="#FFFFFF" />
+              </View>
+              {ticketCount > 0 ? (
+                <View style={styles.ticketBadge}>
+                  <Text style={styles.ticketBadgeText}>{ticketCount > 9 ? '9+' : ticketCount}</Text>
+                </View>
+              ) : null}
+            </View>
+          ),
         }}
       />
       <Tabs.Screen
@@ -71,3 +87,36 @@ export default function TabLayout() {
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  ticketIconWrapper: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    transform: [{ translateY: -6 }],
+  },
+  ticketIconCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+  },
+  ticketBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -10,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#E11D48',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  ticketBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+});

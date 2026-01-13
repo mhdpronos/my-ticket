@@ -1,6 +1,6 @@
-import { FlatList, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { FlatList, RefreshControl, StyleSheet, TouchableOpacity, View } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useScrollToTop } from '@react-navigation/native';
 
 import { TicketItemRow } from '@/components/ticket/TicketItemRow';
@@ -20,16 +20,24 @@ export default function TicketScreen() {
   const card = useThemeColor({}, 'card');
   const border = useThemeColor({}, 'border');
   const mutedText = useThemeColor({}, 'mutedText');
+  const tint = useThemeColor({}, 'tint');
   const { t } = useTranslation();
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useScrollToTop(listRef);
+
+  const refreshTicket = useCallback(async () => {
+    setIsRefreshing(true);
+    await new Promise((resolve) => setTimeout(resolve, 350));
+    setIsRefreshing(false);
+  }, []);
 
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
       <View style={styles.header}>
-        <View>
-          <ThemedText type="title">{t('tabsTicket')}</ThemedText>
-          <ThemedText style={{ color: mutedText }}>{t('headerTicketSubtitle')}</ThemedText>
+        <View style={styles.headerText}>
+          <ThemedText type="pageTitle">{t('tabsTicket')}</ThemedText>
+          <ThemedText style={[styles.subtitle, { color: mutedText }]}>{t('headerTicketSubtitle')}</ThemedText>
         </View>
         <TouchableOpacity
           accessibilityRole="button"
@@ -55,6 +63,8 @@ export default function TicketScreen() {
           </View>
         }
         showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={refreshTicket} tintColor={tint} />}
+        contentInsetAdjustmentBehavior="never"
       />
     </View>
   );
@@ -68,10 +78,9 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: 16,
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     gap: 12,
+    justifyContent: 'center',
   },
   clearButton: {
     flexDirection: 'row',
@@ -81,6 +90,14 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 8,
     paddingHorizontal: 12,
+    position: 'absolute',
+    right: 0,
+  },
+  headerText: {
+    alignItems: 'center',
+  },
+  subtitle: {
+    textAlign: 'center',
   },
   list: {
     gap: 12,

@@ -49,7 +49,8 @@ export default function SessionsScreen() {
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={reloadSessions} tintColor={tint} />}>
+        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={reloadSessions} tintColor={tint} />}
+        contentInsetAdjustmentBehavior="never">
         {items.map((session) => (
           <View key={session.id} style={[styles.card, { backgroundColor: card, borderColor: border }]}>
             <ThemedText type="defaultSemiBold">{session.device}</ThemedText>

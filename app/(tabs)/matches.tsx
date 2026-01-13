@@ -232,10 +232,13 @@ export default function MatchesScreen() {
           <View>
             <View style={styles.headerRow}>
               <View style={styles.brandBlock}>
-                <ThemedText type="title" style={styles.brandTitle} numberOfLines={1}>
+                <ThemedText type="pageTitle" style={styles.brandTitle} numberOfLines={1}>
                   {t('appName')}
                 </ThemedText>
-                <ThemedText style={{ color: mutedText }} numberOfLines={1} ellipsizeMode="tail">
+                <ThemedText
+                  style={[styles.subtitle, { color: mutedText }]}
+                  numberOfLines={1}
+                  ellipsizeMode="tail">
                   {t('headerMatchesSubtitle')}
                 </ThemedText>
               </View>
@@ -335,6 +338,7 @@ export default function MatchesScreen() {
         initialNumToRender={12}
         maxToRenderPerBatch={12}
         windowSize={8}
+        contentInsetAdjustmentBehavior="never"
       />
 
       {isLoading ? (
@@ -428,14 +432,14 @@ const styles = StyleSheet.create({
   },
   headerRow: {
     paddingHorizontal: 16,
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     gap: 12,
+    justifyContent: 'center',
+    position: 'relative',
   },
   brandBlock: {
-    flex: 1,
     gap: 6,
+    alignItems: 'center',
   },
   brandTitle: {
     letterSpacing: 1,
@@ -447,6 +451,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    position: 'absolute',
+    right: 16,
+  },
+  subtitle: {
+    textAlign: 'center',
   },
   divider: {
     height: 1,

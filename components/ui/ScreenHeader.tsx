@@ -27,8 +27,8 @@ export function ScreenHeader({ title, subtitle, containerStyle }: ScreenHeaderPr
         <MaterialCommunityIcons name="chevron-left" size={22} color={mutedText} />
       </TouchableOpacity>
       <View style={styles.textBlock}>
-        <ThemedText type="title">{title}</ThemedText>
-        {subtitle ? <ThemedText style={{ color: mutedText }}>{subtitle}</ThemedText> : null}
+        <ThemedText type="pageTitle">{title}</ThemedText>
+        {subtitle ? <ThemedText style={[styles.subtitle, { color: mutedText }]}>{subtitle}</ThemedText> : null}
       </View>
     </View>
   );
@@ -36,9 +36,8 @@ export function ScreenHeader({ title, subtitle, containerStyle }: ScreenHeaderPr
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    justifyContent: 'center',
     paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: 8,
@@ -50,9 +49,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    position: 'absolute',
+    left: 16,
   },
   textBlock: {
-    flex: 1,
     gap: 4,
+    alignItems: 'center',
+    paddingHorizontal: 44,
+  },
+  subtitle: {
+    textAlign: 'center',
   },
 });

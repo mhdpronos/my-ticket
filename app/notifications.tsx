@@ -80,6 +80,7 @@ export default function NotificationsScreen() {
           </View>
         }
         refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={reloadNotifications} tintColor={tint} />}
+        contentInsetAdjustmentBehavior="never"
       />
     </View>
   );

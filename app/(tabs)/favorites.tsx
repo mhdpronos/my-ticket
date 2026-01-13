@@ -1,6 +1,6 @@
-import { FlatList, StyleSheet, View } from 'react-native';
+import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useScrollToTop } from '@react-navigation/native';
 import { router } from 'expo-router';
 
@@ -16,21 +16,29 @@ export default function FavoritesScreen() {
   const card = useThemeColor({}, 'card');
   const border = useThemeColor({}, 'border');
   const mutedText = useThemeColor({}, 'mutedText');
+  const tint = useThemeColor({}, 'tint');
   const listRef = useRef<FlatList<Match>>(null);
   const { t } = useTranslation();
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const favoriteMatches = useAppStore((state) => state.favoriteMatches);
   const toggleFavoriteMatch = useAppStore((state) => state.toggleFavoriteMatch);
 
   const isMatchFavorite = (matchId: string) => favoriteMatches.some((match) => match.id === matchId);
 
+  const refreshFavorites = useCallback(async () => {
+    setIsRefreshing(true);
+    await new Promise((resolve) => setTimeout(resolve, 350));
+    setIsRefreshing(false);
+  }, []);
+
   useScrollToTop(listRef);
 
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
       <View style={styles.header}>
-        <ThemedText type="title">{t('tabsFavorites')}</ThemedText>
-        <ThemedText style={{ color: mutedText }}>{t('headerFavoritesSubtitle')}</ThemedText>
+        <ThemedText type="pageTitle">{t('tabsFavorites')}</ThemedText>
+        <ThemedText style={[styles.subtitle, { color: mutedText }]}>{t('headerFavoritesSubtitle')}</ThemedText>
       </View>
 
       <FlatList
@@ -53,7 +61,9 @@ export default function FavoritesScreen() {
             <ThemedText style={{ color: mutedText }}>{t('favoritesEmptySubtitle')}</ThemedText>
           </View>
         }
+        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={refreshFavorites} tintColor={tint} />}
         showsVerticalScrollIndicator={false}
+        contentInsetAdjustmentBehavior="never"
       />
     </View>
   );
@@ -68,6 +78,10 @@ const styles = StyleSheet.create({
   header: {
     gap: 6,
     paddingHorizontal: 16,
+    alignItems: 'center',
+  },
+  subtitle: {
+    textAlign: 'center',
   },
   list: {
     gap: 12,
