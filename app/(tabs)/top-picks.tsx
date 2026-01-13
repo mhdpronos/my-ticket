@@ -50,6 +50,7 @@ export default function TopPicksScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      listRef.current?.scrollToOffset({ offset: 0, animated: false });
       if (!hasFocusedOnce.current) {
         hasFocusedOnce.current = true;
         return;
