@@ -45,13 +45,13 @@ const styles = StyleSheet.create({
   },
   pageTitle: {
     fontSize: 30,
-    fontWeight: '700',
+    fontWeight: 'bold',
     lineHeight: 34,
     textAlign: 'center',
     color: '#4DA3FF',
-    textShadowColor: '#FFFFFF',
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 6,
+    
   },
   subtitle: {
     fontSize: 20,
