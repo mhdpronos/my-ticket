@@ -94,6 +94,7 @@ export default function MatchesScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      listRef.current?.scrollToLocation({ sectionIndex: 0, itemIndex: 0, animated: false });
       if (!hasFocusedOnce.current) {
         hasFocusedOnce.current = true;
         return;
