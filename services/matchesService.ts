@@ -1,5 +1,7 @@
+import { mockMatches } from '@/data/matches';
 import { fetchJson } from '@/services/apiClient';
 import { Match, MatchStatus } from '@/types';
+import { isSameDay } from '@/utils/dateRange';
 
 type ApiFixture = {
   fixture: {
@@ -81,15 +83,24 @@ const formatApiDate = (dateIso: string) => {
 
 export const getMatchesByDate = async (dateIso: string): Promise<Match[]> => {
   const data = await fetchJson<ApiFixtureResponse>('/api/fixtures', { date: formatApiDate(dateIso) });
-  return data?.response.map(mapFixtureToMatch) ?? [];
+  if (data?.response?.length) {
+    return data.response.map(mapFixtureToMatch);
+  }
+  return mockMatches.filter((match) => isSameDay(match.kickoffIso, dateIso));
 };
 
 export const getAllMatches = async (): Promise<Match[]> => {
   const data = await fetchJson<ApiFixtureResponse>('/api/fixtures', { next: 30 });
-  return data?.response.map(mapFixtureToMatch) ?? [];
+  if (data?.response?.length) {
+    return data.response.map(mapFixtureToMatch);
+  }
+  return mockMatches;
 };
 
 export const getMatchById = async (matchId: string): Promise<Match | null> => {
   const data = await fetchJson<ApiFixtureResponse>('/api/fixtures/' + matchId);
-  return data?.response[0] ? mapFixtureToMatch(data.response[0]) : null;
+  if (data?.response?.[0]) {
+    return mapFixtureToMatch(data.response[0]);
+  }
+  return mockMatches.find((match) => match.id === matchId) ?? null;
 };
