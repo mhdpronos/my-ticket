@@ -1,7 +1,7 @@
 import { FlatList, RefreshControl, StyleSheet, TouchableOpacity, View } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useCallback, useRef, useState } from 'react';
-import { useScrollToTop } from '@react-navigation/native';
+import { useFocusEffect, useScrollToTop } from '@react-navigation/native';
 
 import { TicketItemRow } from '@/components/ticket/TicketItemRow';
 import { ThemedText } from '@/components/ui/ThemedText';
@@ -25,6 +25,12 @@ export default function TicketScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   useScrollToTop(listRef);
+
+  useFocusEffect(
+    useCallback(() => {
+      listRef.current?.scrollToOffset({ offset: 0, animated: false });
+    }, [])
+  );
 
   const refreshTicket = useCallback(async () => {
     setIsRefreshing(true);
