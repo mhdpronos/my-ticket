@@ -1,6 +1,6 @@
-import { FlatList, RefreshControl, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { FlatList, StyleSheet, TouchableOpacity, View } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { useCallback, useRef, useState } from 'react';
+import { useRef } from 'react';
 import { useScrollToTop } from '@react-navigation/native';
 
 import { TicketItemRow } from '@/components/ticket/TicketItemRow';
@@ -20,26 +20,17 @@ export default function TicketScreen() {
   const card = useThemeColor({}, 'card');
   const border = useThemeColor({}, 'border');
   const mutedText = useThemeColor({}, 'mutedText');
-  const tint = useThemeColor({}, 'tint');
   const { t } = useTranslation();
-  const [isRefreshing, setIsRefreshing] = useState(false);
-
-  const handleRefresh = useCallback(() => {
-    setIsRefreshing(true);
-    requestAnimationFrame(() => setIsRefreshing(false));
-  }, []);
 
   useScrollToTop(listRef);
 
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
       <View style={styles.header}>
-        <View style={[styles.titleBar, { backgroundColor: tint }]}>
-          <ThemedText type="title" style={styles.titleText}>
-            {t('tabsTicket')}
-          </ThemedText>
+        <View>
+          <ThemedText type="title">{t('tabsTicket')}</ThemedText>
+          <ThemedText style={{ color: mutedText }}>{t('headerTicketSubtitle')}</ThemedText>
         </View>
-        <ThemedText style={[styles.subtitleText, { color: mutedText }]}>{t('headerTicketSubtitle')}</ThemedText>
         <TouchableOpacity
           accessibilityRole="button"
           onPress={clearTicket}
@@ -63,8 +54,6 @@ export default function TicketScreen() {
             <ThemedText style={{ color: mutedText }}>{t('ticketEmptySubtitle')}</ThemedText>
           </View>
         }
-        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={tint} />}
-        contentInsetAdjustmentBehavior="never"
         showsVerticalScrollIndicator={false}
       />
     </View>
@@ -79,23 +68,10 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: 16,
-    gap: 10,
+    flexDirection: 'row',
     alignItems: 'center',
-  },
-  titleBar: {
-    borderRadius: 16,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-  },
-  titleText: {
-    color: '#FFFFFF',
-    textAlign: 'center',
-  },
-  subtitleText: {
-    textAlign: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
   },
   clearButton: {
     flexDirection: 'row',
@@ -105,7 +81,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 8,
     paddingHorizontal: 12,
-    alignSelf: 'center',
   },
   list: {
     gap: 12,

@@ -64,7 +64,6 @@ export default function NotificationsScreen() {
         data={items}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
-        contentInsetAdjustmentBehavior="never"
         renderItem={({ item }) => (
           <View style={[styles.card, { borderColor: border, backgroundColor: card }]}>
             <MaterialCommunityIcons name="bell-ring-outline" size={20} color={tint} />

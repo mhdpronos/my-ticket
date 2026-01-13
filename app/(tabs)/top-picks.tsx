@@ -65,12 +65,10 @@ export default function TopPicksScreen() {
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
       <View style={styles.header}>
-        <View style={[styles.titleBar, { backgroundColor: tint }]}>
-          <ThemedText type="title" style={styles.titleText}>
-            {t('tabsTopPicks')}
-          </ThemedText>
+        <View>
+          <ThemedText type="title">{t('tabsTopPicks')}</ThemedText>
+          <ThemedText style={{ color: mutedText }}>{t('headerTopPicksSubtitle')}</ThemedText>
         </View>
-        <ThemedText style={[styles.subtitleText, { color: mutedText }]}>{t('headerTopPicksSubtitle')}</ThemedText>
         <TouchableOpacity
           accessibilityRole="button"
           onPress={() => router.push('/matches')}
@@ -100,7 +98,6 @@ export default function TopPicksScreen() {
             />
           )}
           refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={loadPicks} tintColor={tint} />}
-          contentInsetAdjustmentBehavior="never"
           ListEmptyComponent={
             <View style={[styles.emptyCard, { backgroundColor: card, borderColor: border }]}>
               <ThemedText type="defaultSemiBold">{t('topPicksEmptyTitle')}</ThemedText>
@@ -120,25 +117,12 @@ const styles = StyleSheet.create({
     paddingTop: 56,
   },
   header: {
-    gap: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 12,
     marginBottom: 16,
     paddingHorizontal: 16,
-    alignItems: 'center',
-  },
-  titleBar: {
-    borderRadius: 16,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-  },
-  titleText: {
-    color: '#FFFFFF',
-    textAlign: 'center',
-  },
-  subtitleText: {
-    textAlign: 'center',
   },
   actionButton: {
     flexDirection: 'row',
@@ -148,7 +132,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 12,
     borderWidth: 1,
-    alignSelf: 'center',
   },
   list: {
     gap: 12,

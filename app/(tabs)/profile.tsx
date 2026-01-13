@@ -54,16 +54,14 @@ export default function ProfileScreen() {
       style={[styles.container, { backgroundColor: background }]}
       contentContainerStyle={styles.content}>
       <View style={styles.header}>
-        <View style={[styles.titleBar, { backgroundColor: tint }]}>
-          <ThemedText type="title" style={styles.titleText}>
-            {t('profileTitle')}
-          </ThemedText>
-        </View>
-        <ThemedText style={[styles.subtitleText, { color: mutedText }]}>
-          {userAccess.isGuest ? t('profileGuest') : t('profileConnected')} • {userAccess.status}
-        </ThemedText>
         <View style={[styles.avatar, { borderColor: border }]}> 
           <MaterialCommunityIcons name="account-outline" size={30} color={mutedText} />
+        </View>
+        <View style={styles.identity}>
+          <ThemedText type="title">{t('profileTitle')}</ThemedText>
+          <ThemedText style={{ color: mutedText }}>
+            {userAccess.isGuest ? t('profileGuest') : t('profileConnected')} • {userAccess.status}
+          </ThemedText>
         </View>
         {!userAccess.isGuest && (
           <Pressable
@@ -250,23 +248,9 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   header: {
+    flexDirection: 'row',
     gap: 12,
     alignItems: 'center',
-  },
-  titleBar: {
-    borderRadius: 16,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-  },
-  titleText: {
-    color: '#FFFFFF',
-    textAlign: 'center',
-  },
-  subtitleText: {
-    textAlign: 'center',
   },
   avatar: {
     width: 56,
@@ -276,6 +260,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1,
   },
+  identity: {
+    flex: 1,
+    gap: 4,
+  },
   signOut: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -284,7 +272,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 6,
     paddingHorizontal: 10,
-    alignSelf: 'center',
   },
   card: {
     borderWidth: 1,

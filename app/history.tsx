@@ -51,7 +51,6 @@ export default function HistoryScreen() {
         data={items}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
-        contentInsetAdjustmentBehavior="never"
         renderItem={({ item }) => (
           <View style={[styles.card, { borderColor: border, backgroundColor: card }]}>
             <MaterialCommunityIcons name="history" size={20} color={mutedText} />
