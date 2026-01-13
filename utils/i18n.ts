@@ -416,6 +416,8 @@ const predictionLabelTranslations: Record<string, { fr: string; en: string }> = 
   'Victoire domicile sans encaisser': { fr: 'Victoire domicile sans encaisser', en: 'Home win to nil' },
   'Score exact 2-0': { fr: 'Score exact 2-0', en: 'Correct score 2-0' },
   'Home win': { fr: 'Victoire domicile', en: 'Home win' },
+  'Away win': { fr: 'Victoire extérieur', en: 'Away win' },
+  Draw: { fr: 'Match nul', en: 'Draw' },
   'Over 1.5 goals': { fr: 'Plus de 1.5 buts', en: 'Over 1.5 goals' },
   'Both teams score': { fr: 'Les deux équipes marquent', en: 'Both teams score' },
   'Home win + Over 1.5 goals': { fr: 'Victoire domicile + +1.5 buts', en: 'Home win + Over 1.5 goals' },

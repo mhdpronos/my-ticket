@@ -10,7 +10,7 @@ import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useTranslation } from '@/hooks/useTranslation';
-import { getAllMatches } from '@/services/matchesService';
+import { getMatchById } from '@/services/matchesService';
 import { getPredictionsForMatch } from '@/services/predictionsService';
 import { useAppStore } from '@/store/useAppStore';
 import { Match, Prediction } from '@/types';
@@ -51,8 +51,7 @@ export default function MatchDetailsScreen() {
       } else {
         setIsRefreshing(true);
       }
-      const data = await getAllMatches();
-      const foundMatch = data.find((item) => item.id === matchIdValue) ?? null;
+      const foundMatch = await getMatchById(matchIdValue);
       setMatch(foundMatch);
       if (foundMatch) {
         const predictionsData = await getPredictionsForMatch(foundMatch.id);
@@ -111,7 +110,25 @@ export default function MatchDetailsScreen() {
   }
 
   const scoreLabel = match.score ? `${match.score.home} : ${match.score.away}` : t('matchScoreFallback');
-  const winRate = match.winRate;
+  const predictionWinRate = predictions.reduce(
+    (acc, prediction) => {
+      if (prediction.market !== '1X2' || prediction.confidence === undefined) {
+        return acc;
+      }
+      if (prediction.selection === 'HOME') {
+        acc.home = prediction.confidence;
+      } else if (prediction.selection === 'DRAW') {
+        acc.draw = prediction.confidence;
+      } else if (prediction.selection === 'AWAY') {
+        acc.away = prediction.confidence;
+      }
+      return acc;
+    },
+    { home: 0, draw: 0, away: 0 }
+  );
+  const hasPredictionRates =
+    predictionWinRate.home + predictionWinRate.draw + predictionWinRate.away > 0;
+  const winRate = match.winRate ?? (hasPredictionRates ? predictionWinRate : null);
 
   return (
     <View style={[styles.container, { backgroundColor: background }]}>

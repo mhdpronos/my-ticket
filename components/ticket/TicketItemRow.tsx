@@ -1,4 +1,5 @@
 // Le code qui rend une ligne du ticket avec les cotes.
+import { useEffect, useState } from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Image } from 'expo-image';
@@ -6,8 +7,8 @@ import { Image } from 'expo-image';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useTranslation } from '@/hooks/useTranslation';
-import { getBookmakers, getOddsForPrediction } from '@/services/oddsService';
-import { TicketItem } from '@/types';
+import { fetchBookmakers, fetchOddsForPrediction } from '@/services/oddsService';
+import { OddsByBookmaker, Bookmaker, TicketItem } from '@/types';
 import { translatePredictionLabel } from '@/utils/i18n';
 
 type TicketItemRowProps = {
@@ -22,8 +23,44 @@ export function TicketItemRow({ item, onRemove }: TicketItemRowProps) {
   const tint = useThemeColor({}, 'tint');
   const { t, language } = useTranslation();
 
-  const bookmakers = getBookmakers();
-  const oddsByBookmaker = getOddsForPrediction(item.prediction);
+  const [bookmakers, setBookmakers] = useState<Bookmaker[]>([]);
+  const [oddsByBookmaker, setOddsByBookmaker] = useState<OddsByBookmaker>({});
+
+  useEffect(() => {
+    let isMounted = true;
+    fetchBookmakers()
+      .then((data) => {
+        if (isMounted) {
+          setBookmakers(data);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setBookmakers([]);
+        }
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    fetchOddsForPrediction(item.prediction)
+      .then((data) => {
+        if (isMounted) {
+          setOddsByBookmaker(data);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setOddsByBookmaker({});
+        }
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [item.prediction]);
   const scoreLabel = item.match.score
     ? `${item.match.score.home} : ${item.match.score.away}`
     : t('matchScoreFallback');

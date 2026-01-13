@@ -53,6 +53,7 @@ export type Prediction = {
   selection: SelectionType;
   tier: PredictionTier;
   risk: RiskLevel;
+  confidence?: number;
 };
 
 export type TicketItem = {
