@@ -37,7 +37,6 @@ export default function MatchesScreen() {
   const [searchValue, setSearchValue] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [selectedLeagueId, setSelectedLeagueId] = useState<string | null>(null);
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<'all' | 'morning' | 'afternoon' | 'evening'>('all');
@@ -81,9 +80,8 @@ export default function MatchesScreen() {
       } else {
         setIsRefreshing(true);
       }
-      const { matches: data, error } = await getMatchesByDate(selectedDateId);
+      const data = await getMatchesByDate(selectedDateId);
       setMatches(data);
-      setErrorMessage(error);
       setIsLoading(false);
       setIsRefreshing(false);
     },
@@ -267,7 +265,7 @@ export default function MatchesScreen() {
               </View>
             </View>
 
-            <View style={[styles.filterPanel, { backgroundColor: card, borderColor: border }]}>
+            <View style={[styles.filterPanel, { backgroundColor: card, borderColor: border }]}> 
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -327,18 +325,10 @@ export default function MatchesScreen() {
                 })}
               </ScrollView>
             </View>
-            {errorMessage ? (
-              <View style={[styles.errorCard, { borderColor: border, backgroundColor: card }]}>
-                <ThemedText type="defaultSemiBold">{t('apiErrorTitle')}</ThemedText>
-                <ThemedText style={{ color: mutedText }}>
-                  {t('apiErrorSubtitle', { message: errorMessage || t('apiErrorUnknown') })}
-                </ThemedText>
-              </View>
-            ) : null}
           </View>
         }
         ListFooterComponent={
-          !isLoading && !errorMessage && visibleMatches.length === 0 ? (
+          !isLoading && visibleMatches.length === 0 ? (
             <View style={[styles.emptyCard, { borderColor: border, backgroundColor: card }]}>
               <ThemedText type="defaultSemiBold">{t('emptyMatchesTitle')}</ThemedText>
               <ThemedText style={{ color: mutedText }}>{t('emptyMatchesSubtitle')}</ThemedText>
@@ -548,14 +538,6 @@ const styles = StyleSheet.create({
     gap: 6,
     marginHorizontal: 16,
     marginTop: 16,
-  },
-  errorCard: {
-    borderWidth: 1,
-    borderRadius: 16,
-    padding: 16,
-    gap: 6,
-    marginHorizontal: 16,
-    marginTop: 12,
   },
   modalOverlay: {
     flex: 1,
