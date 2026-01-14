@@ -22,6 +22,7 @@ export default function MatchDetailsScreen() {
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const hasFocusedOnce = useRef(false);
 
   const userAccess = useAppStore((state) => state.userAccess);
@@ -51,11 +52,14 @@ export default function MatchDetailsScreen() {
       } else {
         setIsRefreshing(true);
       }
-      const foundMatch = await getMatchById(matchIdValue);
+      const { match: foundMatch, error } = await getMatchById(matchIdValue);
       setMatch(foundMatch);
+      setErrorMessage(error);
       if (foundMatch) {
         const predictionsData = await getPredictionsForMatch(foundMatch.id);
         setPredictions(predictionsData);
+      } else {
+        setPredictions([]);
       }
       setIsLoading(false);
       setIsRefreshing(false);
@@ -97,8 +101,19 @@ export default function MatchDetailsScreen() {
   if (!match) {
     return (
       <View style={[styles.loading, { backgroundColor: background }]}>
-        <ThemedText type="defaultSemiBold">{t('matchNotFound')}</ThemedText>
-        <ThemedText style={{ color: mutedText }}>{t('matchNotFoundSubtitle')}</ThemedText>
+        {errorMessage ? (
+          <>
+            <ThemedText type="defaultSemiBold">{t('apiErrorTitle')}</ThemedText>
+            <ThemedText style={{ color: mutedText }}>
+              {t('apiErrorSubtitle', { message: errorMessage || t('apiErrorUnknown') })}
+            </ThemedText>
+          </>
+        ) : (
+          <>
+            <ThemedText type="defaultSemiBold">{t('matchNotFound')}</ThemedText>
+            <ThemedText style={{ color: mutedText }}>{t('matchNotFoundSubtitle')}</ThemedText>
+          </>
+        )}
         <TouchableOpacity
           accessibilityRole="button"
           onPress={() => router.back()}
