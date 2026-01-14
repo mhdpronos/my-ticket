@@ -1,4 +1,4 @@
-import { fetchJsonWithError } from '@/services/apiClient';
+import { fetchJson } from '@/services/apiClient';
 import { Match, MatchStatus } from '@/types';
 
 type ApiFixture = {
@@ -74,16 +74,6 @@ const mapFixtureToMatch = (fixture: ApiFixture): Match => {
   };
 };
 
-export type MatchesResult = {
-  matches: Match[];
-  error: string | null;
-};
-
-export type MatchResult = {
-  match: Match | null;
-  error: string | null;
-};
-
 const formatApiDate = (dateIso: string) => {
   const date = new Date(dateIso);
   const year = date.getFullYear();
@@ -92,28 +82,17 @@ const formatApiDate = (dateIso: string) => {
   return `${year}-${month}-${day}`;
 };
 
-export const getMatchesByDate = async (dateIso: string): Promise<MatchesResult> => {
-  const { data, error } = await fetchJsonWithError<ApiFixtureResponse>('/api/fixtures', {
-    date: formatApiDate(dateIso),
-  });
-  return {
-    matches: data?.response.map(mapFixtureToMatch) ?? [],
-    error,
-  };
+export const getMatchesByDate = async (dateIso: string): Promise<Match[]> => {
+  const data = await fetchJson<ApiFixtureResponse>('/api/fixtures', { date: formatApiDate(dateIso) });
+  return data?.response.map(mapFixtureToMatch) ?? [];
 };
 
-export const getAllMatches = async (): Promise<MatchesResult> => {
-  const { data, error } = await fetchJsonWithError<ApiFixtureResponse>('/api/fixtures', { next: 30 });
-  return {
-    matches: data?.response.map(mapFixtureToMatch) ?? [],
-    error,
-  };
+export const getAllMatches = async (): Promise<Match[]> => {
+  const data = await fetchJson<ApiFixtureResponse>('/api/fixtures', { next: 30 });
+  return data?.response.map(mapFixtureToMatch) ?? [];
 };
 
-export const getMatchById = async (matchId: string): Promise<MatchResult> => {
-  const { data, error } = await fetchJsonWithError<ApiFixtureResponse>('/api/fixtures/' + matchId);
-  return {
-    match: data?.response[0] ? mapFixtureToMatch(data.response[0]) : null,
-    error,
-  };
+export const getMatchById = async (matchId: string): Promise<Match | null> => {
+  const data = await fetchJson<ApiFixtureResponse>('/api/fixtures/' + matchId);
+  return data?.response[0] ? mapFixtureToMatch(data.response[0]) : null;
 };

@@ -16,7 +16,6 @@ export default function TopPicksScreen() {
   const [picks, setPicks] = useState<Match[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const listRef = useRef<FlatList<Match>>(null);
   const hasFocusedOnce = useRef(false);
 
@@ -37,9 +36,8 @@ export default function TopPicksScreen() {
       } else {
         setIsRefreshing(true);
       }
-      const { matches, error } = await getAllMatches();
+      const matches = await getAllMatches();
       setPicks(matches.slice(0, 6));
-      setErrorMessage(error);
       setIsLoading(false);
       setIsRefreshing(false);
     },
@@ -80,14 +78,6 @@ export default function TopPicksScreen() {
           <ThemedText style={{ color: mutedText }}>{t('buttonMatches')}</ThemedText>
         </TouchableOpacity>
       </View>
-      {errorMessage ? (
-        <View style={[styles.errorCard, { backgroundColor: card, borderColor: border }]}>
-          <ThemedText type="defaultSemiBold">{t('apiErrorTitle')}</ThemedText>
-          <ThemedText style={{ color: mutedText }}>
-            {t('apiErrorSubtitle', { message: errorMessage || t('apiErrorUnknown') })}
-          </ThemedText>
-        </View>
-      ) : null}
 
       {isLoading ? (
         <View style={styles.loadingState}>
@@ -110,12 +100,10 @@ export default function TopPicksScreen() {
           )}
           refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={loadPicks} tintColor={tint} />}
           ListEmptyComponent={
-            !errorMessage ? (
-              <View style={[styles.emptyCard, { backgroundColor: card, borderColor: border }]}>
-                <ThemedText type="defaultSemiBold">{t('topPicksEmptyTitle')}</ThemedText>
-                <ThemedText style={{ color: mutedText }}>{t('topPicksEmptySubtitle')}</ThemedText>
-              </View>
-            ) : null
+            <View style={[styles.emptyCard, { backgroundColor: card, borderColor: border }]}>
+              <ThemedText type="defaultSemiBold">{t('topPicksEmptyTitle')}</ThemedText>
+              <ThemedText style={{ color: mutedText }}>{t('topPicksEmptySubtitle')}</ThemedText>
+            </View>
           }
           showsVerticalScrollIndicator={false}
           contentInsetAdjustmentBehavior="never"
@@ -164,14 +152,6 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 6,
     marginHorizontal: 16,
-  },
-  errorCard: {
-    borderWidth: 1,
-    borderRadius: 16,
-    padding: 16,
-    gap: 6,
-    marginHorizontal: 16,
-    marginBottom: 12,
   },
   loadingState: {
     flex: 1,
