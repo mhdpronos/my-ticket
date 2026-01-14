@@ -93,6 +93,6 @@ export const getAllMatches = async (): Promise<Match[]> => {
 };
 
 export const getMatchById = async (matchId: string): Promise<Match | null> => {
-  const data = await fetchJson<ApiFixtureResponse>('/api/fixtures/' + matchId);
+  const data = await fetchJson<ApiFixtureResponse>('/api/fixtures', { id: matchId });
   return data?.response[0] ? mapFixtureToMatch(data.response[0]) : null;
 };

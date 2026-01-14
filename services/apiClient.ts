@@ -1,4 +1,24 @@
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL ?? 'http://localhost:3001';
+import Constants from 'expo-constants';
+
+const DEFAULT_API_BASE_URL = 'http://localhost:3001';
+const API_BASE_URL = (() => {
+  const configuredBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL ?? DEFAULT_API_BASE_URL;
+  try {
+    const url = new URL(configuredBaseUrl);
+    if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
+      const manifest = Constants.manifest as { debuggerHost?: string } | null;
+      const hostUri = Constants.expoConfig?.hostUri ?? manifest?.debuggerHost ?? null;
+      const devHost = hostUri?.split(':')[0];
+      if (devHost) {
+        url.hostname = devHost;
+        return url.toString();
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to parse API base URL', error);
+  }
+  return configuredBaseUrl;
+})();
 const DIRECT_API_BASE_URL = process.env.EXPO_PUBLIC_API_DIRECT_BASE_URL ?? 'https://v3.football.api-sports.io';
 const DIRECT_API_KEY = process.env.EXPO_PUBLIC_API_FOOTBALL_KEY;
 
@@ -33,19 +53,27 @@ const fetchWithBase = async <T>(
 };
 
 export const fetchJson = async <T>(path: string, params?: QueryParams): Promise<T | null> => {
+  let proxyResponse: T | null = null;
   try {
-    const proxyResponse = await fetchWithBase<T>(path, params, API_BASE_URL);
-    if (proxyResponse) {
-      return proxyResponse;
-    }
-    if (DIRECT_API_KEY) {
-      return await fetchWithBase<T>(mapDirectPath(path), params, DIRECT_API_BASE_URL, {
-        'x-apisports-key': DIRECT_API_KEY,
-      });
-    }
-    return null;
+    proxyResponse = await fetchWithBase<T>(path, params, API_BASE_URL);
   } catch (error) {
-    console.warn('API request error', error);
+    console.warn('API proxy request error', error);
+  }
+
+  if (proxyResponse) {
+    return proxyResponse;
+  }
+
+  if (!DIRECT_API_KEY) {
+    return null;
+  }
+
+  try {
+    return await fetchWithBase<T>(mapDirectPath(path), params, DIRECT_API_BASE_URL, {
+      'x-apisports-key': DIRECT_API_KEY,
+    });
+  } catch (error) {
+    console.warn('Direct API request error', error);
     return null;
   }
 };
