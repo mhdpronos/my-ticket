@@ -39,6 +39,7 @@ const apiFetch = async (path, params) => {
 app.get('/api/fixtures', async (req, res) => {
   try {
     const params = {
+      id: req.query.id,
       date: req.query.date,
       next: req.query.next,
       league: req.query.league,
