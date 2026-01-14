@@ -25,6 +25,9 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
 
    Update `API_FOOTBALL_KEY` in `.env` with your API-Football key. The Expo app expects
    `EXPO_PUBLIC_API_BASE_URL` to point to this proxy (defaults to `http://localhost:3001`).
+   If you are testing on a real device, you can either set `EXPO_PUBLIC_API_BASE_URL` to
+   your computer's LAN IP (for example, `http://192.168.1.10:3001`) or let the app resolve
+   it automatically from the Expo dev host.
 
 In the output, you'll find options to open the app in a
 

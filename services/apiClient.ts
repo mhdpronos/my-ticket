@@ -1,4 +1,18 @@
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL ?? 'http://localhost:3001';
+import Constants from 'expo-constants';
+
+const resolveProxyBaseUrl = () => {
+  const hostUri =
+    Constants.expoConfig?.hostUri ??
+    (Constants as { manifest?: { debuggerHost?: string } }).manifest?.debuggerHost;
+  if (!hostUri) {
+    return null;
+  }
+  const normalizedHost = hostUri.includes('://') ? new URL(hostUri).host : hostUri;
+  const host = normalizedHost.split(':')[0];
+  return host ? `http://${host}:3001` : null;
+};
+
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL ?? resolveProxyBaseUrl() ?? 'http://localhost:3001';
 
 type QueryParams = Record<string, string | number | boolean | undefined | null>;
 
@@ -17,7 +31,8 @@ export const fetchJson = async <T>(path: string, params?: QueryParams): Promise<
   try {
     const response = await fetch(buildUrl(path, params));
     if (!response.ok) {
-      console.warn('API request failed', response.status, response.statusText);
+      const message = await response.text();
+      console.warn('API request failed', response.status, response.statusText, message);
       return null;
     }
     return (await response.json()) as T;
