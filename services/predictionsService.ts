@@ -1,3 +1,4 @@
+import { buildPredictionsForMatch } from '@/data/predictions';
 import { fetchJson } from '@/services/apiClient';
 import { Prediction } from '@/types';
 
@@ -26,7 +27,7 @@ export const getPredictionsForMatch = async (matchId: string): Promise<Predictio
   const data = await fetchJson<ApiPredictionsResponse>('/api/predictions', { fixture: matchId });
   const prediction = data?.response[0]?.predictions;
   if (!prediction) {
-    return [];
+    return buildPredictionsForMatch(matchId);
   }
 
   const percentHome = parsePercent(prediction.percent.home);
