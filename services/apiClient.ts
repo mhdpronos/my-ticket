@@ -1,14 +1,23 @@
 import Constants from 'expo-constants';
 
 const DEFAULT_API_BASE_URL = 'http://localhost:3001';
+const resolveDevHost = () => {
+  const manifest = Constants.manifest as { debuggerHost?: string } | null;
+  const manifest2 = Constants.manifest2 as { extra?: { expoGo?: { debuggerHost?: string } } } | null;
+  const hostUri =
+    Constants.expoConfig?.hostUri ??
+    manifest?.debuggerHost ??
+    manifest2?.extra?.expoGo?.debuggerHost ??
+    null;
+  return hostUri?.split(':')[0] ?? null;
+};
+
 const API_BASE_URL = (() => {
   const configuredBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL ?? DEFAULT_API_BASE_URL;
   try {
     const url = new URL(configuredBaseUrl);
     if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
-      const manifest = Constants.manifest as { debuggerHost?: string } | null;
-      const hostUri = Constants.expoConfig?.hostUri ?? manifest?.debuggerHost ?? null;
-      const devHost = hostUri?.split(':')[0];
+      const devHost = resolveDevHost();
       if (devHost) {
         url.hostname = devHost;
         return url.toString();
