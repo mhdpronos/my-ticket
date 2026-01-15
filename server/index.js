@@ -18,13 +18,13 @@ const buildApiUrl = (path, params = {}) => {
   return url.toString();
 };
 
-const apiFetch = async (path, params) => {
-  if (!API_KEY) {
-    throw new Error('Missing API_FOOTBALL_KEY env variable.');
+const apiFetch = async (path, params, apiKey) => {
+  if (!apiKey) {
+    throw new Error('Missing API_FOOTBALL_KEY env variable or x-apisports-key header.');
   }
   const response = await fetch(buildApiUrl(path, params), {
     headers: {
-      'x-apisports-key': API_KEY,
+      'x-apisports-key': apiKey,
     },
   });
 
@@ -50,7 +50,8 @@ app.get('/api/fixtures', async (req, res) => {
       status: req.query.status,
       timezone: req.query.timezone,
     };
-    const data = await apiFetch('/fixtures', params);
+    const apiKey = API_KEY ?? req.get('x-apisports-key');
+    const data = await apiFetch('/fixtures', params, apiKey);
     res.json(data);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -59,7 +60,8 @@ app.get('/api/fixtures', async (req, res) => {
 
 app.get('/api/fixtures/:id', async (req, res) => {
   try {
-    const data = await apiFetch('/fixtures', { id: req.params.id });
+    const apiKey = API_KEY ?? req.get('x-apisports-key');
+    const data = await apiFetch('/fixtures', { id: req.params.id }, apiKey);
     res.json(data);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -68,7 +70,8 @@ app.get('/api/fixtures/:id', async (req, res) => {
 
 app.get('/api/predictions', async (req, res) => {
   try {
-    const data = await apiFetch('/predictions', { fixture: req.query.fixture });
+    const apiKey = API_KEY ?? req.get('x-apisports-key');
+    const data = await apiFetch('/predictions', { fixture: req.query.fixture }, apiKey);
     res.json(data);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -77,11 +80,12 @@ app.get('/api/predictions', async (req, res) => {
 
 app.get('/api/odds', async (req, res) => {
   try {
+    const apiKey = API_KEY ?? req.get('x-apisports-key');
     const data = await apiFetch('/odds', {
       fixture: req.query.fixture,
       bookmaker: req.query.bookmaker,
       bet: req.query.bet,
-    });
+    }, apiKey);
     res.json(data);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -90,7 +94,8 @@ app.get('/api/odds', async (req, res) => {
 
 app.get('/api/bookmakers', async (_req, res) => {
   try {
-    const data = await apiFetch('/odds/bookmakers');
+    const apiKey = API_KEY ?? _req.get('x-apisports-key');
+    const data = await apiFetch('/odds/bookmakers', undefined, apiKey);
     res.json(data);
   } catch (error) {
     res.status(500).json({ error: error.message });

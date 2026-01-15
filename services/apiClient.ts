@@ -55,7 +55,8 @@ const fetchWithBase = async <T>(
 export const fetchJson = async <T>(path: string, params?: QueryParams): Promise<T | null> => {
   let proxyResponse: T | null = null;
   try {
-    proxyResponse = await fetchWithBase<T>(path, params, API_BASE_URL);
+    const proxyHeaders = DIRECT_API_KEY ? { 'x-apisports-key': DIRECT_API_KEY } : {};
+    proxyResponse = await fetchWithBase<T>(path, params, API_BASE_URL, proxyHeaders);
   } catch (error) {
     console.warn('API proxy request error', error);
   }
