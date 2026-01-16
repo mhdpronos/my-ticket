@@ -40,16 +40,18 @@ export default function MatchDetailsScreen() {
   const matchIdValue = Array.isArray(matchId) ? matchId[0] : matchId;
 
   const loadMatch = useCallback(
-    async ({ showLoading }: { showLoading?: boolean } = {}) => {
+    async ({ showLoading, silent }: { showLoading?: boolean; silent?: boolean } = {}) => {
       if (!matchIdValue) {
         setIsLoading(false);
         setIsRefreshing(false);
         return;
       }
-      if (showLoading) {
-        setIsLoading(true);
-      } else {
-        setIsRefreshing(true);
+      if (!silent) {
+        if (showLoading) {
+          setIsLoading(true);
+        } else {
+          setIsRefreshing(true);
+        }
       }
       try {
         const foundMatch = await getMatchById(matchIdValue);
@@ -65,8 +67,10 @@ export default function MatchDetailsScreen() {
         setMatch(null);
         setPredictions([]);
       } finally {
-        setIsLoading(false);
-        setIsRefreshing(false);
+        if (!silent) {
+          setIsLoading(false);
+          setIsRefreshing(false);
+        }
       }
     },
     [matchIdValue]
@@ -78,11 +82,15 @@ export default function MatchDetailsScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      if (!hasFocusedOnce.current) {
+      if (hasFocusedOnce.current) {
+        loadMatch({ silent: true });
+      } else {
         hasFocusedOnce.current = true;
-        return;
       }
-      loadMatch();
+      const interval = setInterval(() => {
+        loadMatch({ silent: true });
+      }, 30000);
+      return () => clearInterval(interval);
     }, [loadMatch])
   );
 

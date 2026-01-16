@@ -72,15 +72,17 @@ export default function MatchesScreen() {
   }, [dates, selectedDateId, setSelectedDateId]);
 
   const loadMatches = useCallback(
-    async ({ showLoading }: { showLoading?: boolean } = {}) => {
+    async ({ showLoading, silent }: { showLoading?: boolean; silent?: boolean } = {}) => {
       if (!selectedDateId) {
         return;
       }
       setHasError(false);
-      if (showLoading) {
-        setIsLoading(true);
-      } else {
-        setIsRefreshing(true);
+      if (!silent) {
+        if (showLoading) {
+          setIsLoading(true);
+        } else {
+          setIsRefreshing(true);
+        }
       }
       try {
         const data = await getMatchesByDate(selectedDateId);
@@ -90,8 +92,10 @@ export default function MatchesScreen() {
         setMatches([]);
         setHasError(true);
       } finally {
-        setIsLoading(false);
-        setIsRefreshing(false);
+        if (!silent) {
+          setIsLoading(false);
+          setIsRefreshing(false);
+        }
       }
     },
     [selectedDateId]
@@ -103,12 +107,15 @@ export default function MatchesScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      listRef.current?.scrollToLocation({ sectionIndex: 0, itemIndex: 0, animated: false });
-      if (!hasFocusedOnce.current) {
+      if (hasFocusedOnce.current) {
+        loadMatches({ silent: true });
+      } else {
         hasFocusedOnce.current = true;
-        return;
       }
-      loadMatches();
+      const interval = setInterval(() => {
+        loadMatches({ silent: true });
+      }, 30000);
+      return () => clearInterval(interval);
     }, [loadMatches])
   );
 
@@ -278,6 +285,8 @@ export default function MatchesScreen() {
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
+                nestedScrollEnabled
+                directionalLockEnabled
                 contentContainerStyle={styles.filterRow}
                 style={styles.filterScroll}>
                 {renderChip({
