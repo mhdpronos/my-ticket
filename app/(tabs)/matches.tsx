@@ -18,6 +18,7 @@ import { useFocusEffect, useScrollToTop } from '@react-navigation/native';
 
 import { DateStrip } from '@/components/matches/DateStrip';
 import { MatchCard } from '@/components/matches/MatchCard';
+import { BrandTitle } from '@/components/ui/BrandTitle';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -249,9 +250,11 @@ export default function MatchesScreen() {
           <View>
             <View style={styles.headerRow}>
               <View style={styles.brandBlock}>
-                <ThemedText type="pageTitle" style={styles.brandTitle} numberOfLines={1}>
-                  {t('appName')}
-                </ThemedText>
+                <BrandTitle
+                  accessibilityLabel={t('appName')}
+                  numberOfLines={1}
+                  style={styles.brandTitle}
+                />
                 <ThemedText
                   style={[styles.subtitle, { color: mutedText }]}
                   numberOfLines={1}
