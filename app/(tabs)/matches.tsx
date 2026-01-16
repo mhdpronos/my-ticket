@@ -477,7 +477,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   brandTitle: {
-    letterSpacing: 1,
+    letterSpacing: -1,
   },
   notificationButton: {
     width: 44,

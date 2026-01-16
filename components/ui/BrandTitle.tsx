@@ -16,7 +16,7 @@ const styles = StyleSheet.create({
     fontSize: 30,
     fontWeight: '900',
     fontStyle: 'italic',
-    letterSpacing: 0.5,
+    letterSpacing: -1,
     textAlign: 'center',
   },
   my: {
