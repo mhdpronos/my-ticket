@@ -1,5 +1,4 @@
-import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, TouchableOpacity, View } from 'react-native';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { router } from 'expo-router';
 import { useFocusEffect, useScrollToTop } from '@react-navigation/native';
@@ -29,25 +28,69 @@ export default function TopPicksScreen() {
   const favoriteMatches = useAppStore((state) => state.favoriteMatches);
   const toggleFavoriteMatch = useAppStore((state) => state.toggleFavoriteMatch);
 
+  const featuredTeams = useRef([
+    'barcelona',
+    'real madrid',
+    'manchester city',
+    'man city',
+    'manchester united',
+    'man united',
+    'paris saint-germain',
+    'psg',
+    'bayern',
+    'liverpool',
+    'arsenal',
+    'chelsea',
+    'tottenham',
+    'juventus',
+    'ac milan',
+    'inter',
+    'barca',
+    'atletico madrid',
+    'borussia dortmund',
+    'napoli',
+  ]);
+
+  const normalizeName = useCallback((name: string) => {
+    return name
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+  }, []);
+
+  const isFeaturedMatch = useCallback(
+    (match: Match) => {
+      const home = normalizeName(match.homeTeam.name);
+      const away = normalizeName(match.awayTeam.name);
+      return featuredTeams.current.some((team) => home.includes(team) || away.includes(team));
+    },
+    [normalizeName]
+  );
+
   const loadPicks = useCallback(
-    async ({ showLoading }: { showLoading?: boolean } = {}) => {
-      if (showLoading) {
-        setIsLoading(true);
-      } else {
-        setIsRefreshing(true);
+    async ({ showLoading, silent }: { showLoading?: boolean; silent?: boolean } = {}) => {
+      if (!silent) {
+        if (showLoading) {
+          setIsLoading(true);
+        } else {
+          setIsRefreshing(true);
+        }
       }
       try {
         const matches = await getAllMatches();
-        setPicks(matches.slice(0, 6));
+        const featured = matches.filter(isFeaturedMatch);
+        setPicks(featured.slice(0, 6));
       } catch (error) {
         console.error('Failed to load top picks', error);
         setPicks([]);
       } finally {
-        setIsLoading(false);
-        setIsRefreshing(false);
+        if (!silent) {
+          setIsLoading(false);
+          setIsRefreshing(false);
+        }
       }
     },
-    []
+    [isFeaturedMatch]
   );
 
   useEffect(() => {
@@ -56,12 +99,15 @@ export default function TopPicksScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      listRef.current?.scrollToOffset({ offset: 0, animated: false });
-      if (!hasFocusedOnce.current) {
+      if (hasFocusedOnce.current) {
+        loadPicks({ silent: true });
+      } else {
         hasFocusedOnce.current = true;
-        return;
       }
-      loadPicks();
+      const interval = setInterval(() => {
+        loadPicks({ silent: true });
+      }, 30000);
+      return () => clearInterval(interval);
     }, [loadPicks])
   );
 
@@ -76,13 +122,6 @@ export default function TopPicksScreen() {
           <ThemedText type="pageTitle">{t('tabsTopPicks')}</ThemedText>
           <ThemedText style={[styles.subtitle, { color: mutedText }]}>{t('headerTopPicksSubtitle')}</ThemedText>
         </View>
-        <TouchableOpacity
-          accessibilityRole="button"
-          onPress={() => router.push('/matches')}
-          style={[styles.actionButton, { borderColor: border, backgroundColor: card }]}>
-          <MaterialCommunityIcons name="soccer" size={18} color={mutedText} />
-          <ThemedText style={{ color: mutedText }}>{t('buttonMatches')}</ThemedText>
-        </TouchableOpacity>
       </View>
 
       {isLoading ? (
@@ -133,17 +172,6 @@ const styles = StyleSheet.create({
   },
   headerText: {
     alignItems: 'center',
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    position: 'absolute',
-    right: 16,
   },
   subtitle: {
     textAlign: 'center',
