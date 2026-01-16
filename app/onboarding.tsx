@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 
+import { BrandTitle } from '@/components/ui/BrandTitle';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -14,7 +15,7 @@ export default function OnboardingScreen() {
   return (
     <View style={[styles.container, { backgroundColor: background }]}> 
       <View style={styles.content}>
-        <ThemedText type="pageTitle">{t('appName')}</ThemedText>
+        <BrandTitle accessibilityLabel={t('appName')} />
         <ThemedText style={[styles.subtitle, { color: mutedText }]}>
           {t('onboardingTagline')}
         </ThemedText>
