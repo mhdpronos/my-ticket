@@ -51,14 +51,23 @@ export default function MatchDetailsScreen() {
       } else {
         setIsRefreshing(true);
       }
-      const foundMatch = await getMatchById(matchIdValue);
-      setMatch(foundMatch);
-      if (foundMatch) {
-        const predictionsData = await getPredictionsForMatch(foundMatch.id);
-        setPredictions(predictionsData);
+      try {
+        const foundMatch = await getMatchById(matchIdValue);
+        setMatch(foundMatch);
+        if (foundMatch) {
+          const predictionsData = await getPredictionsForMatch(foundMatch.id);
+          setPredictions(predictionsData);
+        } else {
+          setPredictions([]);
+        }
+      } catch (error) {
+        console.error('Failed to load match details', error);
+        setMatch(null);
+        setPredictions([]);
+      } finally {
+        setIsLoading(false);
+        setIsRefreshing(false);
       }
-      setIsLoading(false);
-      setIsRefreshing(false);
     },
     [matchIdValue]
   );
