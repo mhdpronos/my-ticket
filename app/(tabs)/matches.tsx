@@ -37,6 +37,7 @@ export default function MatchesScreen() {
   const [searchValue, setSearchValue] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [hasError, setHasError] = useState(false);
   const [selectedLeagueId, setSelectedLeagueId] = useState<string | null>(null);
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<'all' | 'morning' | 'afternoon' | 'evening'>('all');
@@ -75,15 +76,23 @@ export default function MatchesScreen() {
       if (!selectedDateId) {
         return;
       }
+      setHasError(false);
       if (showLoading) {
         setIsLoading(true);
       } else {
         setIsRefreshing(true);
       }
-      const data = await getMatchesByDate(selectedDateId);
-      setMatches(data);
-      setIsLoading(false);
-      setIsRefreshing(false);
+      try {
+        const data = await getMatchesByDate(selectedDateId);
+        setMatches(data);
+      } catch (error) {
+        console.error('Failed to load matches', error);
+        setMatches([]);
+        setHasError(true);
+      } finally {
+        setIsLoading(false);
+        setIsRefreshing(false);
+      }
     },
     [selectedDateId]
   );
@@ -328,11 +337,24 @@ export default function MatchesScreen() {
           </View>
         }
         ListFooterComponent={
-          !isLoading && visibleMatches.length === 0 ? (
-            <View style={[styles.emptyCard, { borderColor: border, backgroundColor: card }]}>
-              <ThemedText type="defaultSemiBold">{t('emptyMatchesTitle')}</ThemedText>
-              <ThemedText style={{ color: mutedText }}>{t('emptyMatchesSubtitle')}</ThemedText>
-            </View>
+          !isLoading ? (
+            hasError ? (
+              <View style={[styles.errorCard, { borderColor: border, backgroundColor: card }]}>
+                <ThemedText type="defaultSemiBold">{t('errorMatchesTitle')}</ThemedText>
+                <ThemedText style={{ color: mutedText }}>{t('errorMatchesSubtitle')}</ThemedText>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  onPress={() => loadMatches({ showLoading: true })}
+                  style={[styles.retryButton, { borderColor: border }]}>
+                  <ThemedText style={{ color: mutedText }}>{t('buttonRetry')}</ThemedText>
+                </TouchableOpacity>
+              </View>
+            ) : visibleMatches.length === 0 ? (
+              <View style={[styles.emptyCard, { borderColor: border, backgroundColor: card }]}>
+                <ThemedText type="defaultSemiBold">{t('emptyMatchesTitle')}</ThemedText>
+                <ThemedText style={{ color: mutedText }}>{t('emptyMatchesSubtitle')}</ThemedText>
+              </View>
+            ) : null
           ) : null
         }
         showsVerticalScrollIndicator={false}
@@ -538,6 +560,21 @@ const styles = StyleSheet.create({
     gap: 6,
     marginHorizontal: 16,
     marginTop: 16,
+  },
+  errorCard: {
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 16,
+    gap: 10,
+    marginHorizontal: 16,
+    marginTop: 16,
+    alignItems: 'center',
+  },
+  retryButton: {
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
   },
   modalOverlay: {
     flex: 1,

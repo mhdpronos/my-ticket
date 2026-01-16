@@ -1,39 +1,9 @@
-import Constants from 'expo-constants';
-
-const DEFAULT_API_BASE_URL = 'http://localhost:3001';
-const resolveDevHost = () => {
-  const manifest = Constants.manifest as { debuggerHost?: string } | null;
-  const manifest2 = Constants.manifest2 as { extra?: { expoGo?: { debuggerHost?: string } } } | null;
-  const hostUri =
-    Constants.expoConfig?.hostUri ??
-    manifest?.debuggerHost ??
-    manifest2?.extra?.expoGo?.debuggerHost ??
-    null;
-  return hostUri?.split(':')[0] ?? null;
-};
-
-const API_BASE_URL = (() => {
-  const configuredBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL ?? DEFAULT_API_BASE_URL;
-  try {
-    const url = new URL(configuredBaseUrl);
-    if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
-      const devHost = resolveDevHost();
-      if (devHost) {
-        url.hostname = devHost;
-        return url.toString();
-      }
-    }
-  } catch (error) {
-    console.warn('Failed to parse API base URL', error);
-  }
-  return configuredBaseUrl;
-})();
 const DIRECT_API_BASE_URL = process.env.EXPO_PUBLIC_API_DIRECT_BASE_URL ?? 'https://v3.football.api-sports.io';
 const DIRECT_API_KEY = process.env.EXPO_PUBLIC_API_FOOTBALL_KEY;
 
 type QueryParams = Record<string, string | number | boolean | undefined | null>;
 
-const buildUrl = (path: string, params: QueryParams = {}, baseUrl = API_BASE_URL) => {
+const buildUrl = (path: string, params: QueryParams = {}, baseUrl = DIRECT_API_BASE_URL) => {
   const url = new URL(path, baseUrl);
   Object.entries(params).forEach(([key, value]) => {
     if (value === undefined || value === null || value === '') {
@@ -46,44 +16,51 @@ const buildUrl = (path: string, params: QueryParams = {}, baseUrl = API_BASE_URL
 
 const mapDirectPath = (path: string) => (path.startsWith('/api/') ? path.replace('/api', '') : path);
 
-const fetchWithBase = async <T>(
+export type ApiFootballResult<T> = {
+  data: T | null;
+  status: number | null;
+  ok: boolean;
+};
+
+export const fetchApiFootball = async <T>(
   path: string,
-  params: QueryParams | undefined,
-  baseUrl: string,
-  headers: Record<string, string> = {}
-): Promise<T | null> => {
-  const response = await fetch(buildUrl(path, params, baseUrl), { headers });
-  if (!response.ok) {
-    const message = await response.text();
-    console.warn('API request failed', response.status, response.statusText, message);
-    return null;
+  params?: QueryParams
+): Promise<ApiFootballResult<T>> => {
+  if (!DIRECT_API_KEY) {
+    throw new Error('Missing API-Football key. Check EXPO_PUBLIC_API_FOOTBALL_KEY.');
   }
-  return (await response.json()) as T;
+  const url = buildUrl(mapDirectPath(path), params, DIRECT_API_BASE_URL);
+  console.info('[API-Football] GET', url);
+  const response = await fetch(url, {
+    headers: {
+      'x-apisports-key': DIRECT_API_KEY,
+    },
+  });
+
+  let data: T | null = null;
+  try {
+    data = (await response.json()) as T;
+  } catch (error) {
+    console.warn('Failed to parse API response JSON', error);
+  }
+
+  return {
+    data,
+    status: response.status,
+    ok: response.ok,
+  };
 };
 
 export const fetchJson = async <T>(path: string, params?: QueryParams): Promise<T | null> => {
-  let proxyResponse: T | null = null;
   try {
-    const proxyHeaders = DIRECT_API_KEY ? { 'x-apisports-key': DIRECT_API_KEY } : {};
-    proxyResponse = await fetchWithBase<T>(path, params, API_BASE_URL, proxyHeaders);
+    const result = await fetchApiFootball<T>(path, params);
+    if (!result.ok) {
+      console.warn('API request failed', result.status);
+      return null;
+    }
+    return result.data;
   } catch (error) {
-    console.warn('API proxy request error', error);
-  }
-
-  if (proxyResponse) {
-    return proxyResponse;
-  }
-
-  if (!DIRECT_API_KEY) {
-    return null;
-  }
-
-  try {
-    return await fetchWithBase<T>(mapDirectPath(path), params, DIRECT_API_BASE_URL, {
-      'x-apisports-key': DIRECT_API_KEY,
-    });
-  } catch (error) {
-    console.warn('Direct API request error', error);
+    console.warn('API request error', error);
     return null;
   }
 };

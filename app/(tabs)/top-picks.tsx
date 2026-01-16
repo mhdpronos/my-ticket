@@ -36,10 +36,16 @@ export default function TopPicksScreen() {
       } else {
         setIsRefreshing(true);
       }
-      const matches = await getAllMatches();
-      setPicks(matches.slice(0, 6));
-      setIsLoading(false);
-      setIsRefreshing(false);
+      try {
+        const matches = await getAllMatches();
+        setPicks(matches.slice(0, 6));
+      } catch (error) {
+        console.error('Failed to load top picks', error);
+        setPicks([]);
+      } finally {
+        setIsLoading(false);
+        setIsRefreshing(false);
+      }
     },
     []
   );

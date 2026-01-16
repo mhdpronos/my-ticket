@@ -1,5 +1,4 @@
-import { mockMatches } from '@/data/matches';
-import { fetchJson } from '@/services/apiClient';
+import { ApiFootballResult, fetchApiFootball } from '@/services/apiClient';
 import { Match, MatchStatus } from '@/types';
 
 type ApiFixture = {
@@ -26,10 +25,12 @@ type ApiFixture = {
 
 type ApiFixtureResponse = {
   response: ApiFixture[];
+  errors?: Record<string, string>;
 };
 
 const liveStatuses = new Set(['1H', '2H', 'ET', 'P', 'HT', 'BT', 'LIVE', 'INT', 'SUSP']);
 const finishedStatuses = new Set(['FT', 'AET', 'PEN', 'AWD', 'WO']);
+let hasLoggedStatus = false;
 
 const mapStatus = (short: string): MatchStatus => {
   if (liveStatuses.has(short)) {
@@ -83,31 +84,67 @@ const formatApiDate = (dateIso: string) => {
   return `${year}-${month}-${day}`;
 };
 
-const filterMockMatchesByDate = (dateIso: string) => {
-  const target = formatApiDate(dateIso);
-  return mockMatches.filter((match) => formatApiDate(match.kickoffIso) === target);
+type ApiStatusResponse = {
+  response?: {
+    requests?: { current?: number; limit_day?: number };
+    subscription?: { active?: boolean; plan?: string };
+  };
+  errors?: Record<string, string>;
+};
+
+const logApiStatusOnce = async () => {
+  if (hasLoggedStatus) {
+    return;
+  }
+  hasLoggedStatus = true;
+  const statusResult = await fetchApiFootball<ApiStatusResponse>('/status');
+  console.info('[API-Football] GET /status', statusResult.status, statusResult.data);
+  if (statusResult.data?.errors && Object.keys(statusResult.data.errors).length > 0) {
+    console.warn('[API-Football] /status errors', statusResult.data.errors);
+  }
+};
+
+const ensureResponse = <T>(result: ApiFootballResult<T>, context: string): T => {
+  console.info(`[API-Football] ${context} status`, result.status);
+  const errors = (result.data as { errors?: Record<string, string> } | null)?.errors;
+  if (errors && Object.keys(errors).length > 0) {
+    console.warn(`[API-Football] ${context} errors`, errors);
+  }
+  if (!result.ok || !result.data) {
+    throw new Error(`API-Football request failed (${context})`);
+  }
+  return result.data;
 };
 
 export const getMatchesByDate = async (dateIso: string): Promise<Match[]> => {
-  const data = await fetchJson<ApiFixtureResponse>('/api/fixtures', { date: formatApiDate(dateIso) });
-  if (data?.response?.length) {
-    return data.response.map(mapFixtureToMatch);
-  }
-  return filterMockMatchesByDate(dateIso);
+  await logApiStatusOnce();
+  const params = { date: formatApiDate(dateIso) };
+  const result = await fetchApiFootball<ApiFixtureResponse>('/fixtures', params);
+  console.info('[API-Football] fixtures URL params', params);
+  const data = ensureResponse(result, 'fixtures by date');
+  console.info('[API-Football] fixtures count', data.response.length);
+  return data.response.map(mapFixtureToMatch);
 };
 
 export const getAllMatches = async (): Promise<Match[]> => {
-  const data = await fetchJson<ApiFixtureResponse>('/api/fixtures', { next: 30 });
-  if (data?.response?.length) {
-    return data.response.map(mapFixtureToMatch);
-  }
-  return mockMatches;
+  await logApiStatusOnce();
+  const params = { next: 30 };
+  const result = await fetchApiFootball<ApiFixtureResponse>('/fixtures', params);
+  console.info('[API-Football] fixtures URL params', params);
+  const data = ensureResponse(result, 'fixtures next');
+  console.info('[API-Football] fixtures count', data.response.length);
+  return data.response.map(mapFixtureToMatch);
 };
 
 export const getMatchById = async (matchId: string): Promise<Match | null> => {
-  const data = await fetchJson<ApiFixtureResponse>('/api/fixtures', { id: matchId });
-  if (data?.response[0]) {
+  await logApiStatusOnce();
+  const params = { id: matchId };
+  const result = await fetchApiFootball<ApiFixtureResponse>('/fixtures', params);
+  console.info('[API-Football] fixtures URL params', params);
+  const data = ensureResponse(result, 'fixture by id');
+  console.info('[API-Football] fixtures count', data.response.length);
+  if (data.response[0]) {
     return mapFixtureToMatch(data.response[0]);
   }
-  return mockMatches.find((match) => match.id === matchId) ?? null;
+  return null;
 };

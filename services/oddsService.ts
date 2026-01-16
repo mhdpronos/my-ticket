@@ -1,5 +1,4 @@
 import { bookmakers } from '@/data/bookmakers';
-import { mockOddsByKey } from '@/data/odds';
 import { fetchJson } from '@/services/apiClient';
 import { Bookmaker, OddsByBookmaker, Prediction } from '@/types';
 
@@ -54,7 +53,7 @@ export const fetchOddsForPrediction = async (prediction: Prediction): Promise<Od
   const oddsMap: OddsByBookmaker = {};
   const entry = data?.response[0];
   if (!entry) {
-    return mockOddsByKey[`${prediction.matchId}:${prediction.market}:${prediction.selection}`] ?? oddsMap;
+    return oddsMap;
   }
 
   entry.bookmakers.forEach((bookmaker) => {
