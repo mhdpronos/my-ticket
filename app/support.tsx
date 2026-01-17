@@ -1,5 +1,6 @@
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { useRouter } from 'expo-router';
 
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ThemedText } from '@/components/ui/ThemedText';
@@ -12,21 +13,50 @@ export default function SupportScreen() {
   const border = useThemeColor({}, 'border');
   const mutedText = useThemeColor({}, 'mutedText');
   const { t } = useTranslation();
+  const router = useRouter();
 
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
       <ScreenHeader title={t('supportTitle')} subtitle={t('supportSubtitle')} />
-      <View style={[styles.card, { backgroundColor: card, borderColor: border }]}>
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => router.push('/support-contact')}
+        style={({ pressed }) => [
+          styles.card,
+          { backgroundColor: pressed ? background : card, borderColor: border },
+        ]}>
         <MaterialCommunityIcons name="headset" size={22} color={mutedText} />
         <View style={styles.textBlock}>
           <ThemedText type="defaultSemiBold">{t('supportContactTitle')}</ThemedText>
           <ThemedText style={{ color: mutedText }}>{t('supportContactBody')}</ThemedText>
         </View>
-      </View>
-      <View style={[styles.card, { backgroundColor: card, borderColor: border }]}>
-        <ThemedText type="defaultSemiBold">{t('supportFaqTitle')}</ThemedText>
-        <ThemedText style={{ color: mutedText }}>{t('supportFaqBody')}</ThemedText>
-      </View>
+      </Pressable>
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => router.push('/support-faq')}
+        style={({ pressed }) => [
+          styles.card,
+          { backgroundColor: pressed ? background : card, borderColor: border },
+        ]}>
+        <MaterialCommunityIcons name="help-circle-outline" size={22} color={mutedText} />
+        <View style={styles.textBlock}>
+          <ThemedText type="defaultSemiBold">{t('supportFaqTitle')}</ThemedText>
+          <ThemedText style={{ color: mutedText }}>{t('supportFaqBody')}</ThemedText>
+        </View>
+      </Pressable>
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => router.push('/about')}
+        style={({ pressed }) => [
+          styles.card,
+          { backgroundColor: pressed ? background : card, borderColor: border },
+        ]}>
+        <MaterialCommunityIcons name="information-outline" size={22} color={mutedText} />
+        <View style={styles.textBlock}>
+          <ThemedText type="defaultSemiBold">{t('supportAboutTitle')}</ThemedText>
+          <ThemedText style={{ color: mutedText }}>{t('supportAboutBody')}</ThemedText>
+        </View>
+      </Pressable>
     </View>
   );
 }
