@@ -22,6 +22,13 @@ type CountryOption = {
   cities: string[];
 };
 
+const getFlagEmoji = (code: string) =>
+  code
+    .toUpperCase()
+    .split('')
+    .map((char) => String.fromCodePoint(127397 + char.charCodeAt(0)))
+    .join('');
+
 const countries: CountryOption[] = [
   {
     code: 'FR',
@@ -55,13 +62,13 @@ export default function ProfileScreen() {
   const mutedText = useThemeColor({}, 'mutedText');
   const tint = useThemeColor({}, 'tint');
   const success = useThemeColor({}, 'success');
+  const danger = useThemeColor({}, 'danger');
   const { t } = useTranslation();
 
   const userAccess = useAppStore((state) => state.userAccess);
   const userProfile = useAppStore((state) => state.userProfile);
   const setUserAccess = useAppStore((state) => state.setUserAccess);
   const updateUserProfile = useAppStore((state) => state.updateUserProfile);
-  const signOut = useAppStore((state) => state.signOut);
 
   const [authMode, setAuthMode] = useState<AuthMode>('login');
   const [loginMethod, setLoginMethod] = useState<LoginMethod>('email');
@@ -69,6 +76,9 @@ export default function ProfileScreen() {
   const [passwordInput, setPasswordInput] = useState('');
   const [loginCountry, setLoginCountry] = useState<CountryOption>(defaultCountry);
   const [loginPhone, setLoginPhone] = useState('');
+  const [loginCountryOpen, setLoginCountryOpen] = useState(false);
+  const [signupCountryOpen, setSignupCountryOpen] = useState(false);
+  const [signupCityOpen, setSignupCityOpen] = useState(false);
 
   const [signupFirstName, setSignupFirstName] = useState('');
   const [signupLastName, setSignupLastName] = useState('');
@@ -77,10 +87,13 @@ export default function ProfileScreen() {
   const [signupPhone, setSignupPhone] = useState('');
   const [signupCountry, setSignupCountry] = useState<CountryOption>(defaultCountry);
   const [signupCity, setSignupCity] = useState(defaultCountry.cities[0]);
+  const [authError, setAuthError] = useState('');
 
   const [editingField, setEditingField] = useState<EditableField | null>(null);
   const [draftValue, setDraftValue] = useState('');
   const [passwordDelivery, setPasswordDelivery] = useState<LoginMethod>('email');
+  const [profileCountryOpen, setProfileCountryOpen] = useState(false);
+  const [profileCityOpen, setProfileCityOpen] = useState(false);
 
   const profileCountry = useMemo(() => {
     return countries.find((country) => country.name === userProfile.country) ?? defaultCountry;
@@ -88,7 +101,37 @@ export default function ProfileScreen() {
 
   useScrollToTop(scrollRef);
 
+  const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  const isValidPassword = (password: string) =>
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/.test(password);
+  const isValidPhone = (phone: string) => /^[0-9]{6,}$/.test(phone.replace(/\s+/g, ''));
+
   const handleLogin = () => {
+    setAuthError('');
+    if (loginMethod === 'email') {
+      if (!emailInput.trim() || !passwordInput.trim()) {
+        setAuthError(t('authErrorMissingFields'));
+        return;
+      }
+      if (!isValidEmail(emailInput)) {
+        setAuthError(t('authErrorInvalidEmail'));
+        return;
+      }
+    } else {
+      if (!loginPhone.trim() || !passwordInput.trim()) {
+        setAuthError(t('authErrorMissingFields'));
+        return;
+      }
+      if (!isValidPhone(loginPhone)) {
+        setAuthError(t('authErrorInvalidPhone'));
+        return;
+      }
+    }
+    if (!isValidPassword(passwordInput)) {
+      setAuthError(t('authErrorInvalidPassword'));
+      return;
+    }
+
     if (!userProfile.userId) {
       updateUserProfile({ userId: createUserId() });
     }
@@ -106,6 +149,31 @@ export default function ProfileScreen() {
   };
 
   const handleSignup = () => {
+    setAuthError('');
+    if (
+      !signupFirstName.trim() ||
+      !signupLastName.trim() ||
+      !signupEmail.trim() ||
+      !signupPassword.trim() ||
+      !signupPhone.trim() ||
+      !signupCity.trim()
+    ) {
+      setAuthError(t('authErrorMissingFields'));
+      return;
+    }
+    if (!isValidEmail(signupEmail)) {
+      setAuthError(t('authErrorInvalidEmail'));
+      return;
+    }
+    if (!isValidPhone(signupPhone)) {
+      setAuthError(t('authErrorInvalidPhone'));
+      return;
+    }
+    if (!isValidPassword(signupPassword)) {
+      setAuthError(t('authErrorInvalidPassword'));
+      return;
+    }
+
     const fullPhone = `${signupCountry.dialCode} ${signupPhone}`.trim();
     updateUserProfile({
       userId: userProfile.userId || createUserId(),
@@ -122,9 +190,21 @@ export default function ProfileScreen() {
 
   const startEditing = (field: EditableField) => {
     setEditingField(field);
-    setDraftValue(userProfile[field] ?? '');
+    if (field === 'country') {
+      setDraftValue(userProfile.country || defaultCountry.name);
+    } else if (field === 'city') {
+      setDraftValue(userProfile.city || profileCountry.cities[0]);
+    } else {
+      setDraftValue(userProfile[field] ?? '');
+    }
     if (field === 'password') {
       setPasswordDelivery('email');
+    }
+    if (field !== 'country') {
+      setProfileCountryOpen(false);
+    }
+    if (field !== 'city') {
+      setProfileCityOpen(false);
     }
   };
 
@@ -140,12 +220,16 @@ export default function ProfileScreen() {
     } else {
       updateUserProfile({ [editingField]: draftValue });
     }
+    setProfileCountryOpen(false);
+    setProfileCityOpen(false);
     setEditingField(null);
   };
 
   const handleCancelEdit = () => {
     setEditingField(null);
     setDraftValue('');
+    setProfileCountryOpen(false);
+    setProfileCityOpen(false);
   };
 
   const renderSelectionChip = (label: string, selected: boolean, onPress: () => void) => (
@@ -162,6 +246,16 @@ export default function ProfileScreen() {
         },
       ]}>
       <ThemedText style={{ color: selected ? '#FFFFFF' : mutedText }}>{label}</ThemedText>
+    </Pressable>
+  );
+
+  const renderSelectTrigger = (label: string, onPress: () => void) => (
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      style={[styles.selectTrigger, { borderColor: border }]}>
+      <ThemedText type="defaultSemiBold">{label}</ThemedText>
+      <MaterialCommunityIcons name="chevron-down" size={18} color={mutedText} />
     </Pressable>
   );
 
@@ -204,15 +298,25 @@ export default function ProfileScreen() {
 
       {editingField === field && field === 'country' && (
         <View style={styles.editPanel}>
-          <View style={styles.selectionGrid}>
-            {countries.map((country) =>
-              renderSelectionChip(
-                `${country.name} (${country.dialCode})`,
-                draftValue === country.name || (!draftValue && country.name === userProfile.country),
-                () => setDraftValue(country.name),
-              ),
-            )}
-          </View>
+          {renderSelectTrigger(
+            draftValue || userProfile.country || defaultCountry.name,
+            () => setProfileCountryOpen((prev) => !prev),
+          )}
+          {profileCountryOpen ? (
+            <View style={[styles.selectionDropdown, { borderColor: border, backgroundColor: card }]}>
+              {countries.map((country) =>
+                renderSelectionChip(
+                  `${getFlagEmoji(country.code)} ${country.name} (${country.dialCode})`,
+                  draftValue === country.name || (!draftValue && country.name === userProfile.country),
+                  () => {
+                    setDraftValue(country.name);
+                    setProfileCountryOpen(false);
+                    setProfileCityOpen(false);
+                  },
+                ),
+              )}
+            </View>
+          ) : null}
           <View style={styles.editActions}>
             <Pressable
               accessibilityRole="button"
@@ -232,13 +336,20 @@ export default function ProfileScreen() {
 
       {editingField === field && field === 'city' && (
         <View style={styles.editPanel}>
-          <View style={styles.selectionGrid}>
-            {profileCountry.cities.map((city) =>
-              renderSelectionChip(city, draftValue === city || (!draftValue && city === userProfile.city), () =>
-                setDraftValue(city),
-              ),
-            )}
-          </View>
+          {renderSelectTrigger(
+            draftValue || userProfile.city || profileCountry.cities[0],
+            () => setProfileCityOpen((prev) => !prev),
+          )}
+          {profileCityOpen ? (
+            <View style={[styles.selectionDropdown, { borderColor: border, backgroundColor: card }]}>
+              {profileCountry.cities.map((city) =>
+                renderSelectionChip(city, draftValue === city || (!draftValue && city === userProfile.city), () => {
+                  setDraftValue(city);
+                  setProfileCityOpen(false);
+                }),
+              )}
+            </View>
+          ) : null}
           <View style={styles.editActions}>
             <Pressable
               accessibilityRole="button"
@@ -311,34 +422,26 @@ export default function ProfileScreen() {
           <View style={styles.identity}>
             <ThemedText type="pageTitle">{t('profileTitle')}</ThemedText>
             <ThemedText style={[styles.subtitle, { color: mutedText }]}>
-              {userAccess.isGuest ? t('profileGuest') : t('profileConnected')} • {userAccess.status}
+              {userAccess.isGuest
+                ? t('profileGuest')
+                : `${t('profileConnected')} • ${userAccess.status}`}
             </ThemedText>
           </View>
-          <View
-            style={[
-              styles.statusBadge,
-              {
-                backgroundColor: userAccess.status === 'PREMIUM' ? tint : background,
-                borderColor: border,
-              },
-            ]}>
-            <ThemedText style={{ color: userAccess.status === 'PREMIUM' ? '#FFFFFF' : mutedText }}>
-              {userAccess.status}
-            </ThemedText>
-          </View>
+          {!userAccess.isGuest ? (
+            <View
+              style={[
+                styles.statusBadge,
+                {
+                  backgroundColor: userAccess.status === 'PREMIUM' ? tint : background,
+                  borderColor: border,
+                },
+              ]}>
+              <ThemedText style={{ color: userAccess.status === 'PREMIUM' ? '#FFFFFF' : mutedText }}>
+                {userAccess.status}
+              </ThemedText>
+            </View>
+          ) : null}
         </View>
-        {!userAccess.isGuest && (
-          <Pressable
-            accessibilityRole="button"
-            onPress={signOut}
-            style={({ pressed }) => [
-              styles.signOut,
-              { borderColor: border, opacity: pressed ? 0.7 : 1 },
-            ]}>
-            <MaterialCommunityIcons name="logout" size={16} color={mutedText} />
-            <ThemedText style={{ color: mutedText }}>{t('profileSignOut')}</ThemedText>
-          </Pressable>
-        )}
       </View>
 
       {userAccess.isGuest ? (
@@ -356,7 +459,10 @@ export default function ProfileScreen() {
           <View style={[styles.authTabs, { backgroundColor: background, borderColor: border }]}>
             <Pressable
               accessibilityRole="button"
-              onPress={() => setAuthMode('login')}
+              onPress={() => {
+                setAuthMode('login');
+                setAuthError('');
+              }}
               style={({ pressed }) => [
                 styles.authTab,
                 { backgroundColor: authMode === 'login' ? tint : 'transparent' },
@@ -368,7 +474,10 @@ export default function ProfileScreen() {
             </Pressable>
             <Pressable
               accessibilityRole="button"
-              onPress={() => setAuthMode('signup')}
+              onPress={() => {
+                setAuthMode('signup');
+                setAuthError('');
+              }}
               style={({ pressed }) => [
                 styles.authTab,
                 { backgroundColor: authMode === 'signup' ? tint : 'transparent' },
@@ -383,8 +492,14 @@ export default function ProfileScreen() {
           {authMode === 'login' ? (
             <View style={styles.formStack}>
               <View style={[styles.selectionRow, styles.miniSegment, { borderColor: border }]}>
-                {renderSelectionChip(t('authLoginByEmail'), loginMethod === 'email', () => setLoginMethod('email'))}
-                {renderSelectionChip(t('authLoginByPhone'), loginMethod === 'phone', () => setLoginMethod('phone'))}
+                {renderSelectionChip(t('authLoginByEmail'), loginMethod === 'email', () => {
+                  setLoginMethod('email');
+                  setAuthError('');
+                })}
+                {renderSelectionChip(t('authLoginByPhone'), loginMethod === 'phone', () => {
+                  setLoginMethod('phone');
+                  setAuthError('');
+                })}
               </View>
 
               {loginMethod === 'email' ? (
@@ -405,10 +520,31 @@ export default function ProfileScreen() {
                 </View>
               ) : (
                 <View style={styles.fieldGroup}>
+                  <ThemedText type="defaultSemiBold">{t('authCountry')}</ThemedText>
+                  {renderSelectTrigger(
+                    `${getFlagEmoji(loginCountry.code)} ${loginCountry.name} (${loginCountry.dialCode})`,
+                    () => setLoginCountryOpen((prev) => !prev),
+                  )}
+                  {loginCountryOpen ? (
+                    <View style={[styles.selectionDropdown, { borderColor: border, backgroundColor: card }]}>
+                      {countries.map((country) =>
+                        renderSelectionChip(
+                          `${getFlagEmoji(country.code)} ${country.name} (${country.dialCode})`,
+                          loginCountry.code === country.code,
+                          () => {
+                            setLoginCountry(country);
+                            setLoginCountryOpen(false);
+                          },
+                        ),
+                      )}
+                    </View>
+                  ) : null}
                   <ThemedText type="defaultSemiBold">{t('authPhone')}</ThemedText>
                   <View style={styles.phoneRow}>
-                    <View style={[styles.phoneCodeCard, { borderColor: border }]}> 
-                      <ThemedText style={{ color: mutedText }}>{loginCountry.dialCode}</ThemedText>
+                    <View style={[styles.phoneCodeCard, { borderColor: border }]}>
+                      <ThemedText style={{ color: mutedText }}>
+                        {getFlagEmoji(loginCountry.code)} {loginCountry.dialCode}
+                      </ThemedText>
                     </View>
                     <View style={[styles.inputShell, styles.phoneInput, { borderColor: border }]}>
                       <MaterialCommunityIcons name="phone-outline" size={18} color={mutedText} />
@@ -421,15 +557,6 @@ export default function ProfileScreen() {
                         style={[styles.input, { color: mutedText }]}
                       />
                     </View>
-                  </View>
-                  <View style={styles.selectionGrid}>
-                    {countries.map((country) =>
-                      renderSelectionChip(
-                        `${country.name} ${country.dialCode}`,
-                        loginCountry.code === country.code,
-                        () => setLoginCountry(country),
-                      ),
-                    )}
                   </View>
                 </View>
               )}
@@ -449,6 +576,7 @@ export default function ProfileScreen() {
                 </View>
               </View>
 
+              {authError ? <ThemedText style={[styles.errorText, { color: danger }]}>{authError}</ThemedText> : null}
               <Pressable
                 accessibilityRole="button"
                 onPress={handleLogin}
@@ -507,10 +635,51 @@ export default function ProfileScreen() {
               </View>
 
               <View style={styles.fieldGroup}>
+                <ThemedText type="defaultSemiBold">{t('authCountry')}</ThemedText>
+                {renderSelectTrigger(
+                  `${getFlagEmoji(signupCountry.code)} ${signupCountry.name} (${signupCountry.dialCode})`,
+                  () => setSignupCountryOpen((prev) => !prev),
+                )}
+                {signupCountryOpen ? (
+                  <View style={[styles.selectionDropdown, { borderColor: border, backgroundColor: card }]}>
+                    {countries.map((country) =>
+                      renderSelectionChip(
+                        `${getFlagEmoji(country.code)} ${country.name} (${country.dialCode})`,
+                        signupCountry.code === country.code,
+                        () => {
+                          setSignupCountry(country);
+                          setSignupCity(country.cities[0]);
+                          setSignupCountryOpen(false);
+                          setSignupCityOpen(false);
+                        },
+                      ),
+                    )}
+                  </View>
+                ) : null}
+              </View>
+
+              <View style={styles.fieldGroup}>
+                <ThemedText type="defaultSemiBold">{t('authCity')}</ThemedText>
+                {renderSelectTrigger(signupCity, () => setSignupCityOpen((prev) => !prev))}
+                {signupCityOpen ? (
+                  <View style={[styles.selectionDropdown, { borderColor: border, backgroundColor: card }]}>
+                    {signupCountry.cities.map((city) =>
+                      renderSelectionChip(city, signupCity === city, () => {
+                        setSignupCity(city);
+                        setSignupCityOpen(false);
+                      }),
+                    )}
+                  </View>
+                ) : null}
+              </View>
+
+              <View style={styles.fieldGroup}>
                 <ThemedText type="defaultSemiBold">{t('authPhone')}</ThemedText>
                 <View style={styles.phoneRow}>
-                  <View style={[styles.phoneCodeCard, { borderColor: border }]}> 
-                    <ThemedText style={{ color: mutedText }}>{signupCountry.dialCode}</ThemedText>
+                  <View style={[styles.phoneCodeCard, { borderColor: border }]}>
+                    <ThemedText style={{ color: mutedText }}>
+                      {getFlagEmoji(signupCountry.code)} {signupCountry.dialCode}
+                    </ThemedText>
                   </View>
                   <View style={[styles.inputShell, styles.phoneInput, { borderColor: border }]}>
                     <MaterialCommunityIcons name="phone-outline" size={18} color={mutedText} />
@@ -523,18 +692,6 @@ export default function ProfileScreen() {
                       style={[styles.input, { color: mutedText }]}
                     />
                   </View>
-                </View>
-                <View style={styles.selectionGrid}>
-                  {countries.map((country) =>
-                    renderSelectionChip(
-                      `${country.name} ${country.dialCode}`,
-                      signupCountry.code === country.code,
-                      () => {
-                        setSignupCountry(country);
-                        setSignupCity(country.cities[0]);
-                      },
-                    ),
-                  )}
                 </View>
               </View>
 
@@ -554,30 +711,7 @@ export default function ProfileScreen() {
                 <ThemedText style={styles.helperText}>{t('authPasswordRequirements')}</ThemedText>
               </View>
 
-              <View style={styles.fieldGroup}>
-                <ThemedText type="defaultSemiBold">{t('authCountry')}</ThemedText>
-                <View style={styles.selectionGrid}>
-                  {countries.map((country) =>
-                    renderSelectionChip(
-                      country.name,
-                      signupCountry.code === country.code,
-                      () => {
-                        setSignupCountry(country);
-                        setSignupCity(country.cities[0]);
-                      },
-                    ),
-                  )}
-                </View>
-              </View>
-
-              <View style={styles.fieldGroup}>
-                <ThemedText type="defaultSemiBold">{t('authCity')}</ThemedText>
-                <View style={styles.selectionGrid}>
-                  {signupCountry.cities.map((city) =>
-                    renderSelectionChip(city, signupCity === city, () => setSignupCity(city)),
-                  )}
-                </View>
-              </View>
+              {authError ? <ThemedText style={[styles.errorText, { color: danger }]}>{authError}</ThemedText> : null}
 
               <Pressable
                 accessibilityRole="button"
@@ -739,15 +873,6 @@ const styles = StyleSheet.create({
     gap: 6,
     flex: 1,
   },
-  signOut: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-  },
   statusBadge: {
     borderWidth: 1,
     borderRadius: 999,
@@ -847,10 +972,17 @@ const styles = StyleSheet.create({
   phoneInput: {
     flex: 1,
   },
-  selectionGrid: {
+  selectionDropdown: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+    padding: 10,
+    borderRadius: 16,
+    borderWidth: 1,
+    shadowColor: '#000000',
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
   },
   selectionRow: {
     flexDirection: 'row',
@@ -867,11 +999,24 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 14,
   },
+  selectTrigger: {
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   primaryButton: {
     marginTop: 4,
     borderRadius: 16,
     paddingVertical: 14,
     alignItems: 'center',
+  },
+  errorText: {
+    fontSize: 12,
+    lineHeight: 16,
   },
   primaryButtonSmall: {
     borderRadius: 16,

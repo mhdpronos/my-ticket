@@ -1,8 +1,17 @@
-import { Platform, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import {
+  LayoutAnimation,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  UIManager,
+  View,
+} from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ThemedText } from '@/components/ui/ThemedText';
@@ -19,6 +28,7 @@ export default function SettingsScreen() {
   const mutedText = useThemeColor({}, 'mutedText');
   const tint = useThemeColor({}, 'tint');
   const danger = useThemeColor({}, 'danger');
+  const success = useThemeColor({}, 'success');
 
   const { t, language } = useTranslation();
   const setLanguage = useAppStore((state) => state.setLanguage);
@@ -39,6 +49,18 @@ export default function SettingsScreen() {
   const isBiometricSupported = Platform.OS === 'ios' || Platform.OS === 'android';
   const [languageMenuOpen, setLanguageMenuOpen] = useState(false);
   const [themeMenuOpen, setThemeMenuOpen] = useState(false);
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
+
+  useEffect(() => {
+    if (Platform.OS === 'android') {
+      UIManager.setLayoutAnimationEnabledExperimental?.(true);
+    }
+  }, []);
+
+  const toggleLogoutConfirm = (nextState?: boolean) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setLogoutConfirmOpen((prev) => (nextState !== undefined ? nextState : !prev));
+  };
 
   const renderChip = (label: string, active: boolean, onPress: () => void) => (
     <Pressable
@@ -279,11 +301,39 @@ export default function SettingsScreen() {
 
         <Pressable
           accessibilityRole="button"
-          onPress={signOut}
+          onPress={() => toggleLogoutConfirm()}
           style={[styles.logoutButton, { borderColor: danger }]}>
           <MaterialCommunityIcons name="logout" size={18} color={danger} />
           <ThemedText style={{ color: danger }}>{t('settingsLogout')}</ThemedText>
         </Pressable>
+        {logoutConfirmOpen ? (
+          <View style={[styles.logoutConfirmCard, { borderColor: border, backgroundColor: card }]}>
+            <ThemedText type="defaultSemiBold">{t('settingsLogoutConfirm')}</ThemedText>
+            <View style={styles.logoutActions}>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => {
+                  toggleLogoutConfirm(false);
+                  signOut();
+                }}
+                style={({ pressed }) => [
+                  styles.logoutChoice,
+                  { backgroundColor: danger, opacity: pressed ? 0.8 : 1 },
+                ]}>
+                <ThemedText style={styles.logoutChoiceText}>{t('settingsLogoutConfirmYes')}</ThemedText>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => toggleLogoutConfirm(false)}
+                style={({ pressed }) => [
+                  styles.logoutChoice,
+                  { backgroundColor: success, opacity: pressed ? 0.8 : 1 },
+                ]}>
+                <ThemedText style={styles.logoutChoiceText}>{t('settingsLogoutConfirmNo')}</ThemedText>
+              </Pressable>
+            </View>
+          </View>
+        ) : null}
       </ScrollView>
     </View>
   );
@@ -407,5 +457,26 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     flexDirection: 'row',
     gap: 8,
+  },
+  logoutConfirmCard: {
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 16,
+    gap: 12,
+  },
+  logoutActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  logoutChoice: {
+    flex: 1,
+    borderRadius: 14,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  logoutChoiceText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
   },
 });
