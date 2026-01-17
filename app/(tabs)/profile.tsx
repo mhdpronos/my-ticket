@@ -153,9 +153,13 @@ export default function ProfileScreen() {
       key={label}
       accessibilityRole="button"
       onPress={onPress}
-      style={[
+      style={({ pressed }) => [
         styles.selectionChip,
-        { borderColor: border, backgroundColor: selected ? tint : 'transparent' },
+        {
+          borderColor: border,
+          backgroundColor: selected ? tint : 'transparent',
+          opacity: pressed ? 0.86 : 1,
+        },
       ]}>
       <ThemedText style={{ color: selected ? '#FFFFFF' : mutedText }}>{label}</ThemedText>
     </Pressable>
@@ -179,7 +183,7 @@ export default function ProfileScreen() {
             onChangeText={setDraftValue}
             placeholder={t('profileEditPlaceholder')}
             placeholderTextColor={mutedText}
-            style={[styles.input, { borderColor: border, color: mutedText }]}
+            style={[styles.inputStandalone, { borderColor: border, color: mutedText }]}
           />
           <View style={styles.editActions}>
             <Pressable
@@ -273,7 +277,7 @@ export default function ProfileScreen() {
             placeholder={t('profileNewPasswordPlaceholder')}
             placeholderTextColor={mutedText}
             secureTextEntry
-            style={[styles.input, { borderColor: border, color: mutedText }]}
+            style={[styles.inputStandalone, { borderColor: border, color: mutedText }]}
           />
           <View style={styles.editActions}>
             <Pressable
@@ -299,21 +303,38 @@ export default function ProfileScreen() {
       ref={scrollRef}
       style={[styles.container, { backgroundColor: background }]}
       contentContainerStyle={styles.content}>
-      <View style={styles.header}>
-        <View style={[styles.avatar, { borderColor: border }]}>
-          <MaterialCommunityIcons name="account-outline" size={30} color={mutedText} />
-        </View>
-        <View style={styles.identity}>
-          <ThemedText type="pageTitle">{t('profileTitle')}</ThemedText>
-          <ThemedText style={[styles.subtitle, { color: mutedText }]}>
-            {userAccess.isGuest ? t('profileGuest') : t('profileConnected')} • {userAccess.status}
-          </ThemedText>
+      <View style={[styles.headerCard, { backgroundColor: card, borderColor: border }]}>
+        <View style={styles.headerTop}>
+          <View style={[styles.avatar, { borderColor: border }]}>
+            <MaterialCommunityIcons name="account-outline" size={30} color={mutedText} />
+          </View>
+          <View style={styles.identity}>
+            <ThemedText type="pageTitle">{t('profileTitle')}</ThemedText>
+            <ThemedText style={[styles.subtitle, { color: mutedText }]}>
+              {userAccess.isGuest ? t('profileGuest') : t('profileConnected')} • {userAccess.status}
+            </ThemedText>
+          </View>
+          <View
+            style={[
+              styles.statusBadge,
+              {
+                backgroundColor: userAccess.status === 'PREMIUM' ? tint : background,
+                borderColor: border,
+              },
+            ]}>
+            <ThemedText style={{ color: userAccess.status === 'PREMIUM' ? '#FFFFFF' : mutedText }}>
+              {userAccess.status}
+            </ThemedText>
+          </View>
         </View>
         {!userAccess.isGuest && (
           <Pressable
             accessibilityRole="button"
             onPress={signOut}
-            style={[styles.signOut, { borderColor: border }]}>
+            style={({ pressed }) => [
+              styles.signOut,
+              { borderColor: border, opacity: pressed ? 0.7 : 1 },
+            ]}>
             <MaterialCommunityIcons name="logout" size={16} color={mutedText} />
             <ThemedText style={{ color: mutedText }}>{t('profileSignOut')}</ThemedText>
           </Pressable>
@@ -321,12 +342,26 @@ export default function ProfileScreen() {
       </View>
 
       {userAccess.isGuest ? (
-        <View style={[styles.card, { backgroundColor: card, borderColor: border }]}>
-          <View style={styles.authTabs}>
+        <View style={[styles.card, styles.elevatedCard, { backgroundColor: card, borderColor: border }]}>
+          <View style={styles.cardHeader}>
+            <ThemedText type="defaultSemiBold">
+              {authMode === 'login' ? t('authLogin') : t('authSignup')}
+            </ThemedText>
+            <ThemedText style={{ color: mutedText }}>
+              {authMode === 'login'
+                ? 'Accède à ton espace MY TICKET en sécurité.'
+                : 'Crée un compte pour profiter de toutes les fonctionnalités.'}
+            </ThemedText>
+          </View>
+          <View style={[styles.authTabs, { backgroundColor: background, borderColor: border }]}>
             <Pressable
               accessibilityRole="button"
               onPress={() => setAuthMode('login')}
-              style={[styles.authTab, { backgroundColor: authMode === 'login' ? tint : background }]}>
+              style={({ pressed }) => [
+                styles.authTab,
+                { backgroundColor: authMode === 'login' ? tint : 'transparent' },
+                pressed && styles.pressedTab,
+              ]}>
               <ThemedText style={{ color: authMode === 'login' ? '#FFFFFF' : mutedText }}>
                 {t('authLogin')}
               </ThemedText>
@@ -334,7 +369,11 @@ export default function ProfileScreen() {
             <Pressable
               accessibilityRole="button"
               onPress={() => setAuthMode('signup')}
-              style={[styles.authTab, { backgroundColor: authMode === 'signup' ? tint : background }]}>
+              style={({ pressed }) => [
+                styles.authTab,
+                { backgroundColor: authMode === 'signup' ? tint : 'transparent' },
+                pressed && styles.pressedTab,
+              ]}>
               <ThemedText style={{ color: authMode === 'signup' ? '#FFFFFF' : mutedText }}>
                 {t('authSignup')}
               </ThemedText>
@@ -343,7 +382,7 @@ export default function ProfileScreen() {
 
           {authMode === 'login' ? (
             <View style={styles.formStack}>
-              <View style={styles.selectionRow}>
+              <View style={[styles.selectionRow, styles.miniSegment, { borderColor: border }]}>
                 {renderSelectionChip(t('authLoginByEmail'), loginMethod === 'email', () => setLoginMethod('email'))}
                 {renderSelectionChip(t('authLoginByPhone'), loginMethod === 'phone', () => setLoginMethod('phone'))}
               </View>
@@ -351,15 +390,18 @@ export default function ProfileScreen() {
               {loginMethod === 'email' ? (
                 <View style={styles.fieldGroup}>
                   <ThemedText type="defaultSemiBold">{t('authEmail')}</ThemedText>
-                  <TextInput
-                    value={emailInput}
-                    onChangeText={setEmailInput}
-                    placeholder={t('authEmailPlaceholder')}
-                    placeholderTextColor={mutedText}
-                    autoCapitalize="none"
-                    keyboardType="email-address"
-                    style={[styles.input, { borderColor: border, color: mutedText }]}
-                  />
+                  <View style={[styles.inputShell, { borderColor: border }]}>
+                    <MaterialCommunityIcons name="email-outline" size={18} color={mutedText} />
+                    <TextInput
+                      value={emailInput}
+                      onChangeText={setEmailInput}
+                      placeholder={t('authEmailPlaceholder')}
+                      placeholderTextColor={mutedText}
+                      autoCapitalize="none"
+                      keyboardType="email-address"
+                      style={[styles.input, { color: mutedText }]}
+                    />
+                  </View>
                 </View>
               ) : (
                 <View style={styles.fieldGroup}>
@@ -368,14 +410,17 @@ export default function ProfileScreen() {
                     <View style={[styles.phoneCodeCard, { borderColor: border }]}> 
                       <ThemedText style={{ color: mutedText }}>{loginCountry.dialCode}</ThemedText>
                     </View>
-                    <TextInput
-                      value={loginPhone}
-                      onChangeText={setLoginPhone}
-                      placeholder={t('authPhonePlaceholder')}
-                      placeholderTextColor={mutedText}
-                      keyboardType="phone-pad"
-                      style={[styles.input, styles.phoneInput, { borderColor: border, color: mutedText }]}
-                    />
+                    <View style={[styles.inputShell, styles.phoneInput, { borderColor: border }]}>
+                      <MaterialCommunityIcons name="phone-outline" size={18} color={mutedText} />
+                      <TextInput
+                        value={loginPhone}
+                        onChangeText={setLoginPhone}
+                        placeholder={t('authPhonePlaceholder')}
+                        placeholderTextColor={mutedText}
+                        keyboardType="phone-pad"
+                        style={[styles.input, { color: mutedText }]}
+                      />
+                    </View>
                   </View>
                   <View style={styles.selectionGrid}>
                     {countries.map((country) =>
@@ -391,20 +436,26 @@ export default function ProfileScreen() {
 
               <View style={styles.fieldGroup}>
                 <ThemedText type="defaultSemiBold">{t('authPassword')}</ThemedText>
-                <TextInput
-                  value={passwordInput}
-                  onChangeText={setPasswordInput}
-                  placeholder={t('authPasswordPlaceholder')}
-                  placeholderTextColor={mutedText}
-                  secureTextEntry
-                  style={[styles.input, { borderColor: border, color: mutedText }]}
-                />
+                <View style={[styles.inputShell, { borderColor: border }]}>
+                  <MaterialCommunityIcons name="lock-outline" size={18} color={mutedText} />
+                  <TextInput
+                    value={passwordInput}
+                    onChangeText={setPasswordInput}
+                    placeholder={t('authPasswordPlaceholder')}
+                    placeholderTextColor={mutedText}
+                    secureTextEntry
+                    style={[styles.input, { color: mutedText }]}
+                  />
+                </View>
               </View>
 
               <Pressable
                 accessibilityRole="button"
                 onPress={handleLogin}
-                style={[styles.primaryButton, { backgroundColor: tint }]}>
+                style={({ pressed }) => [
+                  styles.primaryButton,
+                  { backgroundColor: tint, opacity: pressed ? 0.9 : 1 },
+                ]}>
                 <ThemedText style={styles.primaryButtonText}>{t('authLoginButton')}</ThemedText>
               </Pressable>
             </View>
@@ -413,37 +464,46 @@ export default function ProfileScreen() {
               <View style={styles.splitFields}>
                 <View style={styles.fieldGroupInline}>
                   <ThemedText type="defaultSemiBold">{t('authLastName')}</ThemedText>
-                  <TextInput
-                    value={signupLastName}
-                    onChangeText={setSignupLastName}
-                    placeholder={t('authLastNamePlaceholder')}
-                    placeholderTextColor={mutedText}
-                    style={[styles.input, { borderColor: border, color: mutedText }]}
-                  />
+                  <View style={[styles.inputShell, { borderColor: border }]}>
+                    <MaterialCommunityIcons name="account-outline" size={18} color={mutedText} />
+                    <TextInput
+                      value={signupLastName}
+                      onChangeText={setSignupLastName}
+                      placeholder={t('authLastNamePlaceholder')}
+                      placeholderTextColor={mutedText}
+                      style={[styles.input, { color: mutedText }]}
+                    />
+                  </View>
                 </View>
                 <View style={styles.fieldGroupInline}>
                   <ThemedText type="defaultSemiBold">{t('authFirstName')}</ThemedText>
-                  <TextInput
-                    value={signupFirstName}
-                    onChangeText={setSignupFirstName}
-                    placeholder={t('authFirstNamePlaceholder')}
-                    placeholderTextColor={mutedText}
-                    style={[styles.input, { borderColor: border, color: mutedText }]}
-                  />
+                  <View style={[styles.inputShell, { borderColor: border }]}>
+                    <MaterialCommunityIcons name="account-outline" size={18} color={mutedText} />
+                    <TextInput
+                      value={signupFirstName}
+                      onChangeText={setSignupFirstName}
+                      placeholder={t('authFirstNamePlaceholder')}
+                      placeholderTextColor={mutedText}
+                      style={[styles.input, { color: mutedText }]}
+                    />
+                  </View>
                 </View>
               </View>
 
               <View style={styles.fieldGroup}>
                 <ThemedText type="defaultSemiBold">{t('authEmail')}</ThemedText>
-                <TextInput
-                  value={signupEmail}
-                  onChangeText={setSignupEmail}
-                  placeholder={t('authEmailPlaceholder')}
-                  placeholderTextColor={mutedText}
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                  style={[styles.input, { borderColor: border, color: mutedText }]}
-                />
+                <View style={[styles.inputShell, { borderColor: border }]}>
+                  <MaterialCommunityIcons name="email-outline" size={18} color={mutedText} />
+                  <TextInput
+                    value={signupEmail}
+                    onChangeText={setSignupEmail}
+                    placeholder={t('authEmailPlaceholder')}
+                    placeholderTextColor={mutedText}
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                    style={[styles.input, { color: mutedText }]}
+                  />
+                </View>
               </View>
 
               <View style={styles.fieldGroup}>
@@ -452,14 +512,17 @@ export default function ProfileScreen() {
                   <View style={[styles.phoneCodeCard, { borderColor: border }]}> 
                     <ThemedText style={{ color: mutedText }}>{signupCountry.dialCode}</ThemedText>
                   </View>
-                  <TextInput
-                    value={signupPhone}
-                    onChangeText={setSignupPhone}
-                    placeholder={t('authPhonePlaceholder')}
-                    placeholderTextColor={mutedText}
-                    keyboardType="phone-pad"
-                    style={[styles.input, styles.phoneInput, { borderColor: border, color: mutedText }]}
-                  />
+                  <View style={[styles.inputShell, styles.phoneInput, { borderColor: border }]}>
+                    <MaterialCommunityIcons name="phone-outline" size={18} color={mutedText} />
+                    <TextInput
+                      value={signupPhone}
+                      onChangeText={setSignupPhone}
+                      placeholder={t('authPhonePlaceholder')}
+                      placeholderTextColor={mutedText}
+                      keyboardType="phone-pad"
+                      style={[styles.input, { color: mutedText }]}
+                    />
+                  </View>
                 </View>
                 <View style={styles.selectionGrid}>
                   {countries.map((country) =>
@@ -477,14 +540,17 @@ export default function ProfileScreen() {
 
               <View style={styles.fieldGroup}>
                 <ThemedText type="defaultSemiBold">{t('authPassword')}</ThemedText>
-                <TextInput
-                  value={signupPassword}
-                  onChangeText={setSignupPassword}
-                  placeholder={t('authPasswordPlaceholder')}
-                  placeholderTextColor={mutedText}
-                  secureTextEntry
-                  style={[styles.input, { borderColor: border, color: mutedText }]}
-                />
+                <View style={[styles.inputShell, { borderColor: border }]}>
+                  <MaterialCommunityIcons name="lock-outline" size={18} color={mutedText} />
+                  <TextInput
+                    value={signupPassword}
+                    onChangeText={setSignupPassword}
+                    placeholder={t('authPasswordPlaceholder')}
+                    placeholderTextColor={mutedText}
+                    secureTextEntry
+                    style={[styles.input, { color: mutedText }]}
+                  />
+                </View>
                 <ThemedText style={styles.helperText}>{t('authPasswordRequirements')}</ThemedText>
               </View>
 
@@ -516,7 +582,10 @@ export default function ProfileScreen() {
               <Pressable
                 accessibilityRole="button"
                 onPress={handleSignup}
-                style={[styles.primaryButton, { backgroundColor: tint }]}>
+                style={({ pressed }) => [
+                  styles.primaryButton,
+                  { backgroundColor: tint, opacity: pressed ? 0.9 : 1 },
+                ]}>
                 <ThemedText style={styles.primaryButtonText}>{t('authSignupButton')}</ThemedText>
               </Pressable>
             </View>
@@ -540,50 +609,96 @@ export default function ProfileScreen() {
         <ThemedText style={{ color: success }}>{t('authSuccess')}</ThemedText>
       )}
 
-      <View style={[styles.card, { backgroundColor: card, borderColor: border }]}>
-        <ThemedText type="defaultSemiBold">{t('subscriptionCardTitle')}</ThemedText>
-        <ThemedText style={{ color: mutedText }}>
-          {userAccess.status === 'PREMIUM' ? t('subscriptionCardSubtitlePremium') : t('subscriptionCardSubtitleFree')}
+      <View style={[styles.card, styles.elevatedCard, { backgroundColor: card, borderColor: border }]}>
+        <View style={styles.cardHeaderRow}>
+          <View>
+            <ThemedText type="defaultSemiBold">{t('subscriptionCardTitle')}</ThemedText>
+            <ThemedText style={{ color: mutedText }}>
+              {userAccess.status === 'PREMIUM'
+                ? t('subscriptionCardSubtitlePremium')
+                : t('subscriptionCardSubtitleFree')}
+            </ThemedText>
+          </View>
+          <View style={[styles.premiumBadge, { borderColor: border, backgroundColor: background }]}>
+            <MaterialCommunityIcons name="star-four-points" size={14} color={tint} />
+            <ThemedText style={{ color: tint }}>Premium</ThemedText>
+          </View>
+        </View>
+        <ThemedText style={[styles.helperText, { color: mutedText }]}>
+          +3 pronos premium • stats avancées • ticket rapide
         </ThemedText>
         <Pressable
           accessibilityRole="button"
           onPress={() => router.push('/subscription')}
-          style={[styles.primaryButton, { backgroundColor: tint }]}>
+          style={({ pressed }) => [
+            styles.primaryButton,
+            { backgroundColor: tint, opacity: pressed ? 0.9 : 1 },
+          ]}>
           <ThemedText style={styles.primaryButtonText}>{t('buttonSeeOffers')}</ThemedText>
         </Pressable>
       </View>
 
-      <View style={[styles.card, { backgroundColor: card, borderColor: border }]}>
+      <View style={[styles.card, styles.elevatedCard, { backgroundColor: card, borderColor: border }]}>
         <ThemedText type="defaultSemiBold">{t('shortcutsTitle')}</ThemedText>
         <Pressable
           accessibilityRole="button"
           onPress={() => router.push('/settings')}
-          style={[styles.actionRow, { borderColor: border }]}>
+          style={({ pressed }) => [
+            styles.actionRow,
+            { borderColor: border, backgroundColor: pressed ? background : 'transparent' },
+          ]}>
           <View style={styles.actionRowContent}>
-            <MaterialCommunityIcons name="cog-outline" size={18} color={tint} />
-            <ThemedText>{t('buttonSettings')}</ThemedText>
+            <View style={[styles.iconBubble, { backgroundColor: background }]}>
+              <MaterialCommunityIcons name="cog-outline" size={18} color={tint} />
+            </View>
+            <View style={styles.actionTextStack}>
+              <ThemedText>{t('buttonSettings')}</ThemedText>
+              <ThemedText style={[styles.actionSubtitle, { color: mutedText }]}>
+                Gérer ton compte, thème, préférences
+              </ThemedText>
+            </View>
           </View>
-          <MaterialCommunityIcons name="chevron-right" size={18} color={mutedText} />
+          <MaterialCommunityIcons name="chevron-right" size={20} color={mutedText} />
         </Pressable>
         <Pressable
           accessibilityRole="button"
           onPress={() => router.push('/support')}
-          style={[styles.actionRow, { borderColor: border }]}>
+          style={({ pressed }) => [
+            styles.actionRow,
+            { borderColor: border, backgroundColor: pressed ? background : 'transparent' },
+          ]}>
           <View style={styles.actionRowContent}>
-            <MaterialCommunityIcons name="help-circle-outline" size={18} color={tint} />
-            <ThemedText>{t('buttonSupport')}</ThemedText>
+            <View style={[styles.iconBubble, { backgroundColor: background }]}>
+              <MaterialCommunityIcons name="help-circle-outline" size={18} color={tint} />
+            </View>
+            <View style={styles.actionTextStack}>
+              <ThemedText>{t('buttonSupport')}</ThemedText>
+              <ThemedText style={[styles.actionSubtitle, { color: mutedText }]}>
+                Besoin d’aide ? Support & FAQ rapides
+              </ThemedText>
+            </View>
           </View>
-          <MaterialCommunityIcons name="chevron-right" size={18} color={mutedText} />
+          <MaterialCommunityIcons name="chevron-right" size={20} color={mutedText} />
         </Pressable>
         <Pressable
           accessibilityRole="button"
           onPress={() => router.push('/legal')}
-          style={[styles.actionRow, { borderColor: border }]}>
+          style={({ pressed }) => [
+            styles.actionRow,
+            { borderColor: border, backgroundColor: pressed ? background : 'transparent' },
+          ]}>
           <View style={styles.actionRowContent}>
-            <MaterialCommunityIcons name="file-document-outline" size={18} color={tint} />
-            <ThemedText>{t('legalTitle')}</ThemedText>
+            <View style={[styles.iconBubble, { backgroundColor: background }]}>
+              <MaterialCommunityIcons name="file-document-outline" size={18} color={tint} />
+            </View>
+            <View style={styles.actionTextStack}>
+              <ThemedText>{t('legalTitle')}</ThemedText>
+              <ThemedText style={[styles.actionSubtitle, { color: mutedText }]}>
+                CGU, mentions légales, politique
+              </ThemedText>
+            </View>
           </View>
-          <MaterialCommunityIcons name="chevron-right" size={18} color={mutedText} />
+          <MaterialCommunityIcons name="chevron-right" size={20} color={mutedText} />
         </Pressable>
       </View>
     </ScrollView>
@@ -595,14 +710,22 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    paddingTop: 56,
-    paddingHorizontal: 16,
-    gap: 16,
-    paddingBottom: 40,
+    paddingTop: 32,
+    paddingHorizontal: 18,
+    gap: 18,
+    paddingBottom: 48,
   },
-  header: {
+  headerCard: {
+    borderWidth: 1,
+    borderRadius: 22,
+    padding: 18,
+    gap: 14,
+  },
+  headerTop: {
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 14,
+    justifyContent: 'space-between',
   },
   avatar: {
     width: 56,
@@ -613,8 +736,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   identity: {
-    gap: 4,
-    alignItems: 'center',
+    gap: 6,
+    flex: 1,
   },
   signOut: {
     flexDirection: 'row',
@@ -625,29 +748,54 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 10,
   },
+  statusBadge: {
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
   subtitle: {
-    textAlign: 'center',
+    textAlign: 'left',
   },
   card: {
     borderWidth: 1,
-    borderRadius: 18,
-    padding: 16,
-    gap: 12,
+    borderRadius: 22,
+    padding: 18,
+    gap: 14,
+  },
+  elevatedCard: {
+    shadowColor: '#000000',
+    shadowOpacity: 0.18,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 4,
+  },
+  cardHeader: {
+    gap: 4,
+  },
+  cardHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   authTabs: {
     flexDirection: 'row',
-    borderRadius: 16,
+    borderRadius: 18,
     padding: 4,
     gap: 6,
+    borderWidth: 1,
   },
   authTab: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 8,
-    borderRadius: 12,
+    paddingVertical: 10,
+    borderRadius: 14,
+  },
+  pressedTab: {
+    opacity: 0.9,
   },
   formStack: {
-    gap: 14,
+    gap: 16,
   },
   splitFields: {
     flexDirection: 'row',
@@ -660,9 +808,22 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 8,
   },
-  input: {
+  inputShell: {
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  input: {
+    flex: 1,
+    paddingVertical: 6,
+  },
+  inputStandalone: {
+    borderWidth: 1,
+    borderRadius: 14,
     paddingHorizontal: 12,
     paddingVertical: 10,
   },
@@ -695,20 +856,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
   },
+  miniSegment: {
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 4,
+  },
   selectionChip: {
     borderWidth: 1,
-    borderRadius: 14,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
+    borderRadius: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
   },
   primaryButton: {
     marginTop: 4,
-    borderRadius: 14,
-    paddingVertical: 12,
+    borderRadius: 16,
+    paddingVertical: 14,
     alignItems: 'center',
   },
   primaryButtonSmall: {
-    borderRadius: 14,
+    borderRadius: 16,
     paddingVertical: 10,
     paddingHorizontal: 18,
     alignItems: 'center',
@@ -719,24 +885,48 @@ const styles = StyleSheet.create({
   },
   secondaryButton: {
     borderWidth: 1,
-    borderRadius: 14,
+    borderRadius: 16,
     paddingVertical: 10,
     paddingHorizontal: 16,
     alignItems: 'center',
   },
+  premiumBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
   actionRow: {
     borderWidth: 1,
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
+    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 12,
   },
   actionRowContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 12,
+  },
+  iconBubble: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionTextStack: {
+    gap: 2,
+  },
+  actionSubtitle: {
+    fontSize: 12,
+    lineHeight: 16,
   },
   infoRow: {
     gap: 6,
