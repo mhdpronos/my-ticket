@@ -835,6 +835,30 @@ export default function ProfileScreen() {
           <MaterialCommunityIcons name="chevron-right" size={20} color={mutedText} />
         </Pressable>
       </View>
+
+      <View style={[styles.card, styles.elevatedCard, { backgroundColor: card, borderColor: border }]}>
+        <ThemedText type="defaultSemiBold">{t('profilePrivacyTitle')}</ThemedText>
+        <View style={[styles.actionRow, { borderColor: border }]}>
+          <View style={styles.actionRowContent}>
+            <View style={[styles.iconBubble, { backgroundColor: background }]}>
+              <MaterialCommunityIcons name="shield-account-outline" size={18} color={tint} />
+            </View>
+            <View style={styles.actionTextStack}>
+              <ThemedText>{t('profilePrivacyPolicy')}</ThemedText>
+            </View>
+          </View>
+        </View>
+        <View style={[styles.actionRow, { borderColor: border }]}>
+          <View style={styles.actionRowContent}>
+            <View style={[styles.iconBubble, { backgroundColor: background }]}>
+              <MaterialCommunityIcons name="file-document-outline" size={18} color={tint} />
+            </View>
+            <View style={styles.actionTextStack}>
+              <ThemedText>{t('profileTerms')}</ThemedText>
+            </View>
+          </View>
+        </View>
+      </View>
     </ScrollView>
   );
 }
