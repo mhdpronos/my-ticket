@@ -6,6 +6,7 @@ import { useMemo, useRef, useState } from 'react';
 import { useScrollToTop } from '@react-navigation/native';
 
 import { ThemedText } from '@/components/ui/ThemedText';
+import { useHapticOnScroll } from '@/hooks/useHapticOnScroll';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAppStore } from '@/store/useAppStore';
@@ -64,6 +65,7 @@ export default function ProfileScreen() {
   const success = useThemeColor({}, 'success');
   const danger = useThemeColor({}, 'danger');
   const { t } = useTranslation();
+  const scrollHaptics = useHapticOnScroll();
 
   const userAccess = useAppStore((state) => state.userAccess);
   const userProfile = useAppStore((state) => state.userProfile);
@@ -413,7 +415,8 @@ export default function ProfileScreen() {
     <ScrollView
       ref={scrollRef}
       style={[styles.container, { backgroundColor: background }]}
-      contentContainerStyle={styles.content}>
+      contentContainerStyle={styles.content}
+      {...scrollHaptics}>
       <View style={[styles.headerCard, { backgroundColor: card, borderColor: border }]}>
         <View style={styles.headerTop}>
           <View style={[styles.avatar, { borderColor: border }]}>

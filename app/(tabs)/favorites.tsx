@@ -6,6 +6,7 @@ import { router } from 'expo-router';
 
 import { MatchCard } from '@/components/matches/MatchCard';
 import { ThemedText } from '@/components/ui/ThemedText';
+import { useHapticOnScroll } from '@/hooks/useHapticOnScroll';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAppStore } from '@/store/useAppStore';
@@ -20,6 +21,7 @@ export default function FavoritesScreen() {
   const listRef = useRef<FlatList<Match>>(null);
   const { t } = useTranslation();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const scrollHaptics = useHapticOnScroll();
 
   const favoriteMatches = useAppStore((state) => state.favoriteMatches);
   const toggleFavoriteMatch = useAppStore((state) => state.toggleFavoriteMatch);
@@ -45,6 +47,7 @@ export default function FavoritesScreen() {
         ref={listRef}
         data={favoriteMatches}
         keyExtractor={(item) => item.id}
+        {...scrollHaptics}
         contentContainerStyle={styles.list}
         renderItem={({ item }) => (
           <MatchCard

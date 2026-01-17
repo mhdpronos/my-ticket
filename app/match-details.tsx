@@ -8,6 +8,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { PredictionRow } from '@/components/matches/PredictionRow';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ThemedText } from '@/components/ui/ThemedText';
+import { useHapticOnScroll } from '@/hooks/useHapticOnScroll';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getMatchById } from '@/services/matchesService';
@@ -37,6 +38,7 @@ export default function MatchDetailsScreen() {
   const danger = useThemeColor({}, 'danger');
   const { t, language } = useTranslation();
   const locale = getLocale(language);
+  const scrollHaptics = useHapticOnScroll();
 
   const matchIdValue = Array.isArray(matchId) ? matchId[0] : matchId;
 
@@ -169,7 +171,8 @@ export default function MatchDetailsScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={loadMatch} tintColor={tint} />}
-        contentInsetAdjustmentBehavior="never">
+        contentInsetAdjustmentBehavior="never"
+        {...scrollHaptics}>
         <View style={[styles.matchCard, { backgroundColor: card, borderColor: border }]}>
           <View style={styles.matchHeader}>
             <View style={styles.teamColumn}>

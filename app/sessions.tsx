@@ -4,6 +4,7 @@ import { useFocusEffect } from '@react-navigation/native';
 
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ThemedText } from '@/components/ui/ThemedText';
+import { useHapticOnScroll } from '@/hooks/useHapticOnScroll';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -22,6 +23,7 @@ export default function SessionsScreen() {
   const mutedText = useThemeColor({}, 'mutedText');
   const tint = useThemeColor({}, 'tint');
   const { t, language } = useTranslation();
+  const scrollHaptics = useHapticOnScroll();
 
   const reloadSessions = useCallback(async () => {
     setIsRefreshing(true);
@@ -50,7 +52,8 @@ export default function SessionsScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={reloadSessions} tintColor={tint} />}
-        contentInsetAdjustmentBehavior="never">
+        contentInsetAdjustmentBehavior="never"
+        {...scrollHaptics}>
         {items.map((session) => (
           <View key={session.id} style={[styles.card, { backgroundColor: card, borderColor: border }]}>
             <ThemedText type="defaultSemiBold">{session.device}</ThemedText>

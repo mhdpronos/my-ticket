@@ -1,6 +1,7 @@
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 import { ThemedText } from '@/components/ui/ThemedText';
+import { useHapticOnScroll } from '@/hooks/useHapticOnScroll';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useTranslation } from '@/hooks/useTranslation';
 import { RollingDate } from '@/utils/dateRange';
@@ -36,9 +37,15 @@ export function DateStrip({ dates, selectedId, onSelect }: DateStripProps) {
   const mutedText = useThemeColor({}, 'mutedText');
   const { t, language } = useTranslation();
   const locale = getLocale(language);
+  const scrollHaptics = useHapticOnScroll();
 
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.container} contentContainerStyle={styles.row}>
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={styles.container}
+      contentContainerStyle={styles.row}
+      {...scrollHaptics}>
       {dates.map((date) => {
         const isSelected = date.id === selectedId;
         return (
