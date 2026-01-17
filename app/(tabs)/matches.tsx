@@ -397,25 +397,31 @@ export default function MatchesScreen() {
                 <MaterialCommunityIcons name="close" size={18} color={mutedText} />
               </TouchableOpacity>
             </View>
-            <TouchableOpacity
-              style={[styles.modalItem, { borderColor: border }]}
-              onPress={() => {
-                setSelectedLeagueId(null);
-                setIsLeagueModalOpen(false);
-              }}>
-              <ThemedText style={{ color: mutedText }}>{t('modalAllLeagues')}</ThemedText>
-            </TouchableOpacity>
-            {leagueOptions.map((league) => (
+            <ScrollView
+              style={styles.modalList}
+              contentContainerStyle={styles.modalListContent}
+              showsVerticalScrollIndicator={false}
+              nestedScrollEnabled>
               <TouchableOpacity
-                key={league.id}
                 style={[styles.modalItem, { borderColor: border }]}
                 onPress={() => {
-                  setSelectedLeagueId(league.id);
+                  setSelectedLeagueId(null);
                   setIsLeagueModalOpen(false);
                 }}>
-                <ThemedText style={{ color: mutedText }}>{league.name}</ThemedText>
+                <ThemedText style={{ color: mutedText }}>{t('modalAllLeagues')}</ThemedText>
               </TouchableOpacity>
-            ))}
+              {leagueOptions.map((league) => (
+                <TouchableOpacity
+                  key={league.id}
+                  style={[styles.modalItem, { borderColor: border }]}
+                  onPress={() => {
+                    setSelectedLeagueId(league.id);
+                    setIsLeagueModalOpen(false);
+                  }}>
+                  <ThemedText style={{ color: mutedText }}>{league.name}</ThemedText>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
           </View>
         </Pressable>
       </Modal>
@@ -434,25 +440,31 @@ export default function MatchesScreen() {
                 <MaterialCommunityIcons name="close" size={18} color={mutedText} />
               </TouchableOpacity>
             </View>
-            <TouchableOpacity
-              style={[styles.modalItem, { borderColor: border }]}
-              onPress={() => {
-                setSelectedCountry(null);
-                setIsCountryModalOpen(false);
-              }}>
-              <ThemedText style={{ color: mutedText }}>{t('modalAllCountries')}</ThemedText>
-            </TouchableOpacity>
-            {countryOptions.map((country) => (
+            <ScrollView
+              style={styles.modalList}
+              contentContainerStyle={styles.modalListContent}
+              showsVerticalScrollIndicator={false}
+              nestedScrollEnabled>
               <TouchableOpacity
-                key={country}
                 style={[styles.modalItem, { borderColor: border }]}
                 onPress={() => {
-                  setSelectedCountry(country);
+                  setSelectedCountry(null);
                   setIsCountryModalOpen(false);
                 }}>
-                <ThemedText style={{ color: mutedText }}>{country}</ThemedText>
+                <ThemedText style={{ color: mutedText }}>{t('modalAllCountries')}</ThemedText>
               </TouchableOpacity>
-            ))}
+              {countryOptions.map((country) => (
+                <TouchableOpacity
+                  key={country}
+                  style={[styles.modalItem, { borderColor: border }]}
+                  onPress={() => {
+                    setSelectedCountry(country);
+                    setIsCountryModalOpen(false);
+                  }}>
+                  <ThemedText style={{ color: mutedText }}>{country}</ThemedText>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
           </View>
         </Pressable>
       </Modal>
@@ -598,6 +610,12 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
     padding: 16,
+    gap: 10,
+  },
+  modalList: {
+    maxHeight: 360,
+  },
+  modalListContent: {
     gap: 10,
   },
   modalHeader: {
