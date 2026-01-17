@@ -848,6 +848,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     gap: 18,
     paddingBottom: 48,
+    paddingTop: 60
   },
   headerCard: {
     borderWidth: 1,
