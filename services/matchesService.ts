@@ -1,5 +1,6 @@
 import { ApiFootballResult, fetchApiFootball } from '@/services/apiClient';
 import { Match, MatchStatus } from '@/types';
+import { isAllowedLeague } from '@/utils/leagueFilters';
 
 type ApiFixture = {
   fixture: {
@@ -123,7 +124,9 @@ export const getMatchesByDate = async (dateIso: string): Promise<Match[]> => {
   console.info('[API-Football] fixtures URL params', params);
   const data = ensureResponse(result, 'fixtures by date');
   console.info('[API-Football] fixtures count', data.response.length);
-  return data.response.map(mapFixtureToMatch);
+  return data.response
+    .map(mapFixtureToMatch)
+    .filter((match) => isAllowedLeague(match.league.name));
 };
 
 export const getAllMatches = async (): Promise<Match[]> => {
@@ -133,7 +136,9 @@ export const getAllMatches = async (): Promise<Match[]> => {
   console.info('[API-Football] fixtures URL params', params);
   const data = ensureResponse(result, 'fixtures next');
   console.info('[API-Football] fixtures count', data.response.length);
-  return data.response.map(mapFixtureToMatch);
+  return data.response
+    .map(mapFixtureToMatch)
+    .filter((match) => isAllowedLeague(match.league.name));
 };
 
 export const getMatchById = async (matchId: string): Promise<Match | null> => {
