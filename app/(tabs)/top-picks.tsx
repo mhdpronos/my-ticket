@@ -79,7 +79,19 @@ export default function TopPicksScreen() {
       try {
         const matches = await getAllMatches();
         const featured = matches.filter(isFeaturedMatch);
-        setPicks(featured.slice(0, 6));
+        const picksTarget = 10;
+        const selected = new Map<string, Match>();
+        featured.forEach((match) => {
+          if (selected.size < picksTarget) {
+            selected.set(match.id, match);
+          }
+        });
+        matches.forEach((match) => {
+          if (selected.size < picksTarget && !selected.has(match.id)) {
+            selected.set(match.id, match);
+          }
+        });
+        setPicks(Array.from(selected.values()));
       } catch (error) {
         console.error('Failed to load top picks', error);
         setPicks([]);
