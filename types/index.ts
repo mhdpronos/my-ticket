@@ -74,10 +74,12 @@ export type Bookmaker = {
 };
 
 export type UserProfile = {
-  fullName: string;
+  userId: string;
+  firstName: string;
+  lastName: string;
   email: string;
   phone: string;
+  password: string;
+  country: string;
   city: string;
-  favoriteTeam: string;
-  birthDate: string;
 };

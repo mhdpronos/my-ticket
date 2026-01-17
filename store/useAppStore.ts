@@ -32,12 +32,14 @@ type AppState = {
 };
 
 const initialProfile: UserProfile = {
-  fullName: '',
+  userId: '',
+  firstName: '',
+  lastName: '',
   email: '',
   phone: '',
+  password: '',
+  country: '',
   city: '',
-  favoriteTeam: '',
-  birthDate: '',
 };
 
 export const useAppStore = create<AppState>((set) => ({
