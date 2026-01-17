@@ -1,4 +1,6 @@
-import { ApiFootballResult, fetchApiFootball } from '@/services/apiClient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+import { ApiFootballResult, fetchApiFootball } from '@/services/apiFootball';
 import { Match, MatchStatus } from '@/types';
 import { isAllowedLeague } from '@/utils/leagueFilters';
 
@@ -31,7 +33,6 @@ type ApiFixtureResponse = {
 
 const liveStatuses = new Set(['1H', '2H', 'ET', 'P', 'HT', 'BT', 'LIVE', 'INT', 'SUSP']);
 const finishedStatuses = new Set(['FT', 'AET', 'PEN', 'AWD', 'WO']);
-let hasLoggedStatus = false;
 
 const mapStatus = (short: string): MatchStatus => {
   if (liveStatuses.has(short)) {
@@ -85,24 +86,10 @@ const formatApiDate = (dateIso: string) => {
   return `${year}-${month}-${day}`;
 };
 
-type ApiStatusResponse = {
-  response?: {
-    requests?: { current?: number; limit_day?: number };
-    subscription?: { active?: boolean; plan?: string };
-  };
-  errors?: Record<string, string>;
-};
-
-const logApiStatusOnce = async () => {
-  if (hasLoggedStatus) {
-    return;
-  }
-  hasLoggedStatus = true;
-  const statusResult = await fetchApiFootball<ApiStatusResponse>('/status');
-  console.info('[API-Football] GET /status', statusResult.status, statusResult.data);
-  if (statusResult.data?.errors && Object.keys(statusResult.data.errors).length > 0) {
-    console.warn('[API-Football] /status errors', statusResult.data.errors);
-  }
+type FixturesCacheEntry = {
+  data: Match[];
+  cachedAt: number;
+  ttlMs: number;
 };
 
 const ensureResponse = <T>(result: ApiFootballResult<T>, context: string): T => {
@@ -117,20 +104,82 @@ const ensureResponse = <T>(result: ApiFootballResult<T>, context: string): T => 
   return result.data;
 };
 
-export const getMatchesByDate = async (dateIso: string): Promise<Match[]> => {
-  await logApiStatusOnce();
-  const params = { date: formatApiDate(dateIso) };
-  const result = await fetchApiFootball<ApiFixtureResponse>('/fixtures', params);
-  console.info('[API-Football] fixtures URL params', params);
-  const data = ensureResponse(result, 'fixtures by date');
-  console.info('[API-Football] fixtures count', data.response.length);
-  return data.response
-    .map(mapFixtureToMatch)
-    .filter((match) => isAllowedLeague(match.league.name));
+const getFixturesCacheKey = (dateIso: string) => `fixtures:${formatApiDate(dateIso)}`;
+
+const startOfDay = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+
+const getFixturesTtlMs = (dateIso: string) => {
+  const targetDay = startOfDay(new Date(dateIso));
+  const todayDay = startOfDay(new Date());
+  if (targetDay === todayDay) {
+    return 2 * 60 * 1000;
+  }
+  if (targetDay > todayDay) {
+    return 6 * 60 * 60 * 1000;
+  }
+  return 24 * 60 * 60 * 1000;
+};
+
+const readFixturesCache = async (cacheKey: string): Promise<FixturesCacheEntry | null> => {
+  try {
+    const cachedRaw = await AsyncStorage.getItem(cacheKey);
+    if (!cachedRaw) {
+      return null;
+    }
+    return JSON.parse(cachedRaw) as FixturesCacheEntry;
+  } catch (error) {
+    console.warn('[API-Football] Failed to read fixtures cache', error);
+    return null;
+  }
+};
+
+const writeFixturesCache = async (cacheKey: string, entry: FixturesCacheEntry) => {
+  try {
+    await AsyncStorage.setItem(cacheKey, JSON.stringify(entry));
+  } catch (error) {
+    console.warn('[API-Football] Failed to write fixtures cache', error);
+  }
+};
+
+const isCacheValid = (entry: FixturesCacheEntry) => Date.now() < entry.cachedAt + entry.ttlMs;
+
+export const getMatchesByDate = async (
+  dateIso: string,
+  options: { forceRefresh?: boolean } = {}
+): Promise<Match[]> => {
+  const cacheKey = getFixturesCacheKey(dateIso);
+  const cacheEntry = await readFixturesCache(cacheKey);
+  const hasValidCache = cacheEntry ? isCacheValid(cacheEntry) : false;
+
+  if (hasValidCache && !options.forceRefresh) {
+    return cacheEntry?.data ?? [];
+  }
+
+  const params = { date: formatApiDate(dateIso), timezone: 'Africa/Abidjan' };
+  try {
+    const result = await fetchApiFootball<ApiFixtureResponse>('/fixtures', params);
+    const data = ensureResponse(result, 'fixtures by date');
+    const matches = data.response
+      .map(mapFixtureToMatch)
+      .filter((match) => isAllowedLeague(match.league.name));
+
+    await writeFixturesCache(cacheKey, {
+      data: matches,
+      cachedAt: Date.now(),
+      ttlMs: getFixturesTtlMs(dateIso),
+    });
+
+    return matches;
+  } catch (error) {
+    if (cacheEntry) {
+      console.warn('[API-Football] Using stale fixtures cache', { date: formatApiDate(dateIso) });
+      return cacheEntry.data;
+    }
+    throw error;
+  }
 };
 
 export const getAllMatches = async (): Promise<Match[]> => {
-  await logApiStatusOnce();
   const params = { next: 30 };
   const result = await fetchApiFootball<ApiFixtureResponse>('/fixtures', params);
   console.info('[API-Football] fixtures URL params', params);
@@ -142,7 +191,6 @@ export const getAllMatches = async (): Promise<Match[]> => {
 };
 
 export const getMatchById = async (matchId: string): Promise<Match | null> => {
-  await logApiStatusOnce();
   const params = { id: matchId };
   const result = await fetchApiFootball<ApiFixtureResponse>('/fixtures', params);
   console.info('[API-Football] fixtures URL params', params);

@@ -14,7 +14,7 @@ import {
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { router } from 'expo-router';
-import { useFocusEffect, useScrollToTop } from '@react-navigation/native';
+import { useScrollToTop } from '@react-navigation/native';
 
 import { DateStrip } from '@/components/matches/DateStrip';
 import { MatchCard } from '@/components/matches/MatchCard';
@@ -46,7 +46,6 @@ export default function MatchesScreen() {
   const [isLeagueModalOpen, setIsLeagueModalOpen] = useState(false);
   const [isCountryModalOpen, setIsCountryModalOpen] = useState(false);
   const listRef = useRef<SectionList<Match>>(null);
-  const hasFocusedOnce = useRef(false);
   const { t, language } = useTranslation();
   const locale = getLocale(language);
 
@@ -73,52 +72,36 @@ export default function MatchesScreen() {
   }, [dates, selectedDateId, setSelectedDateId]);
 
   const loadMatches = useCallback(
-    async ({ showLoading, silent }: { showLoading?: boolean; silent?: boolean } = {}) => {
+    async ({ showLoading, forceRefresh }: { showLoading?: boolean; forceRefresh?: boolean } = {}) => {
       if (!selectedDateId) {
         return;
       }
       setHasError(false);
-      if (!silent) {
-        if (showLoading) {
-          setIsLoading(true);
-        } else {
-          setIsRefreshing(true);
-        }
+      if (showLoading) {
+        setIsLoading(true);
+      } else {
+        setIsRefreshing(true);
       }
       try {
-        const data = await getMatchesByDate(selectedDateId);
+        const data = await getMatchesByDate(selectedDateId, { forceRefresh });
         setMatches(data);
       } catch (error) {
         console.error('Failed to load matches', error);
         setMatches([]);
         setHasError(true);
       } finally {
-        if (!silent) {
-          setIsLoading(false);
-          setIsRefreshing(false);
-        }
+        setIsLoading(false);
+        setIsRefreshing(false);
       }
     },
     [selectedDateId]
   );
 
   useEffect(() => {
-    loadMatches({ showLoading: true });
-  }, [loadMatches]);
-
-  useFocusEffect(
-    useCallback(() => {
-      if (hasFocusedOnce.current) {
-        loadMatches({ silent: true });
-      } else {
-        hasFocusedOnce.current = true;
-      }
-      const interval = setInterval(() => {
-        loadMatches({ silent: true });
-      }, 30000);
-      return () => clearInterval(interval);
-    }, [loadMatches])
-  );
+    if (selectedDateId) {
+      loadMatches({ showLoading: true });
+    }
+  }, [loadMatches, selectedDateId]);
 
   const leagueOptions = useMemo(() => {
     const unique = new Map(matches.map((match) => [match.league.id, match.league]));
@@ -245,7 +228,13 @@ export default function MatchesScreen() {
         }
         stickySectionHeadersEnabled
         contentContainerStyle={styles.list}
-        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={loadMatches} tintColor={tint} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={() => loadMatches({ forceRefresh: true })}
+            tintColor={tint}
+          />
+        }
         ListHeaderComponent={
           <View>
             <View style={styles.headerRow}>
@@ -343,6 +332,13 @@ export default function MatchesScreen() {
                   active: selectedStatus === 'finished',
                   activeColor: warning,
                   onPress: () => setSelectedStatus((prev) => (prev === 'finished' ? 'all' : 'finished')),
+                })}
+                {renderChip({
+                  label: t('buttonRefresh'),
+                  icon: 'refresh',
+                  active: false,
+                  activeColor: card,
+                  onPress: () => loadMatches({ forceRefresh: true }),
                 })}
               </ScrollView>
             </View>
