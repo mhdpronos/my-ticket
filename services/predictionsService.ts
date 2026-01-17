@@ -34,36 +34,17 @@ export const getPredictionsForMatch = async (matchId: string): Promise<Predictio
   const percentDraw = parsePercent(prediction.percent.draw);
   const percentAway = parsePercent(prediction.percent.away);
 
-  return [
-    {
-      id: `${matchId}-pred-home`,
-      matchId,
-      label: 'Home win',
-      market: '1X2',
-      selection: 'HOME',
-      tier: 'free',
-      risk: riskFromPercent(percentHome),
-      confidence: percentHome,
-    },
-    {
-      id: `${matchId}-pred-draw`,
-      matchId,
-      label: 'Draw',
-      market: '1X2',
-      selection: 'DRAW',
-      tier: 'free',
-      risk: riskFromPercent(percentDraw),
-      confidence: percentDraw,
-    },
-    {
-      id: `${matchId}-pred-away`,
-      matchId,
-      label: 'Away win',
-      market: '1X2',
-      selection: 'AWAY',
-      tier: 'free',
-      risk: riskFromPercent(percentAway),
-      confidence: percentAway,
-    },
-  ];
+  return buildPredictionsForMatch(matchId, {
+    HOME: percentHome,
+    DRAW: percentDraw,
+    AWAY: percentAway,
+  }).map((item) => {
+    if (item.market !== '1X2' || item.confidence === undefined) {
+      return item;
+    }
+    return {
+      ...item,
+      risk: riskFromPercent(item.confidence),
+    };
+  });
 };

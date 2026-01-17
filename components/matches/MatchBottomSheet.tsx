@@ -11,6 +11,7 @@ import { ThemedText } from '@/components/ui/ThemedText';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useTranslation } from '@/hooks/useTranslation';
 import { fetchBookmakers } from '@/services/oddsService';
+import { useAppStore } from '@/store/useAppStore';
 import { Bookmaker, Match, Prediction, UserAccess } from '@/types';
 import { getLocale } from '@/utils/i18n';
 
@@ -43,6 +44,7 @@ export function MatchBottomSheet({
   const { t, language } = useTranslation();
   const locale = getLocale(language);
   const [bookmakers, setBookmakers] = useState<Bookmaker[]>([]);
+  const ticketItems = useAppStore((state) => state.ticketItems);
 
   const snapPoints = useMemo(() => ['65%', '92%'], []);
 
@@ -213,7 +215,10 @@ export function MatchBottomSheet({
                       prediction={prediction}
                       locked={prediction.tier === 'premium' && !isPremium}
                       onAdd={() => onAddPrediction(match, prediction)}
-                      oddsLabel="—"
+                      oddsLabel={prediction.odds ? prediction.odds.toFixed(2) : undefined}
+                      isAdded={ticketItems.some(
+                        (item) => item.match.id === match.id && item.prediction.id === prediction.id
+                      )}
                     />
                   ))
                 )}

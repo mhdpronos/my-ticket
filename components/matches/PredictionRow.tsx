@@ -1,28 +1,50 @@
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { useState } from 'react';
 
 import { ThemedText } from '@/components/ui/ThemedText';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Prediction } from '@/types';
-import { translatePredictionLabel } from '@/utils/i18n';
 
 type PredictionRowProps = {
   prediction: Prediction;
   locked: boolean;
   onAdd: () => void;
   oddsLabel?: string;
+  isAdded?: boolean;
 };
 
-export function PredictionRow({ prediction, locked, onAdd, oddsLabel = '—' }: PredictionRowProps) {
+const selectionLabels: Record<Prediction['selection'], string> = {
+  HOME: 'V1',
+  DRAW: 'X',
+  AWAY: 'V2',
+  OVER: '+',
+  UNDER: '-',
+  YES: 'Oui',
+  NO: 'Non',
+};
+
+const marketLabels: Record<Prediction['market'], string> = {
+  '1X2': '1X2',
+  OVER_UNDER: 'O/U',
+  BOTH_TEAMS_SCORE: 'BTTS',
+  DOUBLE_CHANCE: 'DC',
+  HANDICAP: 'Handicap',
+};
+
+export function PredictionRow({
+  prediction,
+  locked,
+  onAdd,
+  oddsLabel = '—',
+  isAdded = false,
+}: PredictionRowProps) {
   const border = useThemeColor({}, 'border');
   const mutedText = useThemeColor({}, 'mutedText');
   const premium = useThemeColor({}, 'premium');
   const accent = useThemeColor({}, 'accent');
   const success = useThemeColor({}, 'success');
-  const [isAdded, setIsAdded] = useState(false);
-  const { t, language } = useTranslation();
+  const { t } = useTranslation();
 
   const riskLabels: Record<Prediction['risk'], string> = {
     safe: t('riskSafe'),
@@ -35,17 +57,18 @@ export function PredictionRow({ prediction, locked, onAdd, oddsLabel = '—' }: 
       return;
     }
     onAdd();
-    setIsAdded(true);
   };
 
   const buttonLabel = isAdded ? t('ticketAdded') : t('ticketAdd');
   const buttonColor = isAdded ? success : accent;
+  const selectionLabel = prediction.selectionLabel ?? selectionLabels[prediction.selection];
+  const predictionTitle = `${marketLabels[prediction.market]}: ${selectionLabel}`;
 
   return (
-    <View style={[styles.row, { borderColor: border, opacity: locked ? 0.5 : 1 }]}> 
+    <View style={[styles.row, { borderColor: border, opacity: locked ? 0.5 : 1 }]}>
       <View style={styles.info}>
         <ThemedText type="defaultSemiBold" numberOfLines={1}>
-          {translatePredictionLabel(language, prediction.label)}
+          {predictionTitle}
         </ThemedText>
         <ThemedText style={{ color: mutedText }}>{t('ticketOddsLabel', { value: oddsLabel })}</ThemedText>
         <View style={styles.metaRow}>

@@ -1,5 +1,7 @@
 // Le code qui gère l'état global de l'application avec Zustand.
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
 
 import { Match, Prediction, TicketItem, UserAccess, UserProfile } from '@/types';
 
@@ -42,67 +44,77 @@ const initialProfile: UserProfile = {
   city: '',
 };
 
-export const useAppStore = create<AppState>((set) => ({
-  themePreference: 'nocturne',
-  setThemePreference: (theme) =>
-    set((state) => (state.themePreference === theme ? state : { themePreference: theme })),
-  language: 'fr',
-  setLanguage: (language) => set((state) => (state.language === language ? state : { language })),
-  notificationsEnabled: true,
-  setNotificationsEnabled: (enabled) =>
-    set((state) => (state.notificationsEnabled === enabled ? state : { notificationsEnabled: enabled })),
-  twoFactorEnabled: true,
-  setTwoFactorEnabled: (enabled) =>
-    set((state) => (state.twoFactorEnabled === enabled ? state : { twoFactorEnabled: enabled })),
-  appUnlockEnabled: true,
-  setAppUnlockEnabled: (enabled) =>
-    set((state) => (state.appUnlockEnabled === enabled ? state : { appUnlockEnabled: enabled })),
-  loginBiometricEnabled: false,
-  setLoginBiometricEnabled: (enabled) =>
-    set((state) => (state.loginBiometricEnabled === enabled ? state : { loginBiometricEnabled: enabled })),
-  selectedDateId: null,
-  setSelectedDateId: (dateId) => set((state) => (state.selectedDateId === dateId ? state : { selectedDateId: dateId })),
-  ticketItems: [],
-  addTicketItem: (match, prediction) =>
-    set((state) => {
-      const exists = state.ticketItems.some((item) => item.match.id === match.id);
-      const item: TicketItem = { match, prediction };
-      return {
-        ticketItems: exists
-          ? state.ticketItems.map((entry) => (entry.match.id === match.id ? item : entry))
-          : [...state.ticketItems, item],
-      };
-    }),
-  removeTicketItem: (matchId) =>
-    set((state) => ({
-      ticketItems: state.ticketItems.filter((item) => item.match.id !== matchId),
-    })),
-  clearTicket: () => set({ ticketItems: [] }),
-  favoriteMatches: [],
-  toggleFavoriteMatch: (match) =>
-    set((state) => {
-      const exists = state.favoriteMatches.some((item) => item.id === match.id);
-      return {
-        favoriteMatches: exists
-          ? state.favoriteMatches.filter((item) => item.id !== match.id)
-          : [match, ...state.favoriteMatches],
-      };
-    }),
-  userAccess: { status: 'FREE', isGuest: true },
-  setUserAccess: (access) => set({ userAccess: access }),
-  userProfile: initialProfile,
-  updateUserProfile: (profile) =>
-    set((state) => ({
-      userProfile: {
-        ...state.userProfile,
-        ...profile,
-      },
-    })),
-  signOut: () =>
-    set({
-      userAccess: { status: 'FREE', isGuest: true },
-      userProfile: initialProfile,
+export const useAppStore = create<AppState>()(
+  persist(
+    (set) => ({
+      themePreference: 'nocturne',
+      setThemePreference: (theme) =>
+        set((state) => (state.themePreference === theme ? state : { themePreference: theme })),
+      language: 'fr',
+      setLanguage: (language) => set((state) => (state.language === language ? state : { language })),
+      notificationsEnabled: true,
+      setNotificationsEnabled: (enabled) =>
+        set((state) => (state.notificationsEnabled === enabled ? state : { notificationsEnabled: enabled })),
+      twoFactorEnabled: true,
+      setTwoFactorEnabled: (enabled) =>
+        set((state) => (state.twoFactorEnabled === enabled ? state : { twoFactorEnabled: enabled })),
+      appUnlockEnabled: true,
+      setAppUnlockEnabled: (enabled) =>
+        set((state) => (state.appUnlockEnabled === enabled ? state : { appUnlockEnabled: enabled })),
+      loginBiometricEnabled: false,
+      setLoginBiometricEnabled: (enabled) =>
+        set((state) => (state.loginBiometricEnabled === enabled ? state : { loginBiometricEnabled: enabled })),
+      selectedDateId: null,
+      setSelectedDateId: (dateId) =>
+        set((state) => (state.selectedDateId === dateId ? state : { selectedDateId: dateId })),
       ticketItems: [],
+      addTicketItem: (match, prediction) =>
+        set((state) => {
+          const exists = state.ticketItems.some((item) => item.match.id === match.id);
+          const item: TicketItem = { match, prediction };
+          return {
+            ticketItems: exists
+              ? state.ticketItems.map((entry) => (entry.match.id === match.id ? item : entry))
+              : [...state.ticketItems, item],
+          };
+        }),
+      removeTicketItem: (matchId) =>
+        set((state) => ({
+          ticketItems: state.ticketItems.filter((item) => item.match.id !== matchId),
+        })),
+      clearTicket: () => set({ ticketItems: [] }),
       favoriteMatches: [],
+      toggleFavoriteMatch: (match) =>
+        set((state) => {
+          const exists = state.favoriteMatches.some((item) => item.id === match.id);
+          return {
+            favoriteMatches: exists
+              ? state.favoriteMatches.filter((item) => item.id !== match.id)
+              : [match, ...state.favoriteMatches],
+          };
+        }),
+      userAccess: { status: 'FREE', isGuest: true },
+      setUserAccess: (access) => set({ userAccess: access }),
+      userProfile: initialProfile,
+      updateUserProfile: (profile) =>
+        set((state) => ({
+          userProfile: {
+            ...state.userProfile,
+            ...profile,
+          },
+        })),
+      signOut: () =>
+        set({
+          userAccess: { status: 'FREE', isGuest: true },
+          userProfile: initialProfile,
+          ticketItems: [],
+          favoriteMatches: [],
+        }),
     }),
-}));
+    {
+      name: 'my-ticket-store',
+      storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({ ticketItems: state.ticketItems }),
+    }
+  )
+);

@@ -26,6 +26,7 @@ export default function MatchDetailsScreen() {
 
   const userAccess = useAppStore((state) => state.userAccess);
   const addTicketItem = useAppStore((state) => state.addTicketItem);
+  const ticketItems = useAppStore((state) => state.ticketItems);
 
   const background = useThemeColor({}, 'background');
   const card = useThemeColor({}, 'card');
@@ -95,9 +96,23 @@ export default function MatchDetailsScreen() {
   );
 
   const isPremium = userAccess.status === 'PREMIUM';
-  const freePredictions = useMemo(() => predictions.filter((prediction) => prediction.tier === 'free'), [predictions]);
+  const freePredictions = useMemo(
+    () =>
+      predictions
+        .filter((prediction) => prediction.tier === 'free' && (prediction.odds ?? 0) <= 1.3)
+        .slice(0, 6),
+    [predictions]
+  );
   const premiumPredictions = useMemo(
-    () => predictions.filter((prediction) => prediction.tier === 'premium'),
+    () =>
+      predictions
+        .filter(
+          (prediction) =>
+            prediction.tier === 'premium' &&
+            (prediction.odds ?? 0) >= 1.4 &&
+            (prediction.odds ?? 0) <= 2
+        )
+        .slice(0, 6),
     [predictions]
   );
   const visiblePredictions = isPremium ? [...freePredictions, ...premiumPredictions] : freePredictions;
@@ -187,6 +202,40 @@ export default function MatchDetailsScreen() {
           </View>
         </View>
 
+        {winRate && (
+          <View style={[styles.rateCardWrapper, { backgroundColor: card, borderColor: border }]}>
+            <ThemedText type="defaultSemiBold">{t('estimatedSuccessRate')}</ThemedText>
+            <View style={styles.rateCardRow}>
+              <View
+                style={[
+                  styles.rateCard,
+                  {
+                    backgroundColor: winRate.home >= 60 ? success : danger,
+                    borderColor: winRate.home >= 60 ? success : danger,
+                  },
+                ]}>
+                <Image source={{ uri: match.homeTeam.logoUrl }} style={styles.rateLogo} contentFit="contain" />
+                <ThemedText type="defaultSemiBold" style={styles.rateValue}>
+                  {winRate.home}%
+                </ThemedText>
+              </View>
+              <View
+                style={[
+                  styles.rateCard,
+                  {
+                    backgroundColor: winRate.away >= 60 ? success : danger,
+                    borderColor: winRate.away >= 60 ? success : danger,
+                  },
+                ]}>
+                <Image source={{ uri: match.awayTeam.logoUrl }} style={styles.rateLogo} contentFit="contain" />
+                <ThemedText type="defaultSemiBold" style={styles.rateValue}>
+                  {winRate.away}%
+                </ThemedText>
+              </View>
+            </View>
+          </View>
+        )}
+
         <View style={[styles.card, { backgroundColor: card, borderColor: border }]}>
           <View style={styles.cardHeader}>
             <ThemedText type="defaultSemiBold">{t('predictions')}</ThemedText>
@@ -203,25 +252,14 @@ export default function MatchDetailsScreen() {
                 prediction={prediction}
                 locked={prediction.tier === 'premium' && !isPremium}
                 onAdd={() => addTicketItem(match, prediction)}
+                oddsLabel={prediction.odds ? prediction.odds.toFixed(2) : undefined}
+                isAdded={ticketItems.some(
+                  (item) => item.match.id === match.id && item.prediction.id === prediction.id
+                )}
               />
             ))
           )}
         </View>
-
-        {winRate && (
-          <View style={[styles.card, { backgroundColor: card, borderColor: border }]}>
-            <ThemedText type="defaultSemiBold">{t('estimatedSuccessRate')}</ThemedText>
-            <View style={styles.rateRow}>
-              <ThemedText style={{ color: winRate.home >= 60 ? success : danger }}>
-                {match.homeTeam.name} {winRate.home}%
-              </ThemedText>
-              <ThemedText style={{ color: mutedText }}>{winRate.draw}% {t('drawLabel')}</ThemedText>
-              <ThemedText style={{ color: winRate.away >= 60 ? success : danger }}>
-                {match.awayTeam.name} {winRate.away}%
-              </ThemedText>
-            </View>
-          </View>
-        )}
 
         {!isPremium && (
           <View style={[styles.premiumBanner, { borderColor: border, backgroundColor: card }]}>
@@ -266,9 +304,14 @@ const styles = StyleSheet.create({
   },
   matchCard: {
     borderWidth: 1,
-    borderRadius: 10,
-    padding: 16,
-    gap: 12,
+    borderRadius: 18,
+    padding: 18,
+    gap: 14,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
   },
   matchHeader: {
     flexDirection: 'row',
@@ -297,8 +340,8 @@ const styles = StyleSheet.create({
   },
   card: {
     borderWidth: 1,
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 18,
+    padding: 18,
     gap: 12,
   },
   cardHeader: {
@@ -306,11 +349,30 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  rateRow: {
+  rateCardWrapper: {
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 16,
+    gap: 12,
+  },
+  rateCardRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
+    gap: 12,
+  },
+  rateCard: {
+    flex: 1,
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingVertical: 12,
+    alignItems: 'center',
     gap: 8,
+  },
+  rateLogo: {
+    width: 34,
+    height: 34,
+  },
+  rateValue: {
+    color: '#FFFFFF',
   },
   premiumBanner: {
     borderWidth: 1,
