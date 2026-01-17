@@ -1,5 +1,5 @@
 // Le code qui affiche une carte de match dans la liste.
-import { memo } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, TouchableOpacity, View } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Image } from 'expo-image';
@@ -36,8 +36,6 @@ function MatchCardComponent({
   const tint = useThemeColor({}, 'tint');
   const accent = useThemeColor({}, 'accent');
   const backgroundSecondary = useThemeColor({}, 'backgroundSecondary');
-  const warning = useThemeColor({}, 'warning');
-  const danger = useThemeColor({}, 'danger');
   const { t, language } = useTranslation();
   const locale = getLocale(language);
 
@@ -47,11 +45,30 @@ function MatchCardComponent({
     hour: '2-digit',
     minute: '2-digit',
   });
-  const statusColor = isLive ? danger : isFinished ? warning : tint;
+  const statusTextColor = isLive ? '#F97316' : isFinished ? '#FACC15' : '#22C55E';
+  const [liveSeconds, setLiveSeconds] = useState(() => (match.liveMinute ?? 0) * 60);
+
+  useEffect(() => {
+    if (!isLive) {
+      return;
+    }
+    setLiveSeconds((match.liveMinute ?? 0) * 60);
+    const interval = setInterval(() => {
+      setLiveSeconds((prev) => prev + 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isLive, match.liveMinute]);
+
+  const liveTimerLabel = useMemo(() => {
+    const minutes = Math.floor(liveSeconds / 60);
+    const seconds = liveSeconds % 60;
+    return `${String(minutes).padStart(2, '0')}, ${String(seconds).padStart(2, '0')}`;
+  }, [liveSeconds]);
+
   const statusLabel = isLive
-    ? t('matchStatusLive', { minute: match.liveMinute ?? 0 })
+    ? `${t('matchLive')} ${liveTimerLabel}`
     : isFinished
-    ? 'FT'
+    ? t('matchFinished')
     : t('matchUpcoming');
 
   return (
@@ -76,9 +93,8 @@ function MatchCardComponent({
               color={accent}
             />
           </TouchableOpacity>
-          <View style={[styles.statusPill, { backgroundColor: statusColor, borderColor: border }]}>
-            <View style={[styles.statusDot, { backgroundColor: '#FFFFFF' }]} />
-            <ThemedText style={{ color: '#FFFFFF' }}>{statusLabel}</ThemedText>
+          <View style={styles.statusPill}>
+            <ThemedText style={{ color: statusTextColor }}>{statusLabel}</ThemedText>
           </View>
         </View>
       </View>
@@ -177,19 +193,9 @@ const styles = StyleSheet.create({
     padding: 6,
     borderRadius: 999,
   },
-  statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
   statusPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    borderWidth: 1,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 999,
+    paddingVertical: 2,
+    paddingHorizontal: 4,
   },
   teamsRow: {
     flexDirection: 'row',
