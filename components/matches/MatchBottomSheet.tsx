@@ -8,6 +8,7 @@ import { router } from 'expo-router';
 
 import { PredictionRow } from '@/components/matches/PredictionRow';
 import { ThemedText } from '@/components/ui/ThemedText';
+import { useHapticOnScroll } from '@/hooks/useHapticOnScroll';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useTranslation } from '@/hooks/useTranslation';
 import { fetchBookmakers } from '@/services/oddsService';
@@ -45,6 +46,7 @@ export function MatchBottomSheet({
   const locale = getLocale(language);
   const [bookmakers, setBookmakers] = useState<Bookmaker[]>([]);
   const ticketItems = useAppStore((state) => state.ticketItems);
+  const scrollHaptics = useHapticOnScroll();
 
   const snapPoints = useMemo(() => ['65%', '92%'], []);
 
@@ -126,7 +128,7 @@ export function MatchBottomSheet({
       handleIndicatorStyle={{ backgroundColor: border }}
       onDismiss={handleDismiss}
       backdropComponent={renderBackdrop}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} {...scrollHaptics}>
         <View style={styles.header}>
           <View style={styles.matchHeader}>
             <View style={styles.teamLine}>

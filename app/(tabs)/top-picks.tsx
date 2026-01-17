@@ -5,6 +5,7 @@ import { useFocusEffect, useScrollToTop } from '@react-navigation/native';
 
 import { MatchCard } from '@/components/matches/MatchCard';
 import { ThemedText } from '@/components/ui/ThemedText';
+import { useHapticOnScroll } from '@/hooks/useHapticOnScroll';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getAllMatches } from '@/services/matchesService';
@@ -24,6 +25,7 @@ export default function TopPicksScreen() {
   const mutedText = useThemeColor({}, 'mutedText');
   const tint = useThemeColor({}, 'tint');
   const { t } = useTranslation();
+  const scrollHaptics = useHapticOnScroll();
 
   const favoriteMatches = useAppStore((state) => state.favoriteMatches);
   const toggleFavoriteMatch = useAppStore((state) => state.toggleFavoriteMatch);
@@ -146,6 +148,7 @@ export default function TopPicksScreen() {
           ref={listRef}
           data={picks}
           keyExtractor={(item) => item.id}
+          {...scrollHaptics}
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
             <MatchCard
