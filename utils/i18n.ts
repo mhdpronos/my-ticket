@@ -103,7 +103,7 @@ export const translations = {
     notificationsMatchSoon: 'Match en approche',
     notificationsMatchSoonDetail: 'PSG vs Lyon commence dans 2 heures',
     supportTitle: 'Aide & Support',
-    supportSubtitle: 'Besoin d\'un coup de main ? On est là.',
+    supportSubtitle: 'Besoin d\'un coup de main ? Yf.',
     supportContactTitle: 'Support MY TICKET',
     supportContactBody: 'Contacte-nous sur WhatsApp ou par email pour une réponse rapide.',
     supportFaqTitle: 'FAQ rapide',
