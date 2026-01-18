@@ -98,7 +98,7 @@ type CacheEntry<T> = {
   ttlMs: number;
 };
 
-const MIN_DEV_TTL_MS = 24 * 60 * 60 * 1000;
+const MIN_DEV_TTL_MS = 10 * 60 * 1000;
 const ALL_MATCHES_TTL_MS = 5 * 60 * 1000;
 const MATCH_DETAILS_TTL_MS = 10 * 60 * 1000;
 

@@ -2,6 +2,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ThemedText } from '@/components/ui/ThemedText';
+import { useHapticOnScroll } from '@/hooks/useHapticOnScroll';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -62,9 +63,10 @@ export default function SupportFaqScreen() {
   const border = useThemeColor({}, 'border');
   const mutedText = useThemeColor({}, 'mutedText');
   const { t } = useTranslation();
+  const scrollHaptics = useHapticOnScroll();
 
   return (
-    <ScrollView style={{ backgroundColor: background }} contentContainerStyle={styles.container}>
+    <ScrollView style={{ backgroundColor: background }} contentContainerStyle={styles.container} {...scrollHaptics}>
       <ScreenHeader title={t('supportFaqPageTitle')} subtitle={t('supportFaqPageSubtitle')} />
       <View style={styles.stack}>
         {faqItems.map((item) => (

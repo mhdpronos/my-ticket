@@ -5,6 +5,7 @@ import { useFocusEffect } from '@react-navigation/native';
 
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ThemedText } from '@/components/ui/ThemedText';
+import { useHapticOnScroll } from '@/hooks/useHapticOnScroll';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -36,6 +37,7 @@ export default function NotificationsScreen() {
   const mutedText = useThemeColor({}, 'mutedText');
   const tint = useThemeColor({}, 'tint');
   const { t } = useTranslation();
+  const scrollHaptics = useHapticOnScroll();
 
   const reloadNotifications = useCallback(async () => {
     setIsRefreshing(true);
@@ -63,6 +65,7 @@ export default function NotificationsScreen() {
       <FlatList
         data={items}
         keyExtractor={(item) => item.id}
+        {...scrollHaptics}
         contentContainerStyle={styles.list}
         renderItem={({ item }) => (
           <View style={[styles.card, { borderColor: border, backgroundColor: card }]}>

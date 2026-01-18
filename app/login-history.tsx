@@ -4,6 +4,7 @@ import { useFocusEffect } from '@react-navigation/native';
 
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ThemedText } from '@/components/ui/ThemedText';
+import { useHapticOnScroll } from '@/hooks/useHapticOnScroll';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -23,6 +24,7 @@ export default function LoginHistoryScreen() {
   const mutedText = useThemeColor({}, 'mutedText');
   const warning = useThemeColor({}, 'warning');
   const { t, language } = useTranslation();
+  const scrollHaptics = useHapticOnScroll();
 
   const reloadHistory = useCallback(async () => {
     setIsRefreshing(true);
@@ -51,7 +53,8 @@ export default function LoginHistoryScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={reloadHistory} />}
-        contentInsetAdjustmentBehavior="never">
+        contentInsetAdjustmentBehavior="never"
+        {...scrollHaptics}>
         {items.map((item) => (
           <View key={item.id} style={[styles.card, { backgroundColor: card, borderColor: border }]}>
             <ThemedText type="defaultSemiBold">

@@ -15,6 +15,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ThemedText } from '@/components/ui/ThemedText';
+import { useHapticOnScroll } from '@/hooks/useHapticOnScroll';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAppStore } from '@/store/useAppStore';
@@ -29,6 +30,7 @@ export default function SettingsScreen() {
   const tint = useThemeColor({}, 'tint');
   const danger = useThemeColor({}, 'danger');
   const success = useThemeColor({}, 'success');
+  const scrollHaptics = useHapticOnScroll();
 
   const { t, language } = useTranslation();
   const setLanguage = useAppStore((state) => state.setLanguage);
@@ -121,7 +123,7 @@ export default function SettingsScreen() {
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
       <ScreenHeader title={t('settingsTitle')} subtitle={t('settingsSubtitle')} containerStyle={styles.header} />
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} {...scrollHaptics}>
         <View style={[styles.card, { backgroundColor: card, borderColor: border }]}>
           <ThemedText type="defaultSemiBold">{t('settingsPreferences')}</ThemedText>
 

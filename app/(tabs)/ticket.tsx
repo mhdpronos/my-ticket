@@ -5,6 +5,7 @@ import { useFocusEffect, useScrollToTop } from '@react-navigation/native';
 
 import { TicketItemRow } from '@/components/ticket/TicketItemRow';
 import { ThemedText } from '@/components/ui/ThemedText';
+import { useHapticOnScroll } from '@/hooks/useHapticOnScroll';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAppStore } from '@/store/useAppStore';
@@ -23,6 +24,7 @@ export default function TicketScreen() {
   const tint = useThemeColor({}, 'tint');
   const { t } = useTranslation();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const scrollHaptics = useHapticOnScroll();
 
   useScrollToTop(listRef);
 
@@ -58,6 +60,7 @@ export default function TicketScreen() {
         ref={listRef}
         data={ticketItems}
         keyExtractor={(item) => item.match.id}
+        {...scrollHaptics}
         contentContainerStyle={styles.list}
         renderItem={({ item }) => (
           <TicketItemRow item={item} onRemove={() => removeTicketItem(item.match.id)} />

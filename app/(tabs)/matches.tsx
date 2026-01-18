@@ -20,6 +20,7 @@ import { DateStrip } from '@/components/matches/DateStrip';
 import { MatchCard } from '@/components/matches/MatchCard';
 import { BrandTitle } from '@/components/ui/BrandTitle';
 import { ThemedText } from '@/components/ui/ThemedText';
+import { useHapticOnScroll } from '@/hooks/useHapticOnScroll';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getMatchesByDate } from '@/services/matchesService';
@@ -64,6 +65,7 @@ export default function MatchesScreen() {
   const tint = useThemeColor({}, 'tint');
   const warning = useThemeColor({}, 'warning');
   const danger = useThemeColor({}, 'danger');
+  const scrollHaptics = useHapticOnScroll();
 
   useEffect(() => {
     if (!selectedDateId) {
@@ -208,6 +210,7 @@ export default function MatchesScreen() {
         ref={listRef}
         sections={sections}
         keyExtractor={(item) => item.id}
+        {...scrollHaptics}
         renderItem={({ item, section }) =>
           section.key === 'matches' ? (
             <MatchCard
@@ -280,7 +283,8 @@ export default function MatchesScreen() {
                 nestedScrollEnabled
                 directionalLockEnabled
                 contentContainerStyle={styles.filterRow}
-                style={styles.filterScroll}>
+                style={styles.filterScroll}
+                {...scrollHaptics}>
                 {renderChip({
                   label: selectedLeagueLabel,
                   icon: 'trophy-outline',
@@ -397,7 +401,8 @@ export default function MatchesScreen() {
               style={styles.modalList}
               contentContainerStyle={styles.modalListContent}
               showsVerticalScrollIndicator={false}
-              nestedScrollEnabled>
+              nestedScrollEnabled
+              {...scrollHaptics}>
               <TouchableOpacity
                 style={[styles.modalItem, { borderColor: border }]}
                 onPress={() => {
@@ -440,7 +445,8 @@ export default function MatchesScreen() {
               style={styles.modalList}
               contentContainerStyle={styles.modalListContent}
               showsVerticalScrollIndicator={false}
-              nestedScrollEnabled>
+              nestedScrollEnabled
+              {...scrollHaptics}>
               <TouchableOpacity
                 style={[styles.modalItem, { borderColor: border }]}
                 onPress={() => {
