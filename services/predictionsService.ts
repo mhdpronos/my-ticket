@@ -1,6 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { buildPredictionsForMatch } from '@/data/predictions';
 import { fetchJson } from '@/services/apiClient';
 import { Prediction } from '@/types';
 
@@ -58,28 +57,55 @@ const writeCache = async (cacheKey: string, entry: CacheEntry<Prediction[]>) => 
 
 const isCacheValid = (entry: CacheEntry<Prediction[]>) => Date.now() < entry.cachedAt + entry.ttlMs;
 
-const buildPredictionsPayload = (matchId: string, prediction?: ApiPredictionsResponse['response'][number]['predictions']) => {
+const buildPredictionsPayload = (
+  matchId: string,
+  prediction?: ApiPredictionsResponse['response'][number]['predictions']
+) => {
   if (!prediction) {
-    return buildPredictionsForMatch(matchId);
+    return [];
   }
 
   const percentHome = parsePercent(prediction.percent.home);
   const percentDraw = parsePercent(prediction.percent.draw);
   const percentAway = parsePercent(prediction.percent.away);
 
-  return buildPredictionsForMatch(matchId, {
-    HOME: percentHome,
-    DRAW: percentDraw,
-    AWAY: percentAway,
-  }).map((item) => {
-    if (item.market !== '1X2' || item.confidence === undefined) {
-      return item;
-    }
-    return {
-      ...item,
-      risk: riskFromPercent(item.confidence),
-    };
-  });
+  const predictions: Prediction[] = [
+    {
+      id: `${matchId}-pred-home`,
+      matchId,
+      label: '1X2: V1',
+      market: '1X2',
+      selection: 'HOME',
+      selectionLabel: 'V1',
+      tier: 'free',
+      risk: riskFromPercent(percentHome),
+      confidence: percentHome,
+    },
+    {
+      id: `${matchId}-pred-draw`,
+      matchId,
+      label: '1X2: X',
+      market: '1X2',
+      selection: 'DRAW',
+      selectionLabel: 'X',
+      tier: 'free',
+      risk: riskFromPercent(percentDraw),
+      confidence: percentDraw,
+    },
+    {
+      id: `${matchId}-pred-away`,
+      matchId,
+      label: '1X2: V2',
+      market: '1X2',
+      selection: 'AWAY',
+      selectionLabel: 'V2',
+      tier: 'free',
+      risk: riskFromPercent(percentAway),
+      confidence: percentAway,
+    },
+  ];
+
+  return predictions;
 };
 
 export const getPredictionsForMatch = async (
@@ -114,13 +140,8 @@ export const getPredictionsForMatch = async (
         console.warn('[Predictions] Using stale cache', { matchId });
         return cacheEntry.data;
       }
-      const fallback = buildPredictionsPayload(matchId);
-      await writeCache(cacheKey, {
-        data: fallback,
-        cachedAt: Date.now(),
-        ttlMs: DAY_TTL_MS,
-      });
-      return fallback;
+      console.warn('[Predictions] Failed to load predictions', { matchId, error });
+      return [];
     } finally {
       pendingRequests.delete(cacheKey);
     }

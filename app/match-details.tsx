@@ -11,6 +11,7 @@ import { ThemedText } from '@/components/ui/ThemedText';
 import { useHapticOnScroll } from '@/hooks/useHapticOnScroll';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useTranslation } from '@/hooks/useTranslation';
+import { getMatchInsights, MatchInsights } from '@/services/matchInsightsService';
 import { getMatchById } from '@/services/matchesService';
 import { getPredictionsForMatch } from '@/services/predictionsService';
 import { useAppStore } from '@/store/useAppStore';
@@ -21,8 +22,10 @@ export default function MatchDetailsScreen() {
   const { matchId } = useLocalSearchParams<{ matchId?: string | string[] }>();
   const [match, setMatch] = useState<Match | null>(null);
   const [predictions, setPredictions] = useState<Prediction[]>([]);
+  const [insights, setInsights] = useState<MatchInsights | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isInsightsLoading, setIsInsightsLoading] = useState(false);
   const hasFocusedOnce = useRef(false);
 
   const userAccess = useAppStore((state) => state.userAccess);
@@ -56,6 +59,7 @@ export default function MatchDetailsScreen() {
       if (!matchIdValue) {
         setIsLoading(false);
         setIsRefreshing(false);
+        setIsInsightsLoading(false);
         return;
       }
       if (!silent) {
@@ -65,24 +69,32 @@ export default function MatchDetailsScreen() {
           setIsRefreshing(true);
         }
       }
+      setIsInsightsLoading(true);
       try {
         const foundMatch = await getMatchById(matchIdValue, { forceRefresh });
         setMatch(foundMatch);
         if (foundMatch) {
-          const predictionsData = await getPredictionsForMatch(foundMatch.id, { forceRefresh });
+          const [predictionsData, insightsData] = await Promise.all([
+            getPredictionsForMatch(foundMatch.id, { forceRefresh }),
+            getMatchInsights(foundMatch, { forceRefresh }),
+          ]);
           setPredictions(predictionsData);
+          setInsights(insightsData);
         } else {
           setPredictions([]);
+          setInsights(null);
         }
       } catch (error) {
         console.error('Failed to load match details', error);
         setMatch(null);
         setPredictions([]);
+        setInsights(null);
       } finally {
         if (!silent) {
           setIsLoading(false);
           setIsRefreshing(false);
         }
+        setIsInsightsLoading(false);
       }
     },
     [matchIdValue]
@@ -178,6 +190,17 @@ export default function MatchDetailsScreen() {
   });
   const rateThreshold = 50;
   const getRateTone = (value: number) => (value >= rateThreshold ? success : danger);
+  const emptyLabel = t('noDataAvailable');
+
+  const formatShortDate = (dateIso: string) =>
+    new Date(dateIso).toLocaleDateString(locale, {
+      month: 'short',
+      day: 'numeric',
+    });
+
+  const renderEmpty = (label = emptyLabel) => (
+    <ThemedText style={{ color: mutedText }}>{label}</ThemedText>
+  );
 
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
@@ -277,6 +300,338 @@ export default function MatchDetailsScreen() {
           </View>
         )}
 
+        {isInsightsLoading && (
+          <View style={[styles.sectionCard, { backgroundColor: card, borderColor: border }]}>
+            <ActivityIndicator size="small" color={tint} />
+            <ThemedText style={{ color: mutedText }}>{t('loadingInsights')}</ThemedText>
+          </View>
+        )}
+
+        {insights && (
+          <>
+            <View style={[styles.sectionCard, { backgroundColor: card, borderColor: border }]}>
+              <View style={styles.sectionHeader}>
+                <ThemedText type="defaultSemiBold">{t('standingsTitle')}</ThemedText>
+                <ThemedText style={{ color: mutedText }}>{match.league.name}</ThemedText>
+              </View>
+              {insights.standings.length === 0
+                ? renderEmpty()
+                : insights.standings.slice(0, 8).map((row) => {
+                    const isHighlighted =
+                      row.team.id === match.homeTeam.id || row.team.id === match.awayTeam.id;
+                    return (
+                      <View
+                        key={row.team.id}
+                        style={[
+                          styles.standingRow,
+                          isHighlighted && { backgroundColor: backgroundSecondary, borderColor: border },
+                        ]}>
+                        <ThemedText style={styles.standingRank}>{row.rank}</ThemedText>
+                        <Image source={{ uri: row.team.logoUrl }} style={styles.standingLogo} contentFit="contain" />
+                        <View style={styles.standingTeamInfo}>
+                          <ThemedText type="defaultSemiBold">{row.team.name}</ThemedText>
+                          <ThemedText style={{ color: mutedText }}>
+                            {t('standingsPlayedLabel', { count: row.played })} ·{' '}
+                            {t('standingsPointsLabel', { count: row.points })}
+                          </ThemedText>
+                        </View>
+                        <ThemedText style={styles.standingGoalDiff}>{row.goalDiff}</ThemedText>
+                      </View>
+                    );
+                  })}
+            </View>
+
+            <View style={[styles.sectionCard, { backgroundColor: card, borderColor: border }]}>
+              <View style={styles.sectionHeader}>
+                <ThemedText type="defaultSemiBold">{t('recentFixturesTitle')}</ThemedText>
+                <ThemedText style={{ color: mutedText }}>{t('recentFixturesSubtitle')}</ThemedText>
+              </View>
+              {insights.recentFixtures.length === 0
+                ? renderEmpty()
+                : insights.recentFixtures.map((group) => (
+                    <View key={group.team.id} style={styles.subSection}>
+                      <View style={styles.teamHeaderRow}>
+                        <Image source={{ uri: group.team.logoUrl }} style={styles.teamBadge} contentFit="contain" />
+                        <ThemedText type="defaultSemiBold">{group.team.name}</ThemedText>
+                      </View>
+                      {group.fixtures.length === 0 ? (
+                        renderEmpty()
+                      ) : (
+                        group.fixtures.map((fixture) => (
+                          <View key={fixture.id} style={styles.fixtureRow}>
+                            <ThemedText style={{ color: mutedText }}>{formatShortDate(fixture.dateIso)}</ThemedText>
+                            <ThemedText style={styles.fixtureTeams}>
+                              {fixture.homeTeam.name} {fixture.score ? `${fixture.score.home} - ${fixture.score.away}` : fixture.status}{' '}
+                              {fixture.awayTeam.name}
+                            </ThemedText>
+                          </View>
+                        ))
+                      )}
+                    </View>
+                  ))}
+            </View>
+
+            <View style={[styles.sectionCard, { backgroundColor: card, borderColor: border }]}>
+              <View style={styles.sectionHeader}>
+                <ThemedText type="defaultSemiBold">{t('headToHeadTitle')}</ThemedText>
+                <ThemedText style={{ color: mutedText }}>{t('headToHeadSubtitle')}</ThemedText>
+              </View>
+              {insights.headToHead.length === 0
+                ? renderEmpty()
+                : insights.headToHead.map((fixture) => (
+                    <View key={fixture.id} style={styles.fixtureRow}>
+                      <ThemedText style={{ color: mutedText }}>{formatShortDate(fixture.dateIso)}</ThemedText>
+                      <ThemedText style={styles.fixtureTeams}>
+                        {fixture.homeTeam.name}{' '}
+                        {fixture.score ? `${fixture.score.home} - ${fixture.score.away}` : fixture.status}{' '}
+                        {fixture.awayTeam.name}
+                      </ThemedText>
+                    </View>
+                  ))}
+            </View>
+
+            <View style={[styles.sectionCard, { backgroundColor: card, borderColor: border }]}>
+              <View style={styles.sectionHeader}>
+                <ThemedText type="defaultSemiBold">{t('eventsTitle')}</ThemedText>
+                <ThemedText style={{ color: mutedText }}>{t('eventsSubtitle')}</ThemedText>
+              </View>
+              {insights.events.length === 0
+                ? renderEmpty()
+                : insights.events.map((event, index) => (
+                    <View key={`${event.player}-${index}`} style={styles.eventRow}>
+                      <ThemedText style={styles.eventTime}>{event.time}</ThemedText>
+                      <Image source={{ uri: event.team.logoUrl }} style={styles.eventLogo} contentFit="contain" />
+                      <View style={styles.eventInfo}>
+                        <ThemedText type="defaultSemiBold">
+                          {event.player} · {event.detail}
+                        </ThemedText>
+                        <ThemedText style={{ color: mutedText }}>
+                          {event.type}
+                          {event.assist ? ` · ${t('assistLabel')}: ${event.assist}` : ''}
+                        </ThemedText>
+                      </View>
+                    </View>
+                  ))}
+            </View>
+
+            <View style={[styles.sectionCard, { backgroundColor: card, borderColor: border }]}>
+              <View style={styles.sectionHeader}>
+                <ThemedText type="defaultSemiBold">{t('lineupsTitle')}</ThemedText>
+                <ThemedText style={{ color: mutedText }}>{t('lineupsSubtitle')}</ThemedText>
+              </View>
+              {insights.lineups.length === 0
+                ? renderEmpty()
+                : insights.lineups.map((lineup) => (
+                    <View key={lineup.team.id} style={styles.subSection}>
+                      <View style={styles.teamHeaderRow}>
+                        <Image source={{ uri: lineup.team.logoUrl }} style={styles.teamBadge} contentFit="contain" />
+                        <View>
+                          <ThemedText type="defaultSemiBold">{lineup.team.name}</ThemedText>
+                          <ThemedText style={{ color: mutedText }}>
+                            {lineup.formation ?? t('formationFallback')}
+                            {lineup.coach ? ` · ${t('coachLabel')}: ${lineup.coach}` : ''}
+                          </ThemedText>
+                        </View>
+                      </View>
+                      <View style={styles.lineupList}>
+                        {lineup.starters.slice(0, 11).map((player) => (
+                          <ThemedText key={player.name} style={[styles.lineupPlayer, { color: mutedText }]}>
+                            {player.number ? `${player.number}. ` : ''}
+                            {player.name} {player.position ? `(${player.position})` : ''}
+                          </ThemedText>
+                        ))}
+                      </View>
+                    </View>
+                  ))}
+            </View>
+
+            <View style={[styles.sectionCard, { backgroundColor: card, borderColor: border }]}>
+              <View style={styles.sectionHeader}>
+                <ThemedText type="defaultSemiBold">{t('topScorersTitle')}</ThemedText>
+                <ThemedText style={{ color: mutedText }}>{t('topScorersSubtitle')}</ThemedText>
+              </View>
+              {insights.topScorers.length === 0
+                ? renderEmpty()
+                : insights.topScorers.map((scorer, index) => (
+                    <View key={`${scorer.player}-${index}`} style={styles.scorerRow}>
+                      <Image source={{ uri: scorer.team.logoUrl }} style={styles.teamBadge} contentFit="contain" />
+                      <View style={styles.scorerInfo}>
+                        <ThemedText type="defaultSemiBold">{scorer.player}</ThemedText>
+                        <ThemedText style={{ color: mutedText }}>{scorer.team.name}</ThemedText>
+                      </View>
+                      <ThemedText style={styles.scorerGoals}>
+                        {t('goalsLabel', { count: scorer.goals })}
+                      </ThemedText>
+                    </View>
+                  ))}
+            </View>
+
+            <View style={[styles.sectionCard, { backgroundColor: card, borderColor: border }]}>
+              <View style={styles.sectionHeader}>
+                <ThemedText type="defaultSemiBold">{t('playersCoachesTitle')}</ThemedText>
+                <ThemedText style={{ color: mutedText }}>{t('playersCoachesSubtitle')}</ThemedText>
+              </View>
+              {insights.rosters.length === 0 && insights.coaches.length === 0 ? (
+                renderEmpty()
+              ) : (
+                <>
+                  {insights.coaches.map((coach) => (
+                    <View key={coach.team.id} style={styles.coachRow}>
+                      <Image source={{ uri: coach.team.logoUrl }} style={styles.teamBadge} contentFit="contain" />
+                      <View>
+                        <ThemedText type="defaultSemiBold">
+                          {coach.name} · {coach.team.name}
+                        </ThemedText>
+                        <ThemedText style={{ color: mutedText }}>
+                          {coach.nationality ? `${coach.nationality} · ` : ''}
+                          {coach.age ? t('ageLabel', { count: coach.age }) : t('ageUnknown')}
+                        </ThemedText>
+                      </View>
+                    </View>
+                  ))}
+                  {insights.rosters.map((roster) => (
+                    <View key={roster.team.id} style={styles.subSection}>
+                      <View style={styles.teamHeaderRow}>
+                        <Image source={{ uri: roster.team.logoUrl }} style={styles.teamBadge} contentFit="contain" />
+                        <ThemedText type="defaultSemiBold">{roster.team.name}</ThemedText>
+                      </View>
+                      {roster.players.length === 0 ? (
+                        renderEmpty()
+                      ) : (
+                        roster.players.map((player) => (
+                          <ThemedText key={player.name} style={[styles.rosterPlayer, { color: mutedText }]}>
+                            {player.name}
+                            {player.position ? ` · ${player.position}` : ''}
+                            {player.age ? ` · ${t('ageLabel', { count: player.age })}` : ''}
+                          </ThemedText>
+                        ))
+                      )}
+                    </View>
+                  ))}
+                </>
+              )}
+            </View>
+
+            <View style={[styles.sectionCard, { backgroundColor: card, borderColor: border }]}>
+              <View style={styles.sectionHeader}>
+                <ThemedText type="defaultSemiBold">{t('transfersTitle')}</ThemedText>
+                <ThemedText style={{ color: mutedText }}>{t('transfersSubtitle')}</ThemedText>
+              </View>
+              {insights.transfers.length === 0
+                ? renderEmpty()
+                : insights.transfers.map((transfer, index) => (
+                    <View key={`${transfer.player}-${index}`} style={styles.transferRow}>
+                      <ThemedText type="defaultSemiBold">{transfer.player}</ThemedText>
+                      <ThemedText style={{ color: mutedText }}>
+                        {transfer.from ?? t('unknownTeam')} → {transfer.to ?? t('unknownTeam')}
+                        {transfer.date ? ` · ${formatShortDate(transfer.date)}` : ''}
+                      </ThemedText>
+                    </View>
+                  ))}
+            </View>
+
+            <View style={[styles.sectionCard, { backgroundColor: card, borderColor: border }]}>
+              <View style={styles.sectionHeader}>
+                <ThemedText type="defaultSemiBold">{t('trophiesTitle')}</ThemedText>
+                <ThemedText style={{ color: mutedText }}>{t('trophiesSubtitle')}</ThemedText>
+              </View>
+              {insights.trophies.length === 0
+                ? renderEmpty()
+                : insights.trophies.map((trophy, index) => (
+                    <View key={`${trophy.name}-${index}`} style={styles.trophyRow}>
+                      <ThemedText type="defaultSemiBold">{trophy.name}</ThemedText>
+                      <ThemedText style={{ color: mutedText }}>
+                        {trophy.country ? `${trophy.country} · ` : ''}
+                        {trophy.season ?? t('seasonUnknown')}
+                        {trophy.place ? ` · ${trophy.place}` : ''}
+                      </ThemedText>
+                    </View>
+                  ))}
+            </View>
+
+            <View style={[styles.sectionCard, { backgroundColor: card, borderColor: border }]}>
+              <View style={styles.sectionHeader}>
+                <ThemedText type="defaultSemiBold">{t('injuriesTitle')}</ThemedText>
+                <ThemedText style={{ color: mutedText }}>{t('injuriesSubtitle')}</ThemedText>
+              </View>
+              {insights.injuries.length === 0
+                ? renderEmpty()
+                : insights.injuries.map((injury, index) => (
+                    <View key={`${injury.player}-${index}`} style={styles.injuryRow}>
+                      <Image source={{ uri: injury.team.logoUrl }} style={styles.teamBadge} contentFit="contain" />
+                      <View>
+                        <ThemedText type="defaultSemiBold">{injury.player}</ThemedText>
+                        <ThemedText style={{ color: mutedText }}>
+                          {injury.team.name} · {injury.type ?? t('injuryUnknown')}
+                          {injury.reason ? ` · ${injury.reason}` : ''}
+                        </ThemedText>
+                      </View>
+                    </View>
+                  ))}
+            </View>
+
+            <View style={[styles.sectionCard, { backgroundColor: card, borderColor: border }]}>
+              <View style={styles.sectionHeader}>
+                <ThemedText type="defaultSemiBold">{t('oddsTitle')}</ThemedText>
+                <ThemedText style={{ color: mutedText }}>{t('oddsSubtitle')}</ThemedText>
+              </View>
+              <View style={styles.subSection}>
+                <ThemedText type="defaultSemiBold">{t('oddsPrematchTitle')}</ThemedText>
+                {insights.odds.prematch.length === 0
+                  ? renderEmpty()
+                  : insights.odds.prematch.slice(0, 5).map((odd, index) => (
+                      <View key={`${odd.bookmaker}-${index}`} style={styles.oddsRow}>
+                        <ThemedText style={styles.oddsBookmaker}>{odd.bookmaker}</ThemedText>
+                        <ThemedText style={styles.oddsValues}>
+                          {odd.home ?? '-'} / {odd.draw ?? '-'} / {odd.away ?? '-'}
+                        </ThemedText>
+                      </View>
+                    ))}
+              </View>
+              <View style={styles.subSection}>
+                <ThemedText type="defaultSemiBold">{t('oddsLiveTitle')}</ThemedText>
+                {insights.odds.live.length === 0
+                  ? renderEmpty()
+                  : insights.odds.live.slice(0, 5).map((odd, index) => (
+                      <View key={`${odd.bookmaker}-${index}`} style={styles.oddsRow}>
+                        <ThemedText style={styles.oddsBookmaker}>{odd.bookmaker}</ThemedText>
+                        <ThemedText style={styles.oddsValues}>
+                          {odd.home ?? '-'} / {odd.draw ?? '-'} / {odd.away ?? '-'}
+                        </ThemedText>
+                      </View>
+                    ))}
+              </View>
+            </View>
+
+            <View style={[styles.sectionCard, { backgroundColor: card, borderColor: border }]}>
+              <View style={styles.sectionHeader}>
+                <ThemedText type="defaultSemiBold">{t('statisticsTitle')}</ThemedText>
+                <ThemedText style={{ color: mutedText }}>{t('statisticsSubtitle')}</ThemedText>
+              </View>
+              {insights.statistics.length === 0
+                ? renderEmpty()
+                : insights.statistics.map((teamStats) => (
+                    <View key={teamStats.team.id} style={styles.subSection}>
+                      <View style={styles.teamHeaderRow}>
+                        <Image source={{ uri: teamStats.team.logoUrl }} style={styles.teamBadge} contentFit="contain" />
+                        <ThemedText type="defaultSemiBold">{teamStats.team.name}</ThemedText>
+                      </View>
+                      {teamStats.values.length === 0 ? (
+                        renderEmpty()
+                      ) : (
+                        teamStats.values.map((stat) => (
+                          <View key={stat.label} style={styles.statRow}>
+                            <ThemedText style={{ color: mutedText }}>{stat.label}</ThemedText>
+                            <ThemedText type="defaultSemiBold">{stat.value}</ThemedText>
+                          </View>
+                        ))
+                      )}
+                    </View>
+                  ))}
+            </View>
+          </>
+        )}
+
         <View style={[styles.card, { backgroundColor: card, borderColor: border }]}>
           <View style={styles.cardHeader}>
             <ThemedText type="defaultSemiBold">{t('predictions')}</ThemedText>
@@ -284,22 +639,20 @@ export default function MatchDetailsScreen() {
               {isPremium ? t('predictionsPremium') : t('predictionsFree')}
             </ThemedText>
           </View>
-          {visiblePredictions.length === 0 ? (
-            <ThemedText style={{ color: mutedText }}>{t('predictionsLoading')}</ThemedText>
-          ) : (
-            visiblePredictions.map((prediction) => (
-              <PredictionRow
-                key={prediction.id}
-                prediction={prediction}
-                locked={prediction.tier === 'premium' && !isPremium}
-                onAdd={() => addTicketItem(match, prediction)}
-                oddsLabel={prediction.odds ? prediction.odds.toFixed(2) : undefined}
-                isAdded={ticketItems.some(
-                  (item) => item.match.id === match.id && item.prediction.id === prediction.id
-                )}
-              />
-            ))
-          )}
+          {visiblePredictions.length === 0
+            ? renderEmpty()
+            : visiblePredictions.map((prediction) => (
+                <PredictionRow
+                  key={prediction.id}
+                  prediction={prediction}
+                  locked={prediction.tier === 'premium' && !isPremium}
+                  onAdd={() => addTicketItem(match, prediction)}
+                  oddsLabel={prediction.odds ? prediction.odds.toFixed(2) : undefined}
+                  isAdded={ticketItems.some(
+                    (item) => item.match.id === match.id && item.prediction.id === prediction.id
+                  )}
+                />
+              ))}
         </View>
 
         {!isPremium && (
@@ -389,6 +742,131 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 18,
     padding: 18,
+    gap: 12,
+  },
+  sectionCard: {
+    borderWidth: 1,
+    borderRadius: 18,
+    padding: 18,
+    gap: 12,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 12,
+  },
+  subSection: {
+    gap: 8,
+    paddingTop: 4,
+  },
+  teamHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  teamBadge: {
+    width: 28,
+    height: 28,
+  },
+  standingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'transparent',
+    gap: 10,
+  },
+  standingRank: {
+    width: 28,
+    textAlign: 'center',
+  },
+  standingLogo: {
+    width: 30,
+    height: 30,
+  },
+  standingTeamInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  standingGoalDiff: {
+    fontWeight: '600',
+  },
+  fixtureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  fixtureTeams: {
+    flex: 1,
+  },
+  eventRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  eventTime: {
+    width: 42,
+  },
+  eventLogo: {
+    width: 26,
+    height: 26,
+  },
+  eventInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  lineupList: {
+    gap: 4,
+    paddingLeft: 6,
+  },
+  lineupPlayer: {
+  },
+  scorerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  scorerInfo: {
+    flex: 1,
+  },
+  scorerGoals: {
+    fontWeight: '600',
+  },
+  coachRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  rosterPlayer: {
+  },
+  transferRow: {
+    gap: 4,
+  },
+  trophyRow: {
+    gap: 4,
+  },
+  injuryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  oddsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  oddsBookmaker: {
+    flex: 1,
+  },
+  oddsValues: {
+    fontWeight: '600',
+  },
+  statRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     gap: 12,
   },
   cardHeader: {
