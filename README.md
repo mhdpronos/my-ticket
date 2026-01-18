@@ -16,16 +16,20 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    npx expo start
    ```
 
-3. Configure SportMonks (v3)
-
-   Add the following variables to your environment (for example in `.env`):
+3. (Optional) Start the API proxy for API-Football
 
    ```bash
-   EXPO_PUBLIC_SPORTMONKS_API_KEY=your_key_here
-   EXPO_PUBLIC_SPORTMONKS_BASE_URL=https://api.sportmonks.com/v3/football
+   cp .env.example .env
+   npm run server
    ```
 
-   The Expo app calls SportMonks directly, so never commit the API key.
+   Update `API_FOOTBALL_KEY` in `.env` with your API-Football key. The Expo app expects
+   `EXPO_PUBLIC_API_BASE_URL` to point to this proxy (defaults to `http://localhost:3001`).
+   If you are testing on a real device, set `EXPO_PUBLIC_API_BASE_URL` to your computer's
+   LAN IP (for example, `http://192.168.1.10:3001`) so the phone can reach the proxy.
+   As a fallback for local testing, you can skip the proxy and set
+   `EXPO_PUBLIC_API_FOOTBALL_KEY` (and optionally `EXPO_PUBLIC_API_DIRECT_BASE_URL`) to call
+   API-Football directly from the app. This exposes the key, so use it only for development.
 
 In the output, you'll find options to open the app in a
 
