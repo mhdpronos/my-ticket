@@ -242,7 +242,7 @@ type ApiStatsResponse = {
   }>;
 };
 
-const TTL_MS = 15 * 60 * 1000;
+const TTL_MS = 24 * 60 * 60 * 1000;
 
 const pendingRequests = new Map<string, Promise<MatchInsights>>();
 
@@ -391,12 +391,14 @@ const mapStatistics = (data: ApiStatsResponse | null): StatisticSummary[] => {
 
 export const getMatchInsights = async (
   match: Match,
-  options: { forceRefresh?: boolean } = {}
+  options: { forceRefresh?: boolean; allowStale?: boolean } = {}
 ): Promise<MatchInsights> => {
   const cacheKey = `match-insights:${match.id}`;
   const cacheEntry = await readCache(cacheKey);
-  if (cacheEntry && isCacheValid(cacheEntry) && !options.forceRefresh) {
-    return cacheEntry.data;
+  if (cacheEntry && !options.forceRefresh) {
+    if (isCacheValid(cacheEntry) || options.allowStale) {
+      return cacheEntry.data;
+    }
   }
 
   if (!options.forceRefresh && pendingRequests.has(cacheKey)) {

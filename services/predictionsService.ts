@@ -110,14 +110,16 @@ const buildPredictionsPayload = (
 
 export const getPredictionsForMatch = async (
   matchId: string,
-  options: { forceRefresh?: boolean } = {}
+  options: { forceRefresh?: boolean; allowStale?: boolean } = {}
 ): Promise<Prediction[]> => {
   const cacheKey = `predictions:${matchId}`;
   const cacheEntry = await readCache(cacheKey);
   const hasValidCache = cacheEntry ? isCacheValid(cacheEntry) : false;
 
-  if (hasValidCache && !options.forceRefresh) {
-    return cacheEntry.data;
+  if (cacheEntry && !options.forceRefresh) {
+    if (hasValidCache || options.allowStale) {
+      return cacheEntry.data;
+    }
   }
 
   if (!options.forceRefresh && pendingRequests.has(cacheKey)) {

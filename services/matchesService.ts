@@ -262,12 +262,14 @@ export const getAllMatches = async (): Promise<Match[]> => {
 
 export const getMatchById = async (
   matchId: string,
-  options: { forceRefresh?: boolean } = {}
+  options: { forceRefresh?: boolean; allowStale?: boolean } = {}
 ): Promise<Match | null> => {
   const cacheKey = `fixture:${matchId}`;
   const cacheEntry = await readCache<Match | null>(cacheKey);
-  if (cacheEntry && isCacheValid(cacheEntry) && !options.forceRefresh) {
-    return cacheEntry.data;
+  if (cacheEntry && !options.forceRefresh) {
+    if (isCacheValid(cacheEntry) || options.allowStale) {
+      return cacheEntry.data;
+    }
   }
 
   if (!options.forceRefresh && pendingRequests.has(cacheKey)) {
