@@ -1,9 +1,82 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { mapSportMonksFixtureToMatch, SportMonksFixture } from '@/services/mappers/mapSportMonksFixtureToMatch';
-import { sportMonksGet } from '@/services/sportMonksClient';
-import { Match } from '@/types';
+import { ApiFootballResult, fetchApiFootball } from '@/services/apiFootball';
+import { Match, MatchStatus } from '@/types';
 import { isAllowedLeague } from '@/utils/leagueFilters';
+
+type ApiFixture = {
+  fixture: {
+    id: number;
+    date: string;
+    status: { short: string; elapsed: number | null };
+    venue?: { name?: string | null };
+  };
+  league: {
+    id: number;
+    name: string;
+    country: string;
+  };
+  teams: {
+    home: { id: number; name: string; logo: string };
+    away: { id: number; name: string; logo: string };
+  };
+  goals: {
+    home: number | null;
+    away: number | null;
+  };
+};
+
+type ApiFixtureResponse = {
+  response: ApiFixture[];
+  errors?: Record<string, string>;
+};
+
+const liveStatuses = new Set(['1H', '2H', 'ET', 'P', 'HT', 'BT', 'LIVE', 'INT', 'SUSP']);
+const finishedStatuses = new Set(['FT', 'AET', 'PEN', 'AWD', 'WO']);
+
+const mapStatus = (short: string): MatchStatus => {
+  if (liveStatuses.has(short)) {
+    return 'live';
+  }
+  if (finishedStatuses.has(short)) {
+    return 'finished';
+  }
+  return 'upcoming';
+};
+
+const mapFixtureToMatch = (fixture: ApiFixture): Match => {
+  const status = mapStatus(fixture.fixture.status.short);
+  const goalsHome = fixture.goals.home;
+  const goalsAway = fixture.goals.away;
+  const score =
+    typeof goalsHome === 'number' && typeof goalsAway === 'number'
+      ? { home: goalsHome, away: goalsAway }
+      : undefined;
+
+  return {
+    id: String(fixture.fixture.id),
+    homeTeam: {
+      id: String(fixture.teams.home.id),
+      name: fixture.teams.home.name,
+      logoUrl: fixture.teams.home.logo,
+    },
+    awayTeam: {
+      id: String(fixture.teams.away.id),
+      name: fixture.teams.away.name,
+      logoUrl: fixture.teams.away.logo,
+    },
+    league: {
+      id: String(fixture.league.id),
+      name: fixture.league.name,
+      country: fixture.league.country,
+    },
+    kickoffIso: fixture.fixture.date,
+    status,
+    score,
+    liveMinute: fixture.fixture.status.elapsed ?? undefined,
+    venue: fixture.fixture.venue?.name ?? undefined,
+  };
+};
 
 const formatApiDate = (dateIso: string) => {
   const date = new Date(dateIso);
@@ -25,37 +98,30 @@ type CacheEntry<T> = {
   ttlMs: number;
 };
 
-type MatchesResult = {
-  matches: Match[];
-  isStale: boolean;
-};
-
-const TODAY_TTL_MS = 3 * 60 * 1000;
-const FUTURE_TTL_MS = 12 * 60 * 60 * 1000;
-const PAST_TTL_MS = 24 * 60 * 60 * 1000;
-const ALL_MATCHES_TTL_MS = 6 * 60 * 60 * 1000;
-const MATCH_DETAILS_TTL_MS = 24 * 60 * 60 * 1000;
+const DAY_TTL_MS = 24 * 60 * 60 * 1000;
+const MIN_DEV_TTL_MS = DAY_TTL_MS;
+const ALL_MATCHES_TTL_MS = DAY_TTL_MS;
+const MATCH_DETAILS_TTL_MS = DAY_TTL_MS;
 
 const pendingRequests = new Map<string, Promise<unknown>>();
 
-const isCacheValid = (entry: { cachedAt: number; ttlMs: number }) => Date.now() < entry.cachedAt + entry.ttlMs;
+const ensureDevTtl = (ttlMs: number) => (__DEV__ ? Math.max(ttlMs, MIN_DEV_TTL_MS) : ttlMs);
+
+const ensureResponse = <T>(result: ApiFootballResult<T>, context: string): T => {
+  console.info(`[API-Football] ${context} status`, result.status);
+  const errors = (result.data as { errors?: Record<string, string> } | null)?.errors;
+  if (errors && Object.keys(errors).length > 0) {
+    console.warn(`[API-Football] ${context} errors`, errors);
+  }
+  if (!result.ok || !result.data) {
+    throw new Error(`API-Football request failed (${context})`);
+  }
+  return result.data;
+};
 
 const getFixturesCacheKey = (dateIso: string) => `fixtures:${formatApiDate(dateIso)}`;
 
-const getFixturesTtlMs = (dateIso: string) => {
-  const selected = new Date(dateIso);
-  const selectedMidnight = new Date(selected.getFullYear(), selected.getMonth(), selected.getDate());
-  const today = new Date();
-  const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-
-  if (selectedMidnight.getTime() === todayMidnight.getTime()) {
-    return TODAY_TTL_MS;
-  }
-  if (selectedMidnight.getTime() < todayMidnight.getTime()) {
-    return PAST_TTL_MS;
-  }
-  return FUTURE_TTL_MS;
-};
+const getFixturesTtlMs = () => ensureDevTtl(DAY_TTL_MS);
 
 const readFixturesCache = async (cacheKey: string): Promise<FixturesCacheEntry | null> => {
   try {
@@ -65,7 +131,7 @@ const readFixturesCache = async (cacheKey: string): Promise<FixturesCacheEntry |
     }
     return JSON.parse(cachedRaw) as FixturesCacheEntry;
   } catch (error) {
-    console.warn('[SportMonks] Failed to read fixtures cache', error);
+    console.warn('[API-Football] Failed to read fixtures cache', error);
     return null;
   }
 };
@@ -74,7 +140,7 @@ const writeFixturesCache = async (cacheKey: string, entry: FixturesCacheEntry) =
   try {
     await AsyncStorage.setItem(cacheKey, JSON.stringify(entry));
   } catch (error) {
-    console.warn('[SportMonks] Failed to write fixtures cache', error);
+    console.warn('[API-Football] Failed to write fixtures cache', error);
   }
 };
 
@@ -86,7 +152,7 @@ const readCache = async <T>(cacheKey: string): Promise<CacheEntry<T> | null> => 
     }
     return JSON.parse(cachedRaw) as CacheEntry<T>;
   } catch (error) {
-    console.warn('[SportMonks] Failed to read cache', error);
+    console.warn('[API-Football] Failed to read cache', error);
     return null;
   }
 };
@@ -95,55 +161,50 @@ const writeCache = async <T>(cacheKey: string, entry: CacheEntry<T>) => {
   try {
     await AsyncStorage.setItem(cacheKey, JSON.stringify(entry));
   } catch (error) {
-    console.warn('[SportMonks] Failed to write cache', error);
+    console.warn('[API-Football] Failed to write cache', error);
   }
 };
 
-const includeParams = 'participants;league.country;venue;scores';
+const isCacheValid = (entry: { cachedAt: number; ttlMs: number }) => Date.now() < entry.cachedAt + entry.ttlMs;
+
 
 export const getMatchesByDate = async (
   dateIso: string,
   options: { forceRefresh?: boolean } = {}
-): Promise<MatchesResult> => {
+): Promise<Match[]> => {
   const cacheKey = getFixturesCacheKey(dateIso);
   const cacheEntry = await readFixturesCache(cacheKey);
   const hasValidCache = cacheEntry ? isCacheValid(cacheEntry) : false;
 
   if (hasValidCache && !options.forceRefresh) {
-    return { matches: cacheEntry?.data ?? [], isStale: false };
+    return cacheEntry?.data ?? [];
   }
 
   const pendingKey = `fixtures-by-date:${formatApiDate(dateIso)}`;
   if (!options.forceRefresh && pendingRequests.has(pendingKey)) {
-    return (await pendingRequests.get(pendingKey)) as MatchesResult;
+    return (await pendingRequests.get(pendingKey)) as Match[];
   }
 
+  const params = { date: formatApiDate(dateIso), timezone: 'Africa/Abidjan' };
   const request = (async () => {
     try {
-      const fixtures = await sportMonksGet<SportMonksFixture[] | null>(`fixtures/date/${formatApiDate(dateIso)}`,
-        {
-          include: includeParams,
-          per_page: 100,
-        }
-      );
-      const normalizedFixtures = fixtures ?? [];
-      const matches = normalizedFixtures
-        .map(mapSportMonksFixtureToMatch)
+      const result = await fetchApiFootball<ApiFixtureResponse>('/fixtures', params);
+      const data = ensureResponse(result, 'fixtures by date');
+      const matches = data.response
+        .map(mapFixtureToMatch)
         .filter((match) => isAllowedLeague(match.league.name));
-
-      console.info('[SportMonks] fixtures count', matches.length);
 
       await writeFixturesCache(cacheKey, {
         data: matches,
         cachedAt: Date.now(),
-        ttlMs: getFixturesTtlMs(dateIso),
+        ttlMs: getFixturesTtlMs(),
       });
 
-      return { matches, isStale: false };
+      return matches;
     } catch (error) {
       if (cacheEntry) {
-        console.warn('[SportMonks] Using stale fixtures cache', { date: formatApiDate(dateIso) });
-        return { matches: cacheEntry.data, isStale: true };
+        console.warn('[API-Football] Using stale fixtures cache', { date: formatApiDate(dateIso) });
+        return cacheEntry.data;
       }
       throw error;
     } finally {
@@ -156,7 +217,7 @@ export const getMatchesByDate = async (
 };
 
 export const getAllMatches = async (): Promise<Match[]> => {
-  const cacheKey = 'fixtures:range:10-days';
+  const cacheKey = 'fixtures:next:30';
   const cacheEntry = await readCache<Match[]>(cacheKey);
   if (cacheEntry && isCacheValid(cacheEntry)) {
     return cacheEntry.data;
@@ -166,34 +227,27 @@ export const getAllMatches = async (): Promise<Match[]> => {
     return (await pendingRequests.get(cacheKey)) as Match[];
   }
 
+  const params = { next: 30 };
   const request = (async () => {
     try {
-      const today = new Date();
-      const end = new Date();
-      end.setDate(today.getDate() + 7);
-      const fixtures = await sportMonksGet<SportMonksFixture[] | null>(
-        `fixtures/between/${formatApiDate(today.toISOString())}/${formatApiDate(end.toISOString())}`,
-        {
-          include: includeParams,
-          per_page: 200,
-        }
-      );
-
-      const normalizedFixtures = fixtures ?? [];
-      const matches = normalizedFixtures
-        .map(mapSportMonksFixtureToMatch)
+      const result = await fetchApiFootball<ApiFixtureResponse>('/fixtures', params);
+      console.info('[API-Football] fixtures URL params', params);
+      const data = ensureResponse(result, 'fixtures next');
+      console.info('[API-Football] fixtures count', data.response.length);
+      const matches = data.response
+        .map(mapFixtureToMatch)
         .filter((match) => isAllowedLeague(match.league.name));
 
       await writeCache(cacheKey, {
         data: matches,
         cachedAt: Date.now(),
-        ttlMs: ALL_MATCHES_TTL_MS,
+        ttlMs: ensureDevTtl(ALL_MATCHES_TTL_MS),
       });
 
       return matches;
     } catch (error) {
       if (cacheEntry) {
-        console.warn('[SportMonks] Using stale fixtures cache', { context: 'fixtures range' });
+        console.warn('[API-Football] Using stale fixtures cache', { context: 'fixtures next' });
         return cacheEntry.data;
       }
       throw error;
@@ -220,25 +274,25 @@ export const getMatchById = async (
     return (await pendingRequests.get(cacheKey)) as Match | null;
   }
 
+  const params = { id: matchId };
   const request = (async () => {
     try {
-      const fixture = await sportMonksGet<SportMonksFixture | SportMonksFixture[] | null>(
-        `fixtures/${matchId}`,
-        { include: includeParams }
-      );
-      const resolvedFixture = Array.isArray(fixture) ? fixture[0] : fixture;
-      const match = resolvedFixture ? mapSportMonksFixtureToMatch(resolvedFixture) : null;
+      const result = await fetchApiFootball<ApiFixtureResponse>('/fixtures', params);
+      console.info('[API-Football] fixtures URL params', params);
+      const data = ensureResponse(result, 'fixture by id');
+      console.info('[API-Football] fixtures count', data.response.length);
+      const match = data.response[0] ? mapFixtureToMatch(data.response[0]) : null;
 
       await writeCache(cacheKey, {
         data: match,
         cachedAt: Date.now(),
-        ttlMs: MATCH_DETAILS_TTL_MS,
+        ttlMs: ensureDevTtl(MATCH_DETAILS_TTL_MS),
       });
 
       return match;
     } catch (error) {
       if (cacheEntry) {
-        console.warn('[SportMonks] Using stale fixtures cache', { context: 'fixture by id' });
+        console.warn('[API-Football] Using stale fixtures cache', { context: 'fixture by id' });
         return cacheEntry.data;
       }
       throw error;
