@@ -36,6 +36,7 @@ export default function MatchDetailsScreen() {
   const tint = useThemeColor({}, 'tint');
   const success = useThemeColor({}, 'success');
   const danger = useThemeColor({}, 'danger');
+  const backgroundSecondary = useThemeColor({}, 'backgroundSecondary');
   const { t, language } = useTranslation();
   const locale = getLocale(language);
   const scrollHaptics = useHapticOnScroll();
@@ -171,6 +172,12 @@ export default function MatchDetailsScreen() {
   const hasPredictionRates =
     predictionWinRate.home + predictionWinRate.draw + predictionWinRate.away > 0;
   const winRate = match.winRate ?? (hasPredictionRates ? predictionWinRate : null);
+  const kickoffTimeLabel = new Date(match.kickoffIso).toLocaleTimeString(locale, {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+  const rateThreshold = 50;
+  const getRateTone = (value: number) => (value >= rateThreshold ? success : danger);
 
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
@@ -204,9 +211,11 @@ export default function MatchDetailsScreen() {
                   ? t('matchStatusFinished')
                   : t('matchStatusUpcoming')}
               </ThemedText>
-              <ThemedText style={{ color: mutedText }}>
-                {new Date(match.kickoffIso).toLocaleString(locale)}
-              </ThemedText>
+              <View style={[styles.timePill, { backgroundColor: backgroundSecondary, borderColor: border }]}>
+                <ThemedText type="defaultSemiBold" style={{ color: tint }}>
+                  {kickoffTimeLabel}
+                </ThemedText>
+              </View>
             </View>
             <View style={styles.teamColumn}>
               <Image source={{ uri: match.awayTeam.logoUrl }} style={styles.logo} contentFit="contain" />
@@ -227,8 +236,8 @@ export default function MatchDetailsScreen() {
                 style={[
                   styles.rateCard,
                   {
-                    backgroundColor: winRate.home >= 60 ? success : danger,
-                    borderColor: winRate.home >= 60 ? success : danger,
+                    backgroundColor: getRateTone(winRate.home),
+                    borderColor: getRateTone(winRate.home),
                   },
                 ]}>
                 <Image source={{ uri: match.homeTeam.logoUrl }} style={styles.rateLogo} contentFit="contain" />
@@ -240,8 +249,23 @@ export default function MatchDetailsScreen() {
                 style={[
                   styles.rateCard,
                   {
-                    backgroundColor: winRate.away >= 60 ? success : danger,
-                    borderColor: winRate.away >= 60 ? success : danger,
+                    backgroundColor: getRateTone(winRate.draw),
+                    borderColor: getRateTone(winRate.draw),
+                  },
+                ]}>
+                <ThemedText type="defaultSemiBold" style={styles.rateLabel}>
+                  {t('drawLabel')}
+                </ThemedText>
+                <ThemedText type="defaultSemiBold" style={styles.rateValue}>
+                  {winRate.draw}%
+                </ThemedText>
+              </View>
+              <View
+                style={[
+                  styles.rateCard,
+                  {
+                    backgroundColor: getRateTone(winRate.away),
+                    borderColor: getRateTone(winRate.away),
                   },
                 ]}>
                 <Image source={{ uri: match.awayTeam.logoUrl }} style={styles.rateLogo} contentFit="contain" />
@@ -345,6 +369,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
   },
+  timePill: {
+    borderWidth: 1,
+    borderRadius: 16,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
   logo: {
     width: 42,
     height: 42,
@@ -374,19 +404,23 @@ const styles = StyleSheet.create({
   },
   rateCardRow: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 8,
   },
   rateCard: {
     flex: 1,
     borderRadius: 14,
     borderWidth: 1,
-    paddingVertical: 12,
+    paddingVertical: 10,
     alignItems: 'center',
     gap: 8,
   },
   rateLogo: {
-    width: 34,
-    height: 34,
+    width: 28,
+    height: 28,
+  },
+  rateLabel: {
+    color: '#FFFFFF',
+    textTransform: 'uppercase',
   },
   rateValue: {
     color: '#FFFFFF',

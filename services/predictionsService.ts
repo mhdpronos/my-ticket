@@ -56,6 +56,8 @@ const writeCache = async (cacheKey: string, entry: CacheEntry<Prediction[]>) => 
   }
 };
 
+const isCacheValid = (entry: CacheEntry<Prediction[]>) => Date.now() < entry.cachedAt + entry.ttlMs;
+
 const buildPredictionsPayload = (matchId: string, prediction?: ApiPredictionsResponse['response'][number]['predictions']) => {
   if (!prediction) {
     return buildPredictionsForMatch(matchId);
@@ -86,8 +88,9 @@ export const getPredictionsForMatch = async (
 ): Promise<Prediction[]> => {
   const cacheKey = `predictions:${matchId}`;
   const cacheEntry = await readCache(cacheKey);
+  const hasValidCache = cacheEntry ? isCacheValid(cacheEntry) : false;
 
-  if (cacheEntry && !options.forceRefresh) {
+  if (hasValidCache && !options.forceRefresh) {
     return cacheEntry.data;
   }
 
