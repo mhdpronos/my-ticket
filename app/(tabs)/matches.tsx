@@ -206,6 +206,23 @@ export default function MatchesScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
+      <View style={[styles.headerContainer, { backgroundColor: background, borderBottomColor: border }]}>
+        <View style={styles.headerRow}>
+          <View style={styles.brandBlock}>
+            <BrandTitle accessibilityLabel={t('appName')} numberOfLines={1} style={styles.brandTitle} />
+            <ThemedText style={[styles.subtitle, { color: mutedText }]} numberOfLines={1} ellipsizeMode="tail">
+              {t('headerMatchesSubtitle')}
+            </ThemedText>
+          </View>
+          <TouchableOpacity
+            accessibilityRole="button"
+            onPress={() => router.push('/notifications')}
+            style={[styles.notificationButton, { borderColor: border, backgroundColor: card }]}>
+            <MaterialCommunityIcons name="bell-outline" size={20} color={mutedText} />
+          </TouchableOpacity>
+        </View>
+        <View style={[styles.divider, { backgroundColor: border }]} />
+      </View>
       <SectionList
         ref={listRef}
         sections={sections}
@@ -240,29 +257,6 @@ export default function MatchesScreen() {
         }
         ListHeaderComponent={
           <View>
-            <View style={styles.headerRow}>
-              <View style={styles.brandBlock}>
-                <BrandTitle
-                  accessibilityLabel={t('appName')}
-                  numberOfLines={1}
-                  style={styles.brandTitle}
-                />
-                <ThemedText
-                  style={[styles.subtitle, { color: mutedText }]}
-                  numberOfLines={1}
-                  ellipsizeMode="tail">
-                  {t('headerMatchesSubtitle')}
-                </ThemedText>
-              </View>
-              <TouchableOpacity
-                accessibilityRole="button"
-                onPress={() => router.push('/notifications')}
-                style={[styles.notificationButton, { borderColor: border, backgroundColor: card }]}>
-                <MaterialCommunityIcons name="bell-outline" size={20} color={mutedText} />
-              </TouchableOpacity>
-            </View>
-            <View style={[styles.divider, { backgroundColor: border }]} />
-
             <View style={styles.searchRow}>
               <View style={[styles.searchBox, { backgroundColor: card, borderColor: border }]}>
                 <MaterialCommunityIcons name="magnify" size={18} color={mutedText} />
@@ -478,6 +472,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingTop: 56,
+  },
+  headerContainer: {
+    paddingTop: 8,
+    borderBottomWidth: 1,
   },
   headerRow: {
     paddingHorizontal: 16,

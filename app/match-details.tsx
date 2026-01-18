@@ -43,7 +43,15 @@ export default function MatchDetailsScreen() {
   const matchIdValue = Array.isArray(matchId) ? matchId[0] : matchId;
 
   const loadMatch = useCallback(
-    async ({ showLoading, silent }: { showLoading?: boolean; silent?: boolean } = {}) => {
+    async ({
+      showLoading,
+      silent,
+      forceRefresh,
+    }: {
+      showLoading?: boolean;
+      silent?: boolean;
+      forceRefresh?: boolean;
+    } = {}) => {
       if (!matchIdValue) {
         setIsLoading(false);
         setIsRefreshing(false);
@@ -57,10 +65,10 @@ export default function MatchDetailsScreen() {
         }
       }
       try {
-        const foundMatch = await getMatchById(matchIdValue);
+        const foundMatch = await getMatchById(matchIdValue, { forceRefresh });
         setMatch(foundMatch);
         if (foundMatch) {
-          const predictionsData = await getPredictionsForMatch(foundMatch.id);
+          const predictionsData = await getPredictionsForMatch(foundMatch.id, { forceRefresh });
           setPredictions(predictionsData);
         } else {
           setPredictions([]);
@@ -170,7 +178,13 @@ export default function MatchDetailsScreen() {
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={loadMatch} tintColor={tint} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={() => loadMatch({ forceRefresh: true })}
+            tintColor={tint}
+          />
+        }
         contentInsetAdjustmentBehavior="never"
         {...scrollHaptics}>
         <View style={[styles.matchCard, { backgroundColor: card, borderColor: border }]}>
