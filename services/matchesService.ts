@@ -98,9 +98,10 @@ type CacheEntry<T> = {
   ttlMs: number;
 };
 
-const MIN_DEV_TTL_MS = 10 * 60 * 1000;
-const ALL_MATCHES_TTL_MS = 5 * 60 * 1000;
-const MATCH_DETAILS_TTL_MS = 10 * 60 * 1000;
+const DAY_TTL_MS = 24 * 60 * 60 * 1000;
+const MIN_DEV_TTL_MS = DAY_TTL_MS;
+const ALL_MATCHES_TTL_MS = DAY_TTL_MS;
+const MATCH_DETAILS_TTL_MS = DAY_TTL_MS;
 
 const pendingRequests = new Map<string, Promise<unknown>>();
 
@@ -120,19 +121,7 @@ const ensureResponse = <T>(result: ApiFootballResult<T>, context: string): T => 
 
 const getFixturesCacheKey = (dateIso: string) => `fixtures:${formatApiDate(dateIso)}`;
 
-const startOfDay = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
-
-const getFixturesTtlMs = (dateIso: string) => {
-  const targetDay = startOfDay(new Date(dateIso));
-  const todayDay = startOfDay(new Date());
-  if (targetDay === todayDay) {
-    return ensureDevTtl(2 * 60 * 1000);
-  }
-  if (targetDay > todayDay) {
-    return ensureDevTtl(6 * 60 * 60 * 1000);
-  }
-  return ensureDevTtl(24 * 60 * 60 * 1000);
-};
+const getFixturesTtlMs = () => ensureDevTtl(DAY_TTL_MS);
 
 const readFixturesCache = async (cacheKey: string): Promise<FixturesCacheEntry | null> => {
   try {
@@ -208,7 +197,7 @@ export const getMatchesByDate = async (
       await writeFixturesCache(cacheKey, {
         data: matches,
         cachedAt: Date.now(),
-        ttlMs: getFixturesTtlMs(dateIso),
+        ttlMs: getFixturesTtlMs(),
       });
 
       return matches;
