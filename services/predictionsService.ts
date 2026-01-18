@@ -1,29 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { buildPredictionsForMatch } from '@/data/predictions';
-import { fetchJson } from '@/services/apiClient';
 import { Prediction } from '@/types';
-
-type ApiPredictionsResponse = {
-  response: Array<{
-    predictions: {
-      percent: { home: string; draw: string; away: string };
-      advice?: string;
-    };
-  }>;
-};
-
-const parsePercent = (value: string) => Number(value.replace('%', '').trim());
-
-const riskFromPercent = (percent: number) => {
-  if (percent >= 60) {
-    return 'safe';
-  }
-  if (percent >= 45) {
-    return 'medium';
-  }
-  return 'risky';
-};
 
 type CacheEntry<T> = {
   data: T;
@@ -58,29 +36,7 @@ const writeCache = async (cacheKey: string, entry: CacheEntry<Prediction[]>) => 
 
 const isCacheValid = (entry: CacheEntry<Prediction[]>) => Date.now() < entry.cachedAt + entry.ttlMs;
 
-const buildPredictionsPayload = (matchId: string, prediction?: ApiPredictionsResponse['response'][number]['predictions']) => {
-  if (!prediction) {
-    return buildPredictionsForMatch(matchId);
-  }
-
-  const percentHome = parsePercent(prediction.percent.home);
-  const percentDraw = parsePercent(prediction.percent.draw);
-  const percentAway = parsePercent(prediction.percent.away);
-
-  return buildPredictionsForMatch(matchId, {
-    HOME: percentHome,
-    DRAW: percentDraw,
-    AWAY: percentAway,
-  }).map((item) => {
-    if (item.market !== '1X2' || item.confidence === undefined) {
-      return item;
-    }
-    return {
-      ...item,
-      risk: riskFromPercent(item.confidence),
-    };
-  });
-};
+const buildPredictionsPayload = (matchId: string) => buildPredictionsForMatch(matchId);
 
 export const getPredictionsForMatch = async (
   matchId: string,
@@ -100,9 +56,7 @@ export const getPredictionsForMatch = async (
 
   const request = (async () => {
     try {
-      const data = await fetchJson<ApiPredictionsResponse>('/api/predictions', { fixture: matchId });
-      const prediction = data?.response[0]?.predictions;
-      const payload = buildPredictionsPayload(matchId, prediction);
+      const payload = buildPredictionsPayload(matchId);
       await writeCache(cacheKey, {
         data: payload,
         cachedAt: Date.now(),
@@ -114,13 +68,7 @@ export const getPredictionsForMatch = async (
         console.warn('[Predictions] Using stale cache', { matchId });
         return cacheEntry.data;
       }
-      const fallback = buildPredictionsPayload(matchId);
-      await writeCache(cacheKey, {
-        data: fallback,
-        cachedAt: Date.now(),
-        ttlMs: DAY_TTL_MS,
-      });
-      return fallback;
+      throw error;
     } finally {
       pendingRequests.delete(cacheKey);
     }
