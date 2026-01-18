@@ -40,6 +40,7 @@ export default function MatchesScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const [isStale, setIsStale] = useState(false);
   const [selectedLeagueId, setSelectedLeagueId] = useState<string | null>(null);
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<'all' | 'morning' | 'afternoon' | 'evening'>('all');
@@ -85,11 +86,13 @@ export default function MatchesScreen() {
         setIsRefreshing(true);
       }
       try {
-        const data = await getMatchesByDate(selectedDateId, { forceRefresh });
-        setMatches(data);
+        const result = await getMatchesByDate(selectedDateId, { forceRefresh });
+        setMatches(result.matches);
+        setIsStale(result.isStale);
       } catch (error) {
         console.error('Failed to load matches', error);
         setMatches([]);
+        setIsStale(false);
         setHasError(true);
       } finally {
         setIsLoading(false);
@@ -340,6 +343,12 @@ export default function MatchesScreen() {
                 })}
               </ScrollView>
             </View>
+            {isStale && !hasError ? (
+              <View style={[styles.staleNotice, { borderColor: border, backgroundColor: card }]}> 
+                <MaterialCommunityIcons name="alert-circle-outline" size={16} color={mutedText} />
+                <ThemedText style={{ color: mutedText }}>{t('staleMatchesNotice')}</ThemedText>
+              </View>
+            ) : null}
           </View>
         }
         ListFooterComponent={
@@ -534,6 +543,16 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     padding: 12,
     gap: 12,
+  },
+  staleNotice: {
+    marginHorizontal: 16,
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   filterScroll: {
     flexGrow: 0,
